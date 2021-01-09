@@ -160,7 +160,7 @@ void setup()
   // getMaxFileBufferAvail will tell us the maximum number of bytes which the file buffer has contained.
   myGNSS.setFileBufferSize(fileBufferSize); // setFileBufferSize must be called _before_ .begin
 
-  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing..."));
     while (1);

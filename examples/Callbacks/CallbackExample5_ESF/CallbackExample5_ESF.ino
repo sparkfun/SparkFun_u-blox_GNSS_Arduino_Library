@@ -142,9 +142,9 @@ void setup()
 
   //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
-  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 

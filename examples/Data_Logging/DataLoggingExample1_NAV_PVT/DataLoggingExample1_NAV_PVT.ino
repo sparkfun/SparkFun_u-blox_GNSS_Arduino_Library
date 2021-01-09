@@ -158,7 +158,7 @@ void setup()
   // I.e. room for three messages plus an empty tail byte.
   myGNSS.setFileBufferSize(301); // setFileBufferSize must be called _before_ .begin
 
-  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing..."));
     while (1);
