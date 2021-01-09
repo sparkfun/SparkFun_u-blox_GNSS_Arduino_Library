@@ -6,7 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-SFE_UBLOX_GPS	KEYWORD1
+SFE_UBLOX_GNSS	KEYWORD1
 
 ubxPacket	KEYWORD1
 
