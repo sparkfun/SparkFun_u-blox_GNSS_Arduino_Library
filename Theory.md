@@ -76,12 +76,22 @@ Notes:
 
 ## Migrating your code to v2.0
 
+Migrating to v2.0 is easy. There are two small changes all users will need to make:
+
+* The name of the library class has changed from ```SFE_UBLOX_GPS``` to ```SFE_UBLOX_GNSS``` to reflect that the library supports all of the Global Navigation Satellite Systems:
+  * As a minimum, you need to change: ```SFE_UBLOX_GPS myGPS;```
+  * to: ```SFE_UBLOX_GNSS myGPS;```
+  * But we would encourage you to use ```SFE_UBLOX_GNSS myGNSS;```. You will see that all of the library examples now use ```myGNSS``` instead of ```myGPS```.
+* The name of the library header and C++ files have changed too:
+  * Change: ```#include <SparkFun_Ublox_Arduino_Library.h>```
+  * to: ```#include <SparkFun_u-blox_GNSS_Arduino_Library.h>```
+
 The biggest change in v2.0 is that data is now stored in a _struct_ which matches the u-blox interface description for that message. For example:
 - In v1, the NAV PVT (Position Velocity Time) latitude and longitude were stored in 'global' _int32_t_ variables called ```latitude``` and ```longitude```
   - In v2.0, the data is now stored in <strong>UBX_NAV_PVT_t *packetUBXNAVPVT</strong>
-  - ```myGPS.latitude``` becomes ```myGPS.packetUBXNAVPVT->data.lat```
-  - ```myGPS.longitude``` becomes ```myGPS.packetUBXNAVPVT->data.lon```
-  - The helper functions ```myGPS.getLatitude()``` and ```myGPS.getLongitude()``` are still available and work in the same way.
+  - ```myGPS.latitude``` becomes ```myGNSS.packetUBXNAVPVT->data.lat```
+  - ```myGPS.longitude``` becomes ```myGNSS.packetUBXNAVPVT->data.lon```
+  - The helper functions ```myGNSS.getLatitude()``` and ```myGNSS.getLongitude()``` are still available and work in the same way.
 - In v1, the ESF Sensor Fusion data for the Dead Reckoning modules was stored in 'global' variables ```imuMeas```, ```ubloxSen``` and ```vehAtt```
   - In v2.0, the data is now stored in:
   - <strong>UBX_ESF_ALG_t *packetUBXESFALG</strong> contains the IMU alignment information (roll, pitch and yaw)
@@ -89,16 +99,16 @@ The biggest change in v2.0 is that data is now stored in a _struct_ which matche
   - <strong>UBX_ESF_MEAS_t *packetUBXESFMEAS</strong> contains the sensor fusion measurements
   - <strong>UBX_ESF_RAW_t *packetUBXESFRAW</strong> contains the raw sensor measurements
   - <strong>UBX_ESF_STATUS_t *packetUBXESFSTATUS</strong> contains the sensor fusion status
-  - e.g. ```myGPS.imuMeas.fusionMode``` becomes ```myGPS.packetUBXESFSTATUS->data.fusionMode```
+  - e.g. ```myGPS.imuMeas.fusionMode``` becomes ```myGNSS.packetUBXESFSTATUS->data.fusionMode```
   - The helper functions ```getSensorFusionMeasurement```, ```getRawSensorMeasurement``` and ```getSensorFusionStatus``` can be used to extract the sensor data for an individual sensor
-  - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushESFALG()```
+  - "auto" data can be marked as stale by calling (e.g.) ```myGNSS.flushESFALG()```
   - Please see the [**Dead_Reckoning/Example4_vehicleDynamics**](./examples/Dead_Reckoning/Example4_vehicleDynamics/Example4_vehicleDynamics.ino) example for more details
 - In v1, the HNR (High Navigation Rate) data for the Dead Reckoning modules was stored in 'global' variables ```hnrAtt```, ```hnrVehDyn``` and ```hnrPVT```
   - In v2.0, e.g.:
-  - ```myGPS.hnrAtt.roll``` becomes ```myGPS.packetUBXHNRATT->data.roll```
-  - ```myGPS.hnrVehDyn.xAccel``` becomes ```myGPS.packetUBXHNRINS->data.xAccel```
-  - ```myGPS.hnrPVT.lat``` becomes ```myGPS.packetUBXHNRPVT->data.lat```
-  - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushHNRATT()```
+  - ```myGPS.hnrAtt.roll``` becomes ```myGNSS.packetUBXHNRATT->data.roll```
+  - ```myGPS.hnrVehDyn.xAccel``` becomes ```myGNSS.packetUBXHNRINS->data.xAccel```
+  - ```myGPS.hnrPVT.lat``` becomes ```myGNSS.packetUBXHNRPVT->data.lat```
+  - "auto" data can be marked as stale by calling (e.g.) ```myGNSS.flushHNRATT()```
   - Please see the [**Dead_Reckoning/Example6_getAutoHNRData**](./examples/Dead_Reckoning/Example6_getAutoHNRData/Example6_getAutoHNRData.ino) example for more details
 
 Other changes include:
@@ -109,9 +119,9 @@ Other changes include:
   - New helper functions (```getRelPosAccN```, ```getRelPosAccE``` and ```getRelPosAccD```) provide backward-compatibility
   - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation/Example5_RelativePositioningInformation.ino) example for more details
 - getSurveyStatus now returns data via <strong>UBX_NAV_SVIN_t *packetUBXNAVSVIN</strong>
-  - ```myGPS.svin.active``` becomes ```myGPS.packetUBXNAVSVIN->data.active```
-  - ```myGPS.svin.valid``` becomes ```myGPS.packetUBXNAVSVIN->data.valid```
-  - ```myGPS.svin.observationTime``` becomes ```myGPS.packetUBXNAVSVIN->data.dur``` and is now uint32_t (not uint16_t)
-  - ```myGPS.svin.MeanAccuracy``` becomes ```myGPS.packetUBXNAVSVIN->data.meanAcc``` and is now uint32_t * 0.1mm (not float * m)
+  - ```myGPS.svin.active``` becomes ```myGNSS.packetUBXNAVSVIN->data.active```
+  - ```myGPS.svin.valid``` becomes ```myGNSS.packetUBXNAVSVIN->data.valid```
+  - ```myGPS.svin.observationTime``` becomes ```myGNSS.packetUBXNAVSVIN->data.dur``` and is now uint32_t (not uint16_t)
+  - ```myGPS.svin.MeanAccuracy``` becomes ```myGNSS.packetUBXNAVSVIN->data.meanAcc``` and is now uint32_t * 0.1mm (not float * m)
   - New helper functions (```getSurveyInActive```, ```getSurveyInValid```, ```getSurveyInObservationTime``` and ```getSurveyInMeanAccuracy```) provide backward-compatibility
   - Please see the [**ZED-F9P/Example3_StartRTCMBase**](./examples/ZED-F9P/Example3_StartRTCMBase/Example3_StartRTCMBase.ino) example for more details
