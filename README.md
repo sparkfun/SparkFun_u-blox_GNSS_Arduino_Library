@@ -17,7 +17,7 @@
   </tr>
 </table>
 
-u-blox makes some incredible GNSS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of u-blox devices over I2C (called DDC by u-blox) and Serial. The UBX protocol is supported over both I2C and serial, and is a much easier and lighterweight interface to a GNSS module. Stop polling messages and parsing NMEA data! Simply ask for the datums you need and receive an automatic callback when they arrive.
+u-blox makes some incredible GNSS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of u-blox devices over I<sup>2</sup>C (called DDC by u-blox) and Serial. The UBX protocol is supported over both I<sup>2</sup>C and serial, and is a much easier and lighterweight interface to a GNSS module. Stop polling messages and parsing NMEA data! Simply ask for the datums you need and receive an automatic callback when they arrive.
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun u-blox GNSS**.
 
@@ -55,7 +55,7 @@ If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages,
 
 ## Max (400kHz) I<sup>2</sup>C Support
 
-To achieve 400kHz I2C speed please be sure to remove all pull-ups on the I2C bus. Most, if not all, u-blox modules include internal pull ups on the I2C lines (sometimes called DDC in their manuals). Cut all I2C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I2C bus at 100kHz.
+To achieve 400kHz I<sup>2</sup>C speed please be sure to remove all pull-ups on the I<sup>2</sup>C bus. Most, if not all, u-blox modules include internal pull ups on the I<sup>2</sup>C lines (sometimes called DDC in their manuals). Cut all I<sup>2</sup>C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I<sup>2</sup>C bus at 100kHz.
 
 ## Contributing
 
