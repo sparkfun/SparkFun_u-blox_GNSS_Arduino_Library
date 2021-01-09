@@ -53,7 +53,7 @@ Migrating to v2.0 is easy. There are two small changes all users will need to ma
 
 If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages, you will need to make more small changes to your code. Please see the [dead reckoning examples](./examples/Dead_Reckoning) for more details. There is more detail available in [Theory.md](./Theory.md#migrating-your-code-to-v20) if you need it.
 
-## Max (400kHz) I2C Support
+## Max (400kHz) I<sup>2</sup>C Support
 
 To achieve 400kHz I2C speed please be sure to remove all pull-ups on the I2C bus. Most, if not all, u-blox modules include internal pull ups on the I2C lines (sometimes called DDC in their manuals). Cut all I2C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I2C bus at 100kHz.
 
@@ -63,21 +63,21 @@ If you would like to contribute to this library: please do, we truly appreciate 
 
 ## Repository Contents
 
-* **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE.
-* **/src** - Source files for the library (.cpp, .h).
-* **[keywords.txt](./keywords.txt)** - Keywords from this library that will be highlighted in the Arduino IDE.
-* **[library.properties](./library.properties)** - General library properties for the Arduino package manager.
-* **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines on how to contribute to this library.
-* **[Theory.md](./Theory.md)** - provides detail on how data is processed by the library.
-* **/Utils** - contains a Python utility which can check the contents of UBX log files.
+* [**/examples**](./examples) - Example sketches for the library (.ino). Run these from the Arduino IDE.
+* [**/src**](./src) - Source files for the library (.cpp, .h).
+* [**keywords.txt**](./keywords.txt) - Keywords from this library that will be highlighted in the Arduino IDE.
+* [**library.properties**](./library.properties) - General library properties for the Arduino package manager.
+* [**CONTRIBUTING.md**](./CONTRIBUTING.md) - Guidelines on how to contribute to this library.
+* [**Theory.md**](./Theory.md) - provides detail on how data is processed by the library.
+* [**/Utils**](./Utils) - contains a Python utility which can check the contents of UBX log files.
 
 ## Documentation
 
-* **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
+* [**Installing an Arduino Library Guide**](https://learn.sparkfun.com/tutorials/installing-an-arduino-library) - Basic information on how to install an Arduino library.
 
 ## Theory
 
-If you would like to learn more about how this library works, including the big changes we made in version 2.0, please see **[Theory.md](./Theory.md)** for full details.
+If you would like to learn more about how this library works, including the big changes we made in version 2.0, please see [**Theory.md**](./Theory.md) for full details.
 
 ## Products That Use This Library
 
