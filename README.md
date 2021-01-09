@@ -1,5 +1,4 @@
-SparkFun u-blox Arduino Library
-===========================================================
+# SparkFun u-blox Arduino GNSS Library
 
 <table class="table table-hover table-striped table-bordered">
   <tr align="center">
@@ -18,55 +17,51 @@ SparkFun u-blox Arduino Library
   </tr>
 </table>
 
-u-blox makes some incredible GNSS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of u-blox devices over I2C (called DDC by u-blox) and Serial. The UBX protocol is supported over both I2C and serial, and is a much easier and lighterweight interface to a GNSS module. Stop parsing NMEA data! And simply ask for the datums you need.
+u-blox makes some incredible GNSS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of u-blox devices over I2C (called DDC by u-blox) and Serial. The UBX protocol is supported over both I2C and serial, and is a much easier and lighterweight interface to a GNSS module. Stop polling messages and parsing NMEA data! Simply ask for the datums you need and receive an automatic callback when they arrive.
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun u-blox GNSS**.
 
-Although not an integrated part of the library, you will find an example of how to communicate with the older series 6 and 7 modules in the [examples folder](./examples/Series_6_7).
+## v2.0
 
-Max (400kHz) I2C Support
--------------------
+This library is the new and improved version of the very popular SparkFun u-blox GNSS Arduino Library. v2.0 contains some big changes and improvements:
 
-To achieve 400kHz I2C speed please be sure to remove all pull-ups on the I2C bus. Most, if not all, u-blox modules include pull ups on the I2C lines (sometimes called DDC in their manuals). Cut all I2C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I2C bus at 100kHz.
+* Seamless support for "automatic" message delivery:
+  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**23 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
+* Dynamic memory allocation with clearly-defined data storage structs for each message:
+  * There are no static 'global' variables to eat up your RAM. v2.0 automatically allocates memory for the automatic messages when they are enabled. You may find your total RAM use is lower with v2.0 than with v1.8.
+  * Each "auto" message has a clearly-defined [data storage struct](./src/u-blox_structs.h) which follows the u-blox protocol specification precisely.
+* Callbacks:
+  * No more polling! Simply request the "auto" messages you need and receive an automatic callback when each message arrives.
+  * Please see the [callback examples](./examples/Callbacks) for more details.
+* Built-in support for data logging:
+  * Want to log RXM SFRBX and RAWX data for Post-Processed Kinematics or Precise Point Positioning? You can absolutely do that! v2.0 provides built-in support for data logging, allowing you to log **any** of the "auto" messages simply and easily.
+  * Incoming "auto" data can be stored in a configurable ring buffer. You can then extract the data from the buffer and write it to (e.g.) SD card using your favorite SD library.
+  * Data is logged in u-blox UBX format which is compact and efficient. You can replay the data using [u-center](https://www.u-blox.com/en/product/u-center).
+  * Please see the [data logging examples](./examples/Data_Logging) for more details.
 
--------------------
+## Migrating to v2.0
 
-Want to help? Please do! We are always looking for ways to improve and build out features of this library.
+Migrating to v2.0 is easy. There are two small changes all users will need to make:
 
-* We are always interested in adding SPI support with a checkUbloxSPI() function
+* The name of the library class has changed from ```SFE_UBLOX_GPS``` to ```SFE_UBLOX_GNSS``` to reflect that the library supports all of the Global Navigation Satellite Systems:
+  * As a minimum, you need to change: ```SFE_UBLOX_GPS myGPS;```
+  * to: ```SFE_UBLOX_GNSS myGPS;```
+  * But we would encourage you to use ```SFE_UBLOX_GNSS myGNSS;```. You will see that all of the library examples now use ```myGNSS``` instead of ```myGPS```.
+* The name of the library header and C++ files have changed too:
+  * Change: ```#include <SparkFun_Ublox_Arduino_Library.h>```
+  * to: ```#include <SparkFun_u-blox_GNSS_Arduino_Library.h>```
 
-Thanks to:
+If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages, you will need to make more small changes to your code. Please see the [dead reckoning examples](./examples/Dead_Reckoning) for more details. There is more detail available in [Theory.md](./Theory.md#migrating-your-code-to-v20) if you need it.
 
-* [trycoon](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/pull/7) for fixing the lack of I2C buffer length defines.
-* [tve](https://github.com/tve) for building out serial additions and examples.
-* [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time.
-* [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug.
-* Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method, geofence functions, better saveConfig handling, as well as a bunch of small fixes.
-* [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position).
-* [tedder](https://github.com/tedder) for moving iTOW to PVT instead of HPPOS and comment cleanup.
-* [grexjmo](https://github.com/grexjmo) for pushing for a better NMEA sentence configuration method.
-* [averywallis](https://github.com/averywallis) for adding good comments to the various constants.
-* [blazczak](https://github.com/blazczak) and [geeksville](https://github.com/geeksville) for adding support for the series 6 and 7 modules.
-* [bjorn@unsurv](https://github.com/unsurv) for adding powerOff and powerOffWithInterrupt.
-* [dotMorten](https://github.com/dotMorten) for the MSGOUT keys, autoHPPOSLLH, autoDOP and upgrades to autoPVT.
-* [markuckermann](https://github.com/markuckermann) for spotting the config layer gremlins
-* [vid553](https://github.com/vid553) for the Zephyr port
-* [balamuruganky](https://github.com/balamuruganky) for the NAV-PVT velocity parameters, getSpeedAccEst, getHeadingAccEst, getInvalidLlh, getHeadVeh, getMagDec and getMagAcc
-* [nelarsen](https://github.com/nelarsen) for the buffer overrun improvements
-* [mstranne](https://github.com/mstranne) and [shaneperera](https://github.com/shaneperera) for the pushRawData suggestion
-* [rubienr](https://github.com/rubienr) for spotting the logical AND issues
+## Max (400kHz) I2C Support
 
-Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
+To achieve 400kHz I2C speed please be sure to remove all pull-ups on the I2C bus. Most, if not all, u-blox modules include internal pull ups on the I2C lines (sometimes called DDC in their manuals). Cut all I2C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I2C bus at 100kHz.
 
-Need a library for the u-blox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
-
-Contributing
---------------
+## Contributing
 
 If you would like to contribute to this library: please do, we truly appreciate it, but please follow [these guidelines](./CONTRIBUTING.md). Thanks!
 
-Repository Contents
--------------------
+## Repository Contents
 
 * **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE.
 * **/src** - Source files for the library (.cpp, .h).
@@ -74,19 +69,18 @@ Repository Contents
 * **[library.properties](./library.properties)** - General library properties for the Arduino package manager.
 * **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines on how to contribute to this library.
 * **[Theory.md](./Theory.md)** - provides detail on how data is processed by the library.
+* **/Utils** - contains a Python utility which can check the contents of UBX log files.
 
-Documentation
---------------
+## Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
-Theory
---------------
+## Theory
 
 If you would like to learn more about how this library works, including the big changes we made in version 2.0, please see **[Theory.md](./Theory.md)** for full details.
 
-Products That Use This Library
----------------------------------
+## Products That Use This Library
+
 * [GPS-16481](https://www.sparkfun.com/products/16481) - SparkFun GPS-RTK-SMA Breakout - ZED-F9P (Qwiic)
 * [GPS-15136](https://www.sparkfun.com/products/15136) - SparkFun GPS-RTK2 Board - ZED-F9P (Qwiic)
 * [GPS-16344](https://www.sparkfun.com/products/16344) - SparkFun GPS-RTK Dead Reckoning Breakout - ZED-F9R (Qwiic)
@@ -99,8 +93,7 @@ Products That Use This Library
 * [SPX-14980](https://www.sparkfun.com/products/14980) - SparkX GPS-RTK Black
 * [SPX-15106](https://www.sparkfun.com/products/15106) - SparkX SAM-M8Q
 
-License Information
--------------------
+## License Information
 
 This product is _**open source**_!
 
