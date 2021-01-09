@@ -41,7 +41,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -54,17 +54,17 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  //myGPS.saveConfiguration(); //Optional: Uncomment this line to save the current settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  //myGNSS.saveConfiguration(); //Optional: Uncomment this line to save the current settings to flash and BBR
 
   Serial.println("Power save example.");
   Serial.println("1) Enable power saving");
@@ -80,9 +80,9 @@ void loop()
     if (incoming == '1')
     {
       // Put the GNSS into power save mode
-      // (If you want to disable power save mode, call myGPS.powerSaveMode(false) instead)
+      // (If you want to disable power save mode, call myGNSS.powerSaveMode(false) instead)
       // This will fail on the ZED (protocol version >= 27) as UBX-CFG-RXM is not supported
-      if (myGPS.powerSaveMode()) // Defaults to true
+      if (myGNSS.powerSaveMode()) // Defaults to true
         Serial.println(F("Power Save Mode enabled."));
       else
         Serial.println(F("***!!! Power Save Mode FAILED !!!***"));
@@ -90,14 +90,14 @@ void loop()
     else if (incoming == '2')
     {
       //Go to normal power mode (not power saving mode)
-      if (myGPS.powerSaveMode(false))
+      if (myGNSS.powerSaveMode(false))
         Serial.println(F("Power Save Mode disabled."));
       else
         Serial.println(F("***!!! Power Save Disable FAILED !!!***"));
     }
 
     // Read and print the new low power mode
-    uint8_t lowPowerMode = myGPS.getPowerSaveMode();
+    uint8_t lowPowerMode = myGNSS.getPowerSaveMode();
     if (lowPowerMode == 255)
     {
       Serial.println(F("***!!! getPowerSaveMode FAILED !!!***"));
@@ -130,7 +130,7 @@ void loop()
   {
     lastTime = millis(); //Update the timer
 
-    byte fixType = myGPS.getFixType(); // Get the fix type
+    byte fixType = myGNSS.getFixType(); // Get the fix type
     Serial.print(F("Fix: "));
     Serial.print(fixType);
     if (fixType == 0)
@@ -144,16 +144,16 @@ void loop()
     else if (fixType == 4)
       Serial.print(F("(GNSS + Dead reckoning)"));
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));

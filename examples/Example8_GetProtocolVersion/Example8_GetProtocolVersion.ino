@@ -29,7 +29,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -41,17 +41,17 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
   Serial.print(F("Version: "));
-  byte versionHigh = myGPS.getProtocolVersionHigh();
+  byte versionHigh = myGNSS.getProtocolVersionHigh();
   Serial.print(versionHigh);
   Serial.print(".");
-  byte versionLow = myGPS.getProtocolVersionLow();
+  byte versionLow = myGNSS.getProtocolVersionLow();
   Serial.print(versionLow);
 }
 

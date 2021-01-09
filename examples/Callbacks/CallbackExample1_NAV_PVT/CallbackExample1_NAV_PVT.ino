@@ -23,8 +23,8 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 // Callback: printPVTdata will be called when new NAV PVT data arrives
 // See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t
@@ -78,26 +78,26 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
-  myGPS.setNavigationFrequency(2); //Produce two solutions per second
+  myGNSS.setNavigationFrequency(2); //Produce two solutions per second
 
-  myGPS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 }
 
 void loop()
 {
-  myGPS.checkUblox(); // Check for the arrival of new data and process it.
-  myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it.
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   Serial.print(".");
   delay(50);

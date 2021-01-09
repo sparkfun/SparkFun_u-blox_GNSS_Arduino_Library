@@ -24,7 +24,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 //#define USE_SERIAL1 // Uncomment this line to push the RTCM data from Serial1 to the module via I2C
 
@@ -44,19 +44,19 @@ void setup()
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
   // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
-  //myGPS.factoryDefault(); delay(5000);
+  //myGNSS.factoryDefault(); delay(5000);
 
 #ifdef USE_SERIAL1
   Serial.print(F("Enabling UBX and RTCM input on I2C. Result: "));
-  Serial.print(myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3)); //Enable UBX and RTCM input on I2C
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
+  Serial.print(myGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3)); //Enable UBX and RTCM input on I2C
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
 #endif
 }
 
@@ -66,76 +66,76 @@ void loop()
   // Please see u-blox_structs.h for the full definition of UBX_NAV_RELPOSNED_t
   // You can either read the data from packetUBXNAVRELPOSNED directly
   // or can use the helper functions: getRelPosN/E/D; getRelPosAccN/E/D
-  if (myGPS.getRELPOSNED() == true)
+  if (myGNSS.getRELPOSNED() == true)
   {
     Serial.print("relPosN: ");
-    Serial.println(myGPS.getRelPosN(), 4); // Use the helper functions to get the rel. pos. as m
+    Serial.println(myGNSS.getRelPosN(), 4); // Use the helper functions to get the rel. pos. as m
     Serial.print("relPosE: ");
-    Serial.println(myGPS.getRelPosE(), 4);
+    Serial.println(myGNSS.getRelPosE(), 4);
     Serial.print("relPosD: ");
-    Serial.println(myGPS.getRelPosD(), 4);
+    Serial.println(myGNSS.getRelPosD(), 4);
 
     Serial.print("relPosLength: ");
-    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosLength);
+    Serial.println(myGNSS.packetUBXNAVRELPOSNED->data.relPosLength);
     Serial.print("relPosHeading: ");
-    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHeading);
+    Serial.println(myGNSS.packetUBXNAVRELPOSNED->data.relPosHeading);
 
     Serial.print("relPosHPN: ");
-    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPN);
+    Serial.println(myGNSS.packetUBXNAVRELPOSNED->data.relPosHPN);
     Serial.print("relPosHPE: ");
-    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPE);
+    Serial.println(myGNSS.packetUBXNAVRELPOSNED->data.relPosHPE);
     Serial.print("relPosHPD: ");
-    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPD);
+    Serial.println(myGNSS.packetUBXNAVRELPOSNED->data.relPosHPD);
     Serial.print("relPosHPLength: ");
-    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPLength);
+    Serial.println(myGNSS.packetUBXNAVRELPOSNED->data.relPosHPLength);
 
     Serial.print("accN: ");
-    Serial.println(myGPS.getRelPosAccN(), 4); // Use the helper functions to get the rel. pos. accuracy as m
+    Serial.println(myGNSS.getRelPosAccN(), 4); // Use the helper functions to get the rel. pos. accuracy as m
     Serial.print("accE: ");
-    Serial.println(myGPS.getRelPosAccE(), 4);
+    Serial.println(myGNSS.getRelPosAccE(), 4);
     Serial.print("accD: ");
-    Serial.println(myGPS.getRelPosAccD(), 4);
+    Serial.println(myGNSS.getRelPosAccD(), 4);
 
     Serial.print("gnssFixOk: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.gnssFixOK == true)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.gnssFixOK == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("diffSolution: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.diffSoln == true)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.diffSoln == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("relPosValid: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.relPosValid == true)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.relPosValid == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("carrier Solution Type: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 0)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 0)
       Serial.println("None");
-    else if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 1)
+    else if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 1)
       Serial.println("Float");
-    else if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 2)
+    else if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 2)
       Serial.println("Fixed");
 
     Serial.print("isMoving: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.isMoving == true)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.isMoving == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("refPosMiss: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.refPosMiss == true)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.refPosMiss == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("refObsMiss: ");
-    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.refObsMiss == true)
+    if (myGNSS.packetUBXNAVRELPOSNED->data.flags.bits.refObsMiss == true)
       Serial.println("x");
     else
       Serial.println("");
@@ -156,7 +156,7 @@ void loop()
       //Serial.print("Pushing ");
       //Serial.print(numBytes);
       //Serial.println(" bytes via I2C");
-      myGPS.pushRawData(((uint8_t *)&store), numBytes); // Push the RTCM data via I2C
+      myGNSS.pushRawData(((uint8_t *)&store), numBytes); // Push the RTCM data via I2C
       numBytes = 0; // Reset numBytes
     }
 #endif

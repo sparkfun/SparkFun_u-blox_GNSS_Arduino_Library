@@ -27,7 +27,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 #include <MicroNMEA.h> //http://librarymanager/All#MicroNMEA
 char nmeaBuffer[100];
@@ -40,7 +40,7 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false)
+  if (myGNSS.begin() == false)
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
@@ -49,7 +49,7 @@ void setup()
 
 void loop()
 {
-  myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
+  myGNSS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
   if(nmea.isValid() == true)
   {
@@ -75,7 +75,7 @@ void loop()
 //As each NMEA character comes in you can specify what to do with it
 //Useful for passing to other libraries like tinyGPS, MicroNMEA, or even
 //a buffer, radio, etc.
-void SFE_UBLOX_GPS::processNMEA(char incoming)
+void SFE_UBLOX_GNSS::processNMEA(char incoming)
 {
   //Take the incoming char from the u-blox I2C port and pass it on to the MicroNMEA lib
   //for sentence cracking

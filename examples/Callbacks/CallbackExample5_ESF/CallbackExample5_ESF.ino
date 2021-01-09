@@ -25,8 +25,8 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 // Callback: printESFALGdata will be called when new ESF ALG data arrives
 // See u-blox_structs.h for the full definition of UBX_ESF_ALG_data_t
@@ -91,7 +91,7 @@ void printESFMEASdata(UBX_ESF_MEAS_data_t ubxDataStruct)
     Serial.print(num);
 
     UBX_ESF_MEAS_sensorData_t sensorData;
-    myGPS.getSensorFusionMeasurement(&sensorData, ubxDataStruct, num); // Extract the data for one sensor
+    myGNSS.getSensorFusionMeasurement(&sensorData, ubxDataStruct, num); // Extract the data for one sensor
 
     Serial.print(F(": Type: "));
     Serial.print(sensorData.data.bits.dataType);
@@ -117,7 +117,7 @@ void printESFSTATUSdata(UBX_ESF_STATUS_data_t ubxDataStruct)
     Serial.print(num);
 
     UBX_ESF_STATUS_sensorStatus_t sensorStatus;
-    myGPS.getSensorFusionStatus(&sensorStatus, ubxDataStruct, num); // Extract the data for one sensor
+    myGNSS.getSensorFusionStatus(&sensorStatus, ubxDataStruct, num); // Extract the data for one sensor
 
     Serial.print(F(": Type: "));
     Serial.print(sensorStatus.sensStatus1.bits.type);
@@ -140,39 +140,39 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
-  myGPS.setNavigationFrequency(1); //Produce one solution per second
-  myGPS.setHNRNavigationRate(1); //Set the High Navigation Rate to 1Hz
+  myGNSS.setNavigationFrequency(1); //Produce one solution per second
+  myGNSS.setHNRNavigationRate(1); //Set the High Navigation Rate to 1Hz
 
-  myGPS.setI2CpollingWait(50); //Allow checkUblox to poll I2C data every 50ms to keep up with the ESF MEAS messages
+  myGNSS.setI2CpollingWait(50); //Allow checkUblox to poll I2C data every 50ms to keep up with the ESF MEAS messages
 
-  if (myGPS.setAutoESFALGcallback(&printESFALGdata) == true) // Enable automatic ESF ALG messages with callback to printESFALGdata
+  if (myGNSS.setAutoESFALGcallback(&printESFALGdata) == true) // Enable automatic ESF ALG messages with callback to printESFALGdata
     Serial.println(F("setAutoESFALGcallback successful"));
 
-  if (myGPS.setAutoESFINScallback(&printESFINSdata) == true) // Enable automatic ESF INS messages with callback to printESFINSdata
+  if (myGNSS.setAutoESFINScallback(&printESFINSdata) == true) // Enable automatic ESF INS messages with callback to printESFINSdata
     Serial.println(F("setAutoESFINScallback successful"));
 
-  if (myGPS.setAutoESFMEAScallback(&printESFMEASdata) == true) // Enable automatic ESF MEAS messages with callback to printESFMEASdata
+  if (myGNSS.setAutoESFMEAScallback(&printESFMEASdata) == true) // Enable automatic ESF MEAS messages with callback to printESFMEASdata
     Serial.println(F("setAutoESFMEAScallback successful"));
 
-  if (myGPS.setAutoESFSTATUScallback(&printESFSTATUSdata) == true) // Enable automatic ESF STATUS messages with callback to printESFSTATUSdata
+  if (myGNSS.setAutoESFSTATUScallback(&printESFSTATUSdata) == true) // Enable automatic ESF STATUS messages with callback to printESFSTATUSdata
     Serial.println(F("setAutoESFSTATUScallback successful"));
 }
 
 void loop()
 {
-  myGPS.checkUblox(); // Check for the arrival of new data and process it.
-  myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it.
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   Serial.print(".");
   delay(25);

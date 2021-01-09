@@ -36,7 +36,7 @@
 //SoftwareSerial mySerial(10, 11); // Uncomment this line to connect via SoftwareSerial(RX, TX). Connect pin 10 to GNSS TX pin.
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -48,7 +48,7 @@ void setup()
 
   Serial.println("Trying 38400 baud");
   mySerial.begin(38400);
-  if (myGPS.begin(mySerial))
+  if (myGNSS.begin(mySerial))
   {
     Serial.println("GNSS connected at 38400 baud");
   }
@@ -56,7 +56,7 @@ void setup()
   {
     Serial.println("Trying 9600 baud");
     mySerial.begin(9600);
-    if (myGPS.begin(mySerial))
+    if (myGNSS.begin(mySerial))
     {
       Serial.println("GNSS connected at 9600 baud");
     }
@@ -68,10 +68,10 @@ void setup()
   }
 
   Serial.print(F("Version: "));
-  byte versionHigh = myGPS.getProtocolVersionHigh();
+  byte versionHigh = myGNSS.getProtocolVersionHigh();
   Serial.print(versionHigh);
   Serial.print(".");
-  byte versionLow = myGPS.getProtocolVersionLow();
+  byte versionLow = myGNSS.getProtocolVersionLow();
   Serial.print(versionLow);
 }
 

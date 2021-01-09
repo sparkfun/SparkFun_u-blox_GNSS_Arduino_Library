@@ -46,8 +46,8 @@
 #include <SD.h>
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 File myFile; //File that all GNSS data is written to
 
@@ -150,15 +150,15 @@ void setup()
     while (1);
   }
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable helpful GNSS debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable helpful GNSS debug messages on Serial
 
   // NAV PVT messages are 100 bytes long.
   // In this example, the data will arrive no faster than one message per second.
   // So, setting the file buffer size to 301 bytes should be more than adequate.
   // I.e. room for three messages plus an empty tail byte.
-  myGPS.setFileBufferSize(301); // setFileBufferSize must be called _before_ .begin
+  myGNSS.setFileBufferSize(301); // setFileBufferSize must be called _before_ .begin
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing..."));
     while (1);
@@ -166,30 +166,30 @@ void setup()
 
   // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
   // (This will also disable any "auto" messages that were enabled and saved by other examples and reduce the load on the I2C bus)
-  //myGPS.factoryDefault(); delay(5000);
+  //myGNSS.factoryDefault(); delay(5000);
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
-  myGPS.setNavigationFrequency(1); //Produce one navigation solution per second
+  myGNSS.setNavigationFrequency(1); //Produce one navigation solution per second
 
-  myGPS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 
-  myGPS.logNAVPVT(); // Enable NAV PVT data logging
+  myGNSS.logNAVPVT(); // Enable NAV PVT data logging
 
   Serial.println(F("Press any key to stop logging."));
 }
 
 void loop()
 {
-  myGPS.checkUblox(); // Check for the arrival of new data and process it.
-  myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it.
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
-  if (myGPS.fileBufferAvailable() >= packetLength) // Check to see if a new packetLength-byte NAV PVT message has been stored
+  if (myGNSS.fileBufferAvailable() >= packetLength) // Check to see if a new packetLength-byte NAV PVT message has been stored
   {
     uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
 
-    myGPS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
+    myGNSS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
 
     myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
 

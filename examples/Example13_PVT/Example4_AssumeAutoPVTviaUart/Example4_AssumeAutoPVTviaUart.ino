@@ -30,7 +30,7 @@
 */
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 #include <SoftwareSerial.h>
 
@@ -52,11 +52,11 @@ void setup()
   //Assume that the U-Blox GNSS is running at baudRate baud
   mySerial.begin(baudRate);
   // No need to check return value as internal call to isConnected() will not succeed
-  myGPS.begin(mySerial);
+  myGNSS.begin(mySerial);
 
   // Tell the library we are expecting the module to send PVT messages by itself to our Rx pin.
   // You can set second parameter to "false" if you want to control the parsing and eviction of the data (need to call checkUblox cyclically)
-  myGPS.assumeAutoPVT(true, true);
+  myGNSS.assumeAutoPVT(true, true);
 
 }
 
@@ -71,25 +71,25 @@ void loop()
   // to prevent serial buffer overflows on boards like the original RedBoard / UNO.
   // At 38400 Baud, the 100 PVT bytes will arrive in 26ms.
   // On the RedBoard, we need to call getPVT every 5ms to keep up.
-  if (myGPS.getPVT())
+  if (myGNSS.getPVT())
   {
     Serial.println();
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));
 
-    byte SIV = myGPS.getSIV();
+    byte SIV = myGNSS.getSIV();
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 

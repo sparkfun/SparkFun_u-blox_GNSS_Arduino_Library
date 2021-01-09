@@ -28,8 +28,8 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 // Callback: printHNRATTdata will be called when new HNR ATT data arrives
 // See u-blox_structs.h for the full definition of UBX_HNR_ATT_data_t
@@ -81,36 +81,36 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
-  if (myGPS.setHNRNavigationRate(10) == true) //Set the High Navigation Rate to 10Hz
+  if (myGNSS.setHNRNavigationRate(10) == true) //Set the High Navigation Rate to 10Hz
     Serial.println(F("setHNRNavigationRate was successful"));
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
 
-  if (myGPS.setAutoHNRATTcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
+  if (myGNSS.setAutoHNRATTcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
     Serial.println(F("setAutoHNRATTcallback successful"));
 
-  if (myGPS.setAutoHNRINScallback(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
+  if (myGNSS.setAutoHNRINScallback(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
     Serial.println(F("setAutoHNRINScallback successful"));
 
-  if (myGPS.setAutoHNRPVTcallback(&printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
+  if (myGNSS.setAutoHNRPVTcallback(&printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
     Serial.println(F("setAutoHNRPVTcallback successful"));
 }
 
 void loop()
 {
-  myGPS.checkUblox(); // Check for the arrival of new data and process it.
-  myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it.
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   Serial.print(".");
   delay(25);

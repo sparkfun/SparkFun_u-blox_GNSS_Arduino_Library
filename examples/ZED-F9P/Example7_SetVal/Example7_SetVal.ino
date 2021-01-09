@@ -25,7 +25,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -39,29 +39,29 @@ void setup()
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
-  //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
+  //myGNSS.enableDebugging(); //Enable debug messages over Serial (default)
+  //myGNSS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
 
   bool setValueSuccess;
 
   //These key values are hard coded and defined in u-blox_config_keys.h.
   //You can obtain them from the ZED-F9P interface description doc
   //or from u-center's Messages->CFG->VALSET window. Keys must be 32-bit.
-  //setValueSuccess = myGPS.setVal(UBLOX_CFG_NMEA_HIGHPREC, 0); //Enable high precision NMEA
-  //setValueSuccess = myGPS.setVal(UBLOX_CFG_RATE_MEAS, 1000); //Set measurement rate to 100ms (10Hz update rate)
-  setValueSuccess = myGPS.setVal(UBLOX_CFG_RATE_MEAS, 1000); //Set measurement rate to 1000ms (1Hz update rate)
+  //setValueSuccess = myGNSS.setVal(UBLOX_CFG_NMEA_HIGHPREC, 0); //Enable high precision NMEA
+  //setValueSuccess = myGNSS.setVal(UBLOX_CFG_RATE_MEAS, 1000); //Set measurement rate to 100ms (10Hz update rate)
+  setValueSuccess = myGNSS.setVal(UBLOX_CFG_RATE_MEAS, 1000); //Set measurement rate to 1000ms (1Hz update rate)
 
   //Below is the original way we enabled the RTCM message on the I2C port. After that, we show how to do the same
   //but with setVal().
-  //Original: myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
-  //setValueSuccess = myGPS.setVal(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1); //Set output rate of msg 1005 over the I2C port to once per second
+  //Original: myGNSS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
+  //setValueSuccess = myGNSS.setVal(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1); //Set output rate of msg 1005 over the I2C port to once per second
 
   if (setValueSuccess == true)
   {

@@ -30,7 +30,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 unsigned long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 unsigned long startTime = 0; //Used to calc the actual update rate.
@@ -48,16 +48,16 @@ void setup()
   // (We normally recommend running the bus at 100kHz)
   Wire.setClock(400000);
   
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.setNavigationFrequency(5); //Set output to 5 times a second
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setNavigationFrequency(5); //Set output to 5 times a second
 
-  uint8_t rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
+  uint8_t rate = myGNSS.getNavigationFrequency(); //Get the update rate of this module
   Serial.print("Current update rate: ");
   Serial.println(rate);
 
@@ -73,11 +73,11 @@ void loop()
   {
     lastTime = millis(); //Update the timer
     
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
 

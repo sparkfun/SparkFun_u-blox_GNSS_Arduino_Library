@@ -38,7 +38,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -51,22 +51,22 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
   // If we are going to change the dynamic platform model, let's do it here.
   // Possible values are:
   // PORTABLE, STATIONARY, PEDESTRIAN, AUTOMOTIVE, SEA, AIRBORNE1g, AIRBORNE2g, AIRBORNE4g, WRIST, BIKE
 
-  if (myGPS.setDynamicModel(DYN_MODEL_PORTABLE) == false) // Set the dynamic model to PORTABLE
+  if (myGNSS.setDynamicModel(DYN_MODEL_PORTABLE) == false) // Set the dynamic model to PORTABLE
   {
     Serial.println(F("***!!! Warning: setDynamicModel failed !!!***"));
   }
@@ -76,7 +76,7 @@ void setup()
   }
 
   // Let's read the new dynamic model to see if it worked
-  uint8_t newDynamicModel = myGPS.getDynamicModel();
+  uint8_t newDynamicModel = myGNSS.getDynamicModel();
   if (newDynamicModel == DYN_MODEL_UNKNOWN)
   {
     Serial.println(F("***!!! Warning: getDynamicModel failed !!!***"));
@@ -87,7 +87,7 @@ void setup()
     Serial.println(newDynamicModel);
   }
 
-  //myGPS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
+  //myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
 }
 
 void loop()
@@ -98,16 +98,16 @@ void loop()
   {
     lastTime = millis(); //Update the timer
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));

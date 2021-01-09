@@ -25,7 +25,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -39,17 +39,17 @@ void setup()
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
-  //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
+  //myGNSS.enableDebugging(); //Enable debug messages over Serial (default)
+  //myGNSS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
 
-  uint8_t currentI2Caddress = myGPS.getVal8(UBLOX_CFG_I2C_ADDRESS);
+  uint8_t currentI2Caddress = myGNSS.getVal8(UBLOX_CFG_I2C_ADDRESS);
   Serial.print("Current I2C address (should be 0x42): 0x");
   Serial.println(currentI2Caddress >> 1, HEX); //u-blox module returns a shifted 8-bit address. Make it 7-bit unshifted.
 }

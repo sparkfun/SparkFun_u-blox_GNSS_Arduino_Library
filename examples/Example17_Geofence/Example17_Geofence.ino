@@ -30,7 +30,7 @@
 #include <Wire.h> // Needed for I2C
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -51,14 +51,14 @@ void setup()
 
   delay(1000); // Let the GNSS power up
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  //myGPS.enableDebugging(); // Enable debug messages
-  myGPS.setI2COutput(COM_TYPE_UBX); // Limit I2C output to UBX (disable the NMEA noise)
+  //myGNSS.enableDebugging(); // Enable debug messages
+  myGNSS.setI2COutput(COM_TYPE_UBX); // Limit I2C output to UBX (disable the NMEA noise)
 
   Serial.println(F("Waiting for a 3D fix..."));
 
@@ -66,7 +66,7 @@ void setup()
 
   while (fixType < 3)
   {
-    fixType = myGPS.getFixType(); // Get the fix type
+    fixType = myGNSS.getFixType(); // Get the fix type
     Serial.print(F("Fix: ")); // Print it
     Serial.print(fixType);
     if(fixType == 0) Serial.print(F(" = No fix"));
@@ -81,11 +81,11 @@ void setup()
 
   Serial.println(F("3D fix found!"));
 
-  long latitude = myGPS.getLatitude(); // Get the latitude in degrees * 10^-7
+  long latitude = myGNSS.getLatitude(); // Get the latitude in degrees * 10^-7
   Serial.print(F("Lat: "));
   Serial.print(latitude);
 
-  long longitude = myGPS.getLongitude(); // Get the longitude in degrees * 10^-7
+  long longitude = myGNSS.getLongitude(); // Get the longitude in degrees * 10^-7
   Serial.print(F("   Long: "));
   Serial.println(longitude);
 
@@ -95,33 +95,33 @@ void setup()
 
   // Call clearGeofences() to clear all existing geofences.
   Serial.print(F("Clearing any existing geofences. clearGeofences returned: "));
-  Serial.println(myGPS.clearGeofences());
+  Serial.println(myGNSS.clearGeofences());
 
   // It is possible to define up to four geofences.
   // Call addGeofence up to four times to define them.
   Serial.println(F("Setting the geofences:"));
 
   Serial.print(F("addGeofence for geofence 1 returned: "));
-  Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
+  Serial.println(myGNSS.addGeofence(latitude, longitude, radius, confidence));
 
   radius = 1000; // 10m
   Serial.print(F("addGeofence for geofence 2 returned: "));
-  Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
+  Serial.println(myGNSS.addGeofence(latitude, longitude, radius, confidence));
 
   radius = 1500; // 15m
   Serial.print(F("addGeofence for geofence 3 returned: "));
-  Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
+  Serial.println(myGNSS.addGeofence(latitude, longitude, radius, confidence));
 
   radius = 2000; // 20m
   Serial.print(F("addGeofence for geofence 4 returned: "));
-  Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
+  Serial.println(myGNSS.addGeofence(latitude, longitude, radius, confidence));
 }
 
 void loop()
 {
   geofenceState currentGeofenceState; // Create storage for the geofence state
 
-  boolean result = myGPS.getGeofenceState(currentGeofenceState);
+  boolean result = myGNSS.getGeofenceState(currentGeofenceState);
 
   Serial.print(F("getGeofenceState returned: ")); // Print the combined state
   Serial.print(result); // Get the geofence state

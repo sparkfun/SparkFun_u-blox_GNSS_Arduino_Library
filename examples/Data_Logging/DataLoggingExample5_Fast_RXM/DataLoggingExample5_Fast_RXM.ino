@@ -53,8 +53,8 @@
 #include <SD.h>
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 File myFile; //File that all GNSS data is written to
 
@@ -120,18 +120,18 @@ void setup()
     while (1);
   }
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable lots of helpful GNSS debug messages on Serial
-  //myGPS.enableDebugging(Serial, true); // Or, uncomment this line to enable only the important GNSS debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable lots of helpful GNSS debug messages on Serial
+  //myGNSS.enableDebugging(Serial, true); // Or, uncomment this line to enable only the important GNSS debug messages on Serial
 
-  myGPS.disableUBX7Fcheck(); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
+  myGNSS.disableUBX7Fcheck(); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
 
   // RAWX messages can be over 2KBytes in size, so we need to make sure we allocate enough RAM to hold all the data.
   // SD cards can occasionally 'hiccup' and a write takes much longer than usual. The buffer needs to be big enough
   // to hold the backlog of data if/when this happens.
   // getMaxFileBufferAvail will tell us the maximum number of bytes which the file buffer has contained.
-  myGPS.setFileBufferSize(fileBufferSize); // setFileBufferSize must be called _before_ .begin
+  myGNSS.setFileBufferSize(fileBufferSize); // setFileBufferSize must be called _before_ .begin
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing..."));
     while (1);
@@ -139,35 +139,35 @@ void setup()
 
   // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
   // (This will also disable any "auto" messages that were enabled and saved by other examples and reduce the load on the I2C bus)
-  //myGPS.factoryDefault(); delay(5000);
+  //myGNSS.factoryDefault(); delay(5000);
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
   // Modules like the ZED-F9P can produce RAW navigation data at rates of up to 25Hz but not while using all of the GNSS constellations.
   // Please consult the data sheet for the Performance figures for your module.
   // In this example we make sure GPS is enabled and then disable Galileo, GLONASS, BeiDou, SBAS and QZSS to achieve 25Hz.
-  myGPS.enableGNSS(true, SFE_UBLOX_GNSS_ID_GPS); // Make sure GPS is enabled (we must leave at least one major GNSS enabled!)
-  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_SBAS); // Disable SBAS
-  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GALILEO); // Disable Galileo
-  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_BEIDOU); // Disable BeiDou
-  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_IMES); // Disable IMES
-  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_QZSS); // Disable QZSS
-  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GLONASS); // Disable GLONASS
+  myGNSS.enableGNSS(true, SFE_UBLOX_GNSS_ID_GPS); // Make sure GPS is enabled (we must leave at least one major GNSS enabled!)
+  myGNSS.enableGNSS(false, SFE_UBLOX_GNSS_ID_SBAS); // Disable SBAS
+  myGNSS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GALILEO); // Disable Galileo
+  myGNSS.enableGNSS(false, SFE_UBLOX_GNSS_ID_BEIDOU); // Disable BeiDou
+  myGNSS.enableGNSS(false, SFE_UBLOX_GNSS_ID_IMES); // Disable IMES
+  myGNSS.enableGNSS(false, SFE_UBLOX_GNSS_ID_QZSS); // Disable QZSS
+  myGNSS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GLONASS); // Disable GLONASS
 
   delay(2000); // Give the module some extra time to get ready
 
   //Produce 7 navigation solutions per second. That's a lot of RAWX data - especially when using both GPS bands L1 and L2.
   //The SD library and card need to be able to cope with the data rate too. You may need a faster SD library to go above 7Hz.
-  myGPS.setNavigationFrequency(7);
+  myGNSS.setNavigationFrequency(7);
 
-  myGPS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
+  myGNSS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
   
-  myGPS.logRXMSFRBX(); // Enable RXM SFRBX data logging
+  myGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
 
-  myGPS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
+  myGNSS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
   
-  myGPS.logRXMRAWX(); // Enable RXM RAWX data logging
+  myGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
 
   Serial.println(F("Press any key to stop logging."));
 
@@ -178,24 +178,24 @@ void loop()
 {
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  myGPS.checkUblox(); // Check for the arrival of new data and process it.
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it.
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  while (myGPS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
+  while (myGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
   {
     digitalWrite(LED_BUILTIN, HIGH); // Flash LED_BUILTIN each time we write to the SD card
   
     uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
-    myGPS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+    myGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
     myFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
     bytesWritten += sdWriteSize; // Update bytesWritten
 
     // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
-    myGPS.checkUblox(); // Check for the arrival of new data and process it.
+    myGNSS.checkUblox(); // Check for the arrival of new data and process it.
 
     digitalWrite(LED_BUILTIN, LOW); // Turn LED_BUILTIN off again
   }
@@ -207,7 +207,7 @@ void loop()
     Serial.print(F("The number of bytes written to SD card is: ")); // Print how many bytes have been written to SD card
     Serial.println(bytesWritten);
 
-    uint16_t maxBufferBytes = myGPS.getMaxFileBufferAvail(); // Get how full the file buffer has been (not how full it is now)
+    uint16_t maxBufferBytes = myGNSS.getMaxFileBufferAvail(); // Get how full the file buffer has been (not how full it is now)
     
     //Serial.print(F("The maximum number of bytes which the file buffer has contained is: ")); // It is a fun thing to watch how full the buffer gets
     //Serial.println(maxBufferBytes);
@@ -224,13 +224,13 @@ void loop()
 
   if (Serial.available()) // Check if the user wants to stop logging
   {
-    myGPS.setAutoRXMSFRBX(false, false); // Disable the automatic RXM SFRBX messages
-    myGPS.setAutoRXMRAWX(false, false); // Disable the automatic RXM RAWX messages
+    myGNSS.setAutoRXMSFRBX(false, false); // Disable the automatic RXM SFRBX messages
+    myGNSS.setAutoRXMRAWX(false, false); // Disable the automatic RXM RAWX messages
 
     delay(1000); // Allow time for any remaining messages to arrive
-    myGPS.checkUblox(); // Process any remaining data
+    myGNSS.checkUblox(); // Process any remaining data
 
-    uint16_t remainingBytes = myGPS.fileBufferAvailable(); // Check if there are any bytes remaining in the file buffer
+    uint16_t remainingBytes = myGNSS.fileBufferAvailable(); // Check if there are any bytes remaining in the file buffer
     
     while (remainingBytes > 0) // While there is still data in the file buffer
     {
@@ -244,7 +244,7 @@ void loop()
         bytesToWrite = sdWriteSize;
       }
   
-      myGPS.extractFileBufferData((uint8_t *)&myBuffer, bytesToWrite); // Extract bytesToWrite bytes from the UBX file buffer and put them into myBuffer
+      myGNSS.extractFileBufferData((uint8_t *)&myBuffer, bytesToWrite); // Extract bytesToWrite bytes from the UBX file buffer and put them into myBuffer
 
       myFile.write(myBuffer, bytesToWrite); // Write bytesToWrite bytes from myBuffer to the ubxDataFile on the SD card
 
@@ -258,7 +258,7 @@ void loop()
     Serial.print(F("The total number of bytes written to SD card is: ")); // Print how many bytes have been written to SD card
     Serial.println(bytesWritten);
 
-    uint16_t maxBufferBytes = myGPS.getMaxFileBufferAvail(); // Show how full the file buffer has been (not how full it is now)
+    uint16_t maxBufferBytes = myGNSS.getMaxFileBufferAvail(); // Show how full the file buffer has been (not how full it is now)
     Serial.print(F("The maximum number of bytes which the file buffer has contained is: "));
     Serial.println(maxBufferBytes);
 

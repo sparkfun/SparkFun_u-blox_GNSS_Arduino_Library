@@ -37,7 +37,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -48,16 +48,16 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
   // Let's configure the module's navigation rate as if we were using setNavigationFrequency
 
@@ -96,7 +96,7 @@ void setup()
   uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
   // Now let's read the current navigation rate. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (myGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("sendCommand (poll / get) failed! Freezing..."));
     while (1)
@@ -126,7 +126,7 @@ void setup()
   // when sendCommand read the data
 
   // Now we write the custom packet back again to change the setting
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
+  if (myGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
     Serial.println(F("sendCommand (set) failed! Freezing."));
     while (1)
@@ -137,29 +137,29 @@ void setup()
     Serial.println(F("Navigation rate updated. Here we go..."));
   }
 
-  myGPS.setAutoPVT(true); // Enable AutoPVT. The module will generate measurements automatically without being polled.
+  myGNSS.setAutoPVT(true); // Enable AutoPVT. The module will generate measurements automatically without being polled.
 
-  //myGPS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
+  //myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
 }
 
 void loop()
 {
   //Query the module as fast as possible
-    int32_t latitude = myGPS.getLatitude();
+    int32_t latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    int32_t longitude = myGPS.getLongitude();
+    int32_t longitude = myGNSS.getLongitude();
     Serial.print(F(" Lon: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    int32_t altitude = myGPS.getAltitude();
+    int32_t altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));
     
-    uint16_t milliseconds = myGPS.getMillisecond();
+    uint16_t milliseconds = myGNSS.getMillisecond();
     Serial.print(F(" Milliseconds: "));
     Serial.print(altitude);
     Serial.println();

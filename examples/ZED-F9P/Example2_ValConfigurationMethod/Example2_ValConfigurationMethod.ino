@@ -30,7 +30,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -42,18 +42,18 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
   byte response;
-  response = myGPS.getVal8(UBLOX_CFG_I2C_ADDRESS, VAL_LAYER_RAM); // Get the I2C address (see u-blox_config_keys.h for details)
+  response = myGNSS.getVal8(UBLOX_CFG_I2C_ADDRESS, VAL_LAYER_RAM); // Get the I2C address (see u-blox_config_keys.h for details)
   Serial.print(F("I2C Address: 0x"));
   Serial.println(response >> 1, HEX); //We have to shift by 1 to get the common '7-bit' I2C address format
 
-  response = myGPS.getVal8(UBLOX_CFG_I2COUTPROT_NMEA, VAL_LAYER_RAM); // Get the flag indicating is NMEA should be output on I2C
+  response = myGNSS.getVal8(UBLOX_CFG_I2COUTPROT_NMEA, VAL_LAYER_RAM); // Get the flag indicating is NMEA should be output on I2C
   Serial.print(F("Output NMEA over I2C port: 0x"));
   Serial.print(response, HEX);
 }

@@ -24,7 +24,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -35,22 +35,22 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(Serial);
+  //myGNSS.enableDebugging(Serial);
 
-  if (myGPS.begin(Wire) == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin(Wire) == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.setNavigationFrequency(20); //Set output to 20 times a second
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setNavigationFrequency(20); //Set output to 20 times a second
 
-  byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
+  byte rate = myGNSS.getNavigationFrequency(); //Get the update rate of this module
   Serial.print("Current update rate: ");
   Serial.println(rate);
 
-  //myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  //myGNSS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
 void loop()
@@ -79,15 +79,15 @@ void loop()
     // The high resolution altitudes can be converted into standard 32-bit float
 
     // First, let's collect the position data
-    int32_t latitude = myGPS.getHighResLatitude();
-    int8_t latitudeHp = myGPS.getHighResLatitudeHp();
-    int32_t longitude = myGPS.getHighResLongitude();
-    int8_t longitudeHp = myGPS.getHighResLongitudeHp();
-    int32_t ellipsoid = myGPS.getElipsoid();
-    int8_t ellipsoidHp = myGPS.getElipsoidHp();
-    int32_t msl = myGPS.getMeanSeaLevel();
-    int8_t mslHp = myGPS.getMeanSeaLevelHp();
-    uint32_t accuracy = myGPS.getHorizontalAccuracy();
+    int32_t latitude = myGNSS.getHighResLatitude();
+    int8_t latitudeHp = myGNSS.getHighResLatitudeHp();
+    int32_t longitude = myGNSS.getHighResLongitude();
+    int8_t longitudeHp = myGNSS.getHighResLongitudeHp();
+    int32_t ellipsoid = myGNSS.getElipsoid();
+    int8_t ellipsoidHp = myGNSS.getElipsoidHp();
+    int32_t msl = myGNSS.getMeanSeaLevel();
+    int8_t mslHp = myGNSS.getMeanSeaLevelHp();
+    uint32_t accuracy = myGNSS.getHorizontalAccuracy();
 
     // Defines storage for the lat and lon units integer and fractional parts
     int32_t lat_int; // Integer part of the latitude in degrees

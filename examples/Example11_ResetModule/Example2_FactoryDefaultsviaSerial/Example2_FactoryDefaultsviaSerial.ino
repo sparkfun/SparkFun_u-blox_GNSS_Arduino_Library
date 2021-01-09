@@ -19,8 +19,8 @@
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 #include <SoftwareSerial.h>
 
@@ -40,7 +40,7 @@ void setup()
   while (!Serial); //Wait for user to open terminal
   Serial.println("SparkFun u-blox Example");
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 }
 
 void loop()
@@ -52,30 +52,30 @@ void loop()
         do {
             Serial.println("GNSS: trying 38400 baud");
             mySerial.begin(38400);
-            if (myGPS.begin(mySerial)) break;
+            if (myGNSS.begin(mySerial)) break;
 
             delay(100);
             Serial.println("GNSS: trying 9600 baud");
             mySerial.begin(9600);
-            if (myGPS.begin(mySerial)) {
+            if (myGNSS.begin(mySerial)) {
                 Serial.println("GNSS: connected at 9600 baud, switching to 38400");
-                myGPS.setSerialRate(38400);
+                myGNSS.setSerialRate(38400);
                 delay(100);
             } else {
                 delay(2000); //Wait a bit before trying again to limit the Serial output flood
             }
         } while(1);
-        myGPS.setUART1Output(COM_TYPE_UBX); //Set the UART port to output UBX only
-        myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+        myGNSS.setUART1Output(COM_TYPE_UBX); //Set the UART port to output UBX only
+        myGNSS.saveConfiguration(); //Save the current settings to flash and BBR
         Serial.println("GNSS serial connected, saved config");
         state++;
         break;
     case 1: // hardReset, expect to see GNSS back at 38400 baud
         Serial.println("Issuing hardReset (cold start)");
-        myGPS.hardReset();
+        myGNSS.hardReset();
         delay(2000);
         mySerial.begin(38400);
-        if (myGPS.begin(mySerial)) {
+        if (myGNSS.begin(mySerial)) {
             Serial.println("Success.");
             state++;
         } else {
@@ -85,10 +85,10 @@ void loop()
         break;
     case 2: // factoryReset, expect to see GNSS back at defaultRate baud
         Serial.println("Issuing factoryReset");
-        myGPS.factoryReset();
+        myGNSS.factoryReset();
         delay(5000); // takes more than one second... a loop to resync would be best
         mySerial.begin(defaultRate);
-        if (myGPS.begin(mySerial)) {
+        if (myGNSS.begin(mySerial)) {
             Serial.println("Success.");
             state++;
         } else {
@@ -100,9 +100,9 @@ void loop()
         // Note: this may fail on boards like the UNO (ATmega328P) with modules like the ZED-F9P
         // because getProtocolVersion returns a lot of data - more than the UNO's serial buffer can hold
         Serial.print("GNSS protocol version: ");
-        Serial.print(myGPS.getProtocolVersionHigh());
+        Serial.print(myGNSS.getProtocolVersionHigh());
         Serial.print('.');
-        Serial.println(myGPS.getProtocolVersionLow());
+        Serial.println(myGNSS.getProtocolVersionLow());
         Serial.println("All finished! Freezing...");
         while(1);
     }

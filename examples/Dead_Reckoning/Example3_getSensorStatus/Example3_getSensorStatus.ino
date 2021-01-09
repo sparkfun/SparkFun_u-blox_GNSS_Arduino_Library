@@ -28,8 +28,8 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -39,23 +39,23 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
 	// GetEsfInfo also gets the number of sensors used by the ublox module, this
 	// includes (in the case of the ZED-F9R) wheel tick input from the vehicle
 	// speed sensor attached to the module. 
-  if (myGPS.getEsfInfo()){
+  if (myGNSS.getEsfInfo()){
 
     Serial.print(F("Fusion Mode: "));  
-    Serial.println(myGPS.packetUBXESFSTATUS->data.fusionMode);  
+    Serial.println(myGNSS.packetUBXESFSTATUS->data.fusionMode);  
 
-    if (myGPS.packetUBXESFSTATUS->data.fusionMode == 1){
+    if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 1){
       Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
@@ -68,7 +68,7 @@ void setup()
 void loop()
 {
   // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
-  if (myGPS.getEsfInfo()) // Poll new ESF STATUS data
+  if (myGNSS.getEsfInfo()) // Poll new ESF STATUS data
   {
     UBX_ESF_STATUS_sensorStatus_t sensorStatus; // Create storage for the individual sensor status
 
@@ -95,9 +95,9 @@ void loop()
     Serial.println(F(".   e   d  y  s  s  e  g  e  e"));
     Serial.println(F("                              "));
 
-  	for(uint8_t i = 0; i < myGPS.packetUBXESFSTATUS->data.numSens; i++)
+  	for(uint8_t i = 0; i < myGNSS.packetUBXESFSTATUS->data.numSens; i++)
   	{
-      myGPS.getSensorFusionStatus(&sensorStatus, i); // Extract the individual sensor data for this sensor
+      myGNSS.getSensorFusionStatus(&sensorStatus, i); // Extract the individual sensor data for this sensor
       
       Serial.print(i); Serial.print(F("   ")); // Print the sensor number
 

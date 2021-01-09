@@ -19,8 +19,8 @@
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -30,7 +30,7 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
@@ -40,11 +40,11 @@ void setup()
   Serial.println("Press a key to reset module to factory defaults");
   while (Serial.available() == false) ; //Wait for user to send character
 
-  myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+  myGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
   delay(5000); // Wait while the module restarts
 
-  while (myGPS.begin() == false) //Attempt to re-connect
+  while (myGNSS.begin() == false) //Attempt to re-connect
   {
     delay(1000);
     Serial.println(F("Attempting to re-connect to u-blox GNSS..."));

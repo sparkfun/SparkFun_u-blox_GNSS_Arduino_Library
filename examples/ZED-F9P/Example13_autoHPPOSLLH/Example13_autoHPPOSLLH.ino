@@ -31,8 +31,8 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -42,72 +42,72 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages
-  //myGPS.enableDebugging(Serial, true); // Uncomment this line to enable the minimum of helpful debug messages
+  //myGNSS.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages
+  //myGNSS.enableDebugging(Serial, true); // Uncomment this line to enable the minimum of helpful debug messages
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
   // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
-  //myGPS.factoryDefault(); delay(5000);
+  //myGNSS.factoryDefault(); delay(5000);
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
 
-  myGPS.setNavigationFrequency(1); //Produce one solution per second
+  myGNSS.setNavigationFrequency(1); //Produce one solution per second
 
 
   // The acid test: all four of these combinations should work seamlessly :-)
 
-  //myGPS.setAutoPVT(false); // Library will poll each reading
-  //myGPS.setAutoHPPOSLLH(false); // Library will poll each reading
+  //myGNSS.setAutoPVT(false); // Library will poll each reading
+  //myGNSS.setAutoHPPOSLLH(false); // Library will poll each reading
 
-  //myGPS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
-  //myGPS.setAutoHPPOSLLH(false); // Library will poll each reading
+  //myGNSS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
+  //myGNSS.setAutoHPPOSLLH(false); // Library will poll each reading
 
-  //myGPS.setAutoPVT(false); // Library will poll each reading
-  //myGPS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
+  //myGNSS.setAutoPVT(false); // Library will poll each reading
+  //myGNSS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
 
-  myGPS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
-  myGPS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
+  myGNSS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
+  myGNSS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
 }
 
 void loop()
 {
   // Calling getHPPOSLLH returns true if there actually is a fresh navigation solution available.
   // Calling getPVT returns true if there actually is a fresh navigation solution available.
-  if ((myGPS.getHPPOSLLH()) || (myGPS.getPVT()))
+  if ((myGNSS.getHPPOSLLH()) || (myGNSS.getPVT()))
   {
     Serial.println();
 
-    long highResLatitude = myGPS.getHighResLatitude();
+    long highResLatitude = myGNSS.getHighResLatitude();
     Serial.print(F("Hi Res Lat: "));
     Serial.print(highResLatitude);
 
-    int highResLatitudeHp = myGPS.getHighResLatitudeHp();
+    int highResLatitudeHp = myGNSS.getHighResLatitudeHp();
     Serial.print(F(" "));
     Serial.print(highResLatitudeHp);
 
-    long highResLongitude = myGPS.getHighResLongitude();
+    long highResLongitude = myGNSS.getHighResLongitude();
     Serial.print(F(" Hi Res Long: "));
     Serial.print(highResLongitude);
 
-    int highResLongitudeHp = myGPS.getHighResLongitudeHp();
+    int highResLongitudeHp = myGNSS.getHighResLongitudeHp();
     Serial.print(F(" "));
     Serial.print(highResLongitudeHp);
 
-    unsigned long horizAccuracy = myGPS.getHorizontalAccuracy();
+    unsigned long horizAccuracy = myGNSS.getHorizontalAccuracy();
     Serial.print(F(" Horiz accuracy: "));
     Serial.print(horizAccuracy);
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.println(longitude);
   }

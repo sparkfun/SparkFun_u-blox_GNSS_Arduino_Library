@@ -29,7 +29,7 @@
 */
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 #include <SoftwareSerial.h>
 
@@ -49,16 +49,16 @@ void setup()
 
   mySerial.begin(baudRate); // Start the Serial port
 
-  if (myGPS.begin(mySerial) == false) //Connect to the u-blox module using Serial
+  if (myGNSS.begin(mySerial) == false) //Connect to the u-blox module using Serial
   {
     Serial.println(F("u-blox GNSS not detected. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setUART1Output(COM_TYPE_UBX); //Set the UART1 port to output UBX only (turn off NMEA noise)
-  myGPS.setNavigationFrequency(2); //Produce two solutions per second
-  myGPS.setAutoPVT(true); //Tell the GNSS to "send" each solution
-  //myGPS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
+  myGNSS.setUART1Output(COM_TYPE_UBX); //Set the UART1 port to output UBX only (turn off NMEA noise)
+  myGNSS.setNavigationFrequency(2); //Produce two solutions per second
+  myGNSS.setAutoPVT(true); //Tell the GNSS to "send" each solution
+  //myGNSS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
 }
 
 void loop()
@@ -68,25 +68,25 @@ void loop()
   // to prevent serial buffer overflows on boards like the original RedBoard / UNO.
   // At 38400 Baud, the 100 PVT bytes will arrive in 26ms.
   // On the RedBoard, we need to call getPVT every 5ms to keep up.
-  if (myGPS.getPVT())
+  if (myGNSS.getPVT())
   {
     Serial.println();
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));
 
-    byte SIV = myGPS.getSIV();
+    byte SIV = myGNSS.getSIV();
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 

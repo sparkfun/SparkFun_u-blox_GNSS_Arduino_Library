@@ -42,7 +42,7 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 // Extend the class for getModuleInfo
-class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GPS
+class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GNSS
 {
 public:
     boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
@@ -56,7 +56,7 @@ public:
     } minfo;
 };
 
-SFE_UBLOX_GPS_ADD myGPS;
+SFE_UBLOX_GPS_ADD myGNSS;
 
 void setup()
 {
@@ -67,19 +67,19 @@ void setup()
 
     Wire.begin();
 
-    //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
+    //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
-    if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+    if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
     {
         Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
         while (1)
             ;
     }
 
-    myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+    myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
     Serial.print(F("Polling module info"));
-    if (myGPS.getModuleInfo(1100) == false) // Try to get the module info
+    if (myGNSS.getModuleInfo(1100) == false) // Try to get the module info
     {
         Serial.print(F("getModuleInfo failed! Freezing..."));
         while (1)
@@ -90,15 +90,15 @@ void setup()
     Serial.println();
     Serial.println(F("Module Info : "));
     Serial.print(F("Soft version: "));
-    Serial.println(myGPS.minfo.swVersion);
+    Serial.println(myGNSS.minfo.swVersion);
     Serial.print(F("Hard version: "));
-    Serial.println(myGPS.minfo.hwVersion);
+    Serial.println(myGNSS.minfo.hwVersion);
     Serial.print(F("Extensions:"));
-    Serial.println(myGPS.minfo.extensionNo);
-    for (int i = 0; i < myGPS.minfo.extensionNo; i++)
+    Serial.println(myGNSS.minfo.extensionNo);
+    for (int i = 0; i < myGNSS.minfo.extensionNo; i++)
     {
         Serial.print("  ");
-        Serial.println(myGPS.minfo.extension[i]);
+        Serial.println(myGNSS.minfo.extension[i]);
     }
     Serial.println();
     Serial.println(F("Done!"));
@@ -110,11 +110,11 @@ void loop()
 
 boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
 {
-    myGPS.minfo.hwVersion[0] = 0;
-    myGPS.minfo.swVersion[0] = 0;
+    myGNSS.minfo.hwVersion[0] = 0;
+    myGNSS.minfo.swVersion[0] = 0;
     for (int i = 0; i < 10; i++)
-        myGPS.minfo.extension[i][0] = 0;
-    myGPS.minfo.extensionNo = 0;
+        myGNSS.minfo.extension[i][0] = 0;
+    myGNSS.minfo.extensionNo = 0;
 
     // Let's create our custom packet
     uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes

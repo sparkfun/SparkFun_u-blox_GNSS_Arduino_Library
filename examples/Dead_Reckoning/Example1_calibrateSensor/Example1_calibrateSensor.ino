@@ -32,8 +32,8 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -43,31 +43,31 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
-  //myGPS.resetIMUalignment(); // Uncomment this line to reset the IMU alignment
+  //myGNSS.resetIMUalignment(); // Uncomment this line to reset the IMU alignment
 }
 
 void loop()
 {
   // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
-  if (myGPS.getEsfInfo()) // Poll new ESF STATUS data
+  if (myGNSS.getEsfInfo()) // Poll new ESF STATUS data
   {
     Serial.print(F("Fusion Mode: "));  
-    Serial.print(myGPS.packetUBXESFSTATUS->data.fusionMode);  
-    if (myGPS.packetUBXESFSTATUS->data.fusionMode == 0)
+    Serial.print(myGNSS.packetUBXESFSTATUS->data.fusionMode);  
+    if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
       Serial.println(F("  Sensor is initializing..."));  
-    else if (myGPS.packetUBXESFSTATUS->data.fusionMode == 1)
+    else if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
       Serial.println(F("  Sensor is calibrated!"));  
-    else if (myGPS.packetUBXESFSTATUS->data.fusionMode == 2)
+    else if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
       Serial.println(F("  Sensor fusion is suspended!"));  
-    else if (myGPS.packetUBXESFSTATUS->data.fusionMode == 3)
+    else if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
       Serial.println(F("  Sensor fusion is disabled!"));  
   }
 

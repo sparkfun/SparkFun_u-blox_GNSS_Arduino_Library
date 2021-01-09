@@ -26,7 +26,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -38,15 +38,15 @@ void setup()
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
-  //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
+  //myGNSS.enableDebugging(); //Enable debug messages over Serial (default)
+  //myGNSS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
 
   bool setValueSuccess = true;
 
@@ -57,25 +57,25 @@ void setup()
   //U2, I2, E2 and X2 values are 16-bit
   //U4, I4, R4, E4, X4 values are 32-bit
 
-  setValueSuccess &= myGPS.setVal8(UBLOX_CFG_NMEA_HIGHPREC, 0); //Enable high precision NMEA (value is 8-bit (L / U1))
-  //setValueSuccess &= myGPS.setVal16(UBLOX_CFG_RATE_MEAS, 200); //Set measurement rate to 100ms (10Hz update rate) (value is 16-bit (U2))
-  //setValueSuccess &= myGPS.setVal16(UBLOX_CFG_RATE_MEAS, 200, 1); //Set rate setting in RAM instead of BBR
-  setValueSuccess &= myGPS.setVal16(UBLOX_CFG_RATE_MEAS, 1000); //Set measurement rate to 1000ms (1Hz update rate) (value is 16-bit (U2))
+  setValueSuccess &= myGNSS.setVal8(UBLOX_CFG_NMEA_HIGHPREC, 0); //Enable high precision NMEA (value is 8-bit (L / U1))
+  //setValueSuccess &= myGNSS.setVal16(UBLOX_CFG_RATE_MEAS, 200); //Set measurement rate to 100ms (10Hz update rate) (value is 16-bit (U2))
+  //setValueSuccess &= myGNSS.setVal16(UBLOX_CFG_RATE_MEAS, 200, 1); //Set rate setting in RAM instead of BBR
+  setValueSuccess &= myGNSS.setVal16(UBLOX_CFG_RATE_MEAS, 1000); //Set measurement rate to 1000ms (1Hz update rate) (value is 16-bit (U2))
 
   //Below is the original way we enabled a single RTCM message on the I2C port. After that, we show how to do the same
   //but with multiple messages all in one go using newCfgValset, addCfgValset and sendCfgValset.
-  //Original: myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
+  //Original: myGNSS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
 
   //Begin with newCfgValset8/16/32
-  setValueSuccess &= myGPS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1); //Set output rate of msg 1005 over the I2C port to once per measurement (value is 8-bit (U1))
-  //setValueSuccess &= myGPS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1, VAL_LAYER_RAM); //Set this and the following settings in RAM only instead of Flash/RAM/BBR
+  setValueSuccess &= myGNSS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1); //Set output rate of msg 1005 over the I2C port to once per measurement (value is 8-bit (U1))
+  //setValueSuccess &= myGNSS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1, VAL_LAYER_RAM); //Set this and the following settings in RAM only instead of Flash/RAM/BBR
   //Add extra keyIDs and values using addCfgValset8/16/32
-  setValueSuccess &= myGPS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1077_I2C, 1); //Set output rate of msg 1077 over the I2C port to once per measurement (value is 8-bit (U1))
-  setValueSuccess &= myGPS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1087_I2C, 1); //Set output rate of msg 1087 over the I2C port to once per measurement (value is 8-bit (U1))
-  setValueSuccess &= myGPS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1127_I2C, 1); //Set output rate of msg 1127 over the I2C port to once per measurement (value is 8-bit (U1))
-  setValueSuccess &= myGPS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1097_I2C, 1); //Set output rate of msg 1097 over the I2C port to once per measurement (value is 8-bit (U1))
+  setValueSuccess &= myGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1077_I2C, 1); //Set output rate of msg 1077 over the I2C port to once per measurement (value is 8-bit (U1))
+  setValueSuccess &= myGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1087_I2C, 1); //Set output rate of msg 1087 over the I2C port to once per measurement (value is 8-bit (U1))
+  setValueSuccess &= myGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1127_I2C, 1); //Set output rate of msg 1127 over the I2C port to once per measurement (value is 8-bit (U1))
+  setValueSuccess &= myGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1097_I2C, 1); //Set output rate of msg 1097 over the I2C port to once per measurement (value is 8-bit (U1))
   // Add the final value and send the packet using sendCfgValset8/16/32
-  setValueSuccess &= myGPS.sendCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 10); //Set output rate of msg 1230 over the I2C port to once every 10 measurements (value is 8-bit (U1))
+  setValueSuccess &= myGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 10); //Set output rate of msg 1230 over the I2C port to once every 10 measurements (value is 8-bit (U1))
 
   if (setValueSuccess == true)
   {

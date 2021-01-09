@@ -29,7 +29,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -41,7 +41,7 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
@@ -56,25 +56,25 @@ void loop()
   {
     lastTime = millis(); //Update the timer
     
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
 
-    long speed = myGPS.getGroundSpeed();
+    long speed = myGNSS.getGroundSpeed();
     Serial.print(F(" Speed: "));
     Serial.print(speed);
     Serial.print(F(" (mm/s)"));
 
-    long heading = myGPS.getHeading();
+    long heading = myGNSS.getHeading();
     Serial.print(F(" Heading: "));
     Serial.print(heading);
     Serial.print(F(" (degrees * 10^-5)"));
 
-    int pDOP = myGPS.getPDOP();
+    int pDOP = myGNSS.getPDOP();
     Serial.print(F(" pDOP: "));
     Serial.print(pDOP / 100.0, 2); // Convert pDOP scaling from 0.01 to 1
 

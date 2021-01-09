@@ -37,7 +37,7 @@ WiFiClient client;
 
 #include <Wire.h> //Needed for I2C to GNSS
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 //Basic Connection settings to RTK2Go NTRIP Caster - See secrets for mount specific credentials
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -62,9 +62,9 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
@@ -81,19 +81,19 @@ void setup()
   Serial.print("\nWiFi connected with IP: ");
   Serial.println(WiFi.localIP());
 
-  myGPS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
+  myGNSS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
 
-  myGPS.setNavigationFrequency(1); //Set output in Hz. RTCM rarely benefits from >1Hz.
+  myGNSS.setNavigationFrequency(1); //Set output in Hz. RTCM rarely benefits from >1Hz.
 
   //Disable all NMEA sentences
   bool response = true;
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C);
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C);
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C);
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C);
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C);
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C);
-  response &= myGPS.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C);
+  response &= myGNSS.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C);
 
   if (response == false)
   {
@@ -104,12 +104,12 @@ void setup()
     Serial.println(F("NMEA disabled"));
 
   //Enable necessary RTCM sentences
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through UART2, message every second
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); //Enable message every 10 seconds
+  response &= myGNSS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through UART2, message every second
+  response &= myGNSS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_I2C, 1);
+  response &= myGNSS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_I2C, 1);
+  response &= myGNSS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_I2C, 1);
+  response &= myGNSS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_I2C, 1);
+  response &= myGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); //Enable message every 10 seconds
 
   if (response == false)
   {
@@ -125,7 +125,7 @@ void setup()
   //Note: If you leave these coordinates in place and setup your antenna *not* at SparkFun, your receiver
   //will be very confused and fail to generate correction data because, well, you aren't at SparkFun...
   //See this tutorial on getting PPP coordinates: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station/all
-  response &= myGPS.setStaticPosition(-128020830, -80, -471680384, -70, 408666581, 10); //With high precision 0.1mm parts
+  response &= myGNSS.setStaticPosition(-128020830, -80, -471680384, -70, 408666581, 10); //With high precision 0.1mm parts
   if (response == false)
   {
     Serial.println(F("Failed to enter static position. Freezing..."));
@@ -135,9 +135,9 @@ void setup()
     Serial.println(F("Static position set"));
 
   //You could instead do a survey-in but it takes much longer to start generating RTCM data. See Example4_BaseWithLCD
-  //myGPS.enableSurveyMode(60, 5.000); //Enable Survey in, 60 seconds, 5.0m
+  //myGNSS.enableSurveyMode(60, 5.000); //Enable Survey in, 60 seconds, 5.0m
 
-  if (myGPS.saveConfiguration() == false) //Save the current settings to flash and BBR
+  if (myGNSS.saveConfiguration() == false) //Save the current settings to flash and BBR
     Serial.println(F("Module failed to save."));
 
   Serial.println(F("Module configuration complete"));
@@ -228,7 +228,7 @@ void beginServing()
       {
         if (Serial.available()) break;
 
-        myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
+        myGNSS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
         //Close socket if we don't have new data for 10s
         //RTK2Go will ban your IP address if you abuse it. See http://www.rtk2go.com/how-to-get-your-ip-banned/
@@ -265,7 +265,7 @@ void beginServing()
 //This function gets called from the SparkFun u-blox Arduino Library.
 //As each RTCM byte comes in you can specify what to do with it
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
-void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
   if (client.connected() == true)
   {

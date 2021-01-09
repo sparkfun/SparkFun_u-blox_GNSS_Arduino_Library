@@ -26,8 +26,8 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -37,20 +37,20 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
-  if (myGPS.getEsfInfo()){
+  if (myGNSS.getEsfInfo()){
 
     Serial.print(F("Fusion Mode: "));  
-    Serial.println(myGPS.packetUBXESFSTATUS->data.fusionMode);  
+    Serial.println(myGNSS.packetUBXESFSTATUS->data.fusionMode);  
 
-    if (myGPS.packetUBXESFSTATUS->data.fusionMode == 1){
+    if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 1){
       Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
@@ -63,20 +63,20 @@ void setup()
 void loop()
 {
   // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
-	if (myGPS.getEsfAlignment()) // Poll new ESF ALG data
+	if (myGNSS.getEsfAlignment()) // Poll new ESF ALG data
   {
   	Serial.print(F("Status: ")); 
-  	Serial.print(myGPS.packetUBXESFALG->data.flags.bits.status);
+  	Serial.print(myGNSS.packetUBXESFALG->data.flags.bits.status);
     Serial.print(F(" Roll: ")); 
-    Serial.print(myGPS.getESFroll(), 2); // Use the helper function to get the roll in degrees
+    Serial.print(myGNSS.getESFroll(), 2); // Use the helper function to get the roll in degrees
   	Serial.print(F(" Pitch: ")); 
-  	Serial.print(myGPS.getESFpitch(), 2); // Use the helper function to get the pitch in degrees
+  	Serial.print(myGNSS.getESFpitch(), 2); // Use the helper function to get the pitch in degrees
   	Serial.print(F(" Heading: ")); 
-  	Serial.print(myGPS.getESFyaw(), 2); // Use the helper function to get the yaw in degrees
+  	Serial.print(myGNSS.getESFyaw(), 2); // Use the helper function to get the yaw in degrees
   	Serial.print(F(" Errors: ")); 
-  	Serial.print(myGPS.packetUBXESFALG->data.error.bits.tiltAlgError);
-  	Serial.print(myGPS.packetUBXESFALG->data.error.bits.yawAlgError);
-  	Serial.println(myGPS.packetUBXESFALG->data.error.bits.angleError);
+  	Serial.print(myGNSS.packetUBXESFALG->data.error.bits.tiltAlgError);
+  	Serial.print(myGNSS.packetUBXESFALG->data.error.bits.yawAlgError);
+  	Serial.println(myGNSS.packetUBXESFALG->data.error.bits.angleError);
   }
 
   delay(250);

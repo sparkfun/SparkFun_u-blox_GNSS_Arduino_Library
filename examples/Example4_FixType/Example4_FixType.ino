@@ -35,7 +35,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -48,7 +48,7 @@ void setup()
   Wire.begin();
   //Wire.setClock(400000); //Optional. Increase I2C clock speed to 400kHz.
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
@@ -62,19 +62,19 @@ void loop()
   {
     lastTime = millis(); //Update the timer
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
 
-    byte fixType = myGPS.getFixType();
+    byte fixType = myGNSS.getFixType();
     Serial.print(F(" Fix: "));
     if(fixType == 0) Serial.print(F("No fix"));
     else if(fixType == 1) Serial.print(F("Dead reckoning"));
@@ -83,7 +83,7 @@ void loop()
     else if(fixType == 4) Serial.print(F("GNSS + Dead reckoning"));
     else if(fixType == 5) Serial.print(F("Time only"));
 
-    byte RTK = myGPS.getCarrierSolutionType();
+    byte RTK = myGNSS.getCarrierSolutionType();
     Serial.print(" RTK: ");
     Serial.print(RTK);
     if (RTK == 0) Serial.print(F(" (No solution)"));

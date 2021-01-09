@@ -24,8 +24,8 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -35,20 +35,20 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
-  if (myGPS.getEsfInfo()){
+  if (myGNSS.getEsfInfo()){
 
     Serial.print(F("Fusion Mode: "));
-    Serial.println(myGPS.packetUBXESFSTATUS->data.fusionMode);  
+    Serial.println(myGNSS.packetUBXESFSTATUS->data.fusionMode);  
 
-    if (myGPS.packetUBXESFSTATUS->data.fusionMode == 1){
+    if (myGNSS.packetUBXESFSTATUS->data.fusionMode == 1){
       Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
@@ -61,30 +61,30 @@ void setup()
 void loop()
 {
   // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
-  if (myGPS.getEsfIns()) // Poll new ESF INS data
+  if (myGNSS.getEsfIns()) // Poll new ESF INS data
   {
     Serial.print(F("X Ang Rate: "));
-    Serial.print(myGPS.packetUBXESFINS->data.xAngRate);  
+    Serial.print(myGNSS.packetUBXESFINS->data.xAngRate);  
     Serial.print(F(" Y Ang Rate: "));
-    Serial.print(myGPS.packetUBXESFINS->data.yAngRate);  
+    Serial.print(myGNSS.packetUBXESFINS->data.yAngRate);  
     Serial.print(F(" Z Ang Rate: "));
-    Serial.print(myGPS.packetUBXESFINS->data.zAngRate);  
+    Serial.print(myGNSS.packetUBXESFINS->data.zAngRate);  
     Serial.print(F(" X Accel: "));
-    Serial.print(myGPS.packetUBXESFINS->data.xAccel);  
+    Serial.print(myGNSS.packetUBXESFINS->data.xAccel);  
     Serial.print(F(" Y Accel: "));
-    Serial.print(myGPS.packetUBXESFINS->data.yAccel);  
+    Serial.print(myGNSS.packetUBXESFINS->data.yAccel);  
     Serial.print(F(" Z Accel: "));
-    Serial.print(myGPS.packetUBXESFINS->data.zAccel);
+    Serial.print(myGNSS.packetUBXESFINS->data.zAccel);
       
 		// These values also have "validity checks" that can be provided by the
 		// ublox library by reading bitfield0
     Serial.print(F(" Validity: "));
-    Serial.print(myGPS.packetUBXESFINS->data.bitfield0.bits.xAngRateValid);
-    Serial.print(myGPS.packetUBXESFINS->data.bitfield0.bits.yAngRateValid);
-    Serial.print(myGPS.packetUBXESFINS->data.bitfield0.bits.zAngRateValid);
-    Serial.print(myGPS.packetUBXESFINS->data.bitfield0.bits.xAccelValid);
-    Serial.print(myGPS.packetUBXESFINS->data.bitfield0.bits.yAccelValid);
-    Serial.println(myGPS.packetUBXESFINS->data.bitfield0.bits.zAccelValid);
+    Serial.print(myGNSS.packetUBXESFINS->data.bitfield0.bits.xAngRateValid);
+    Serial.print(myGNSS.packetUBXESFINS->data.bitfield0.bits.yAngRateValid);
+    Serial.print(myGNSS.packetUBXESFINS->data.bitfield0.bits.zAngRateValid);
+    Serial.print(myGNSS.packetUBXESFINS->data.bitfield0.bits.xAccelValid);
+    Serial.print(myGNSS.packetUBXESFINS->data.bitfield0.bits.yAccelValid);
+    Serial.println(myGNSS.packetUBXESFINS->data.bitfield0.bits.zAccelValid);
   }
 
   delay(250);

@@ -30,7 +30,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 unsigned long lastGNSSsend = 0;
 
@@ -41,7 +41,7 @@ void setup()
 
   Wire.begin();
 
-  if (myGPS.begin() == false)
+  if (myGNSS.begin() == false)
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
@@ -49,22 +49,22 @@ void setup()
   }
 
   //Disable or enable various NMEA sentences over the UART1 interface
-  myGPS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1); //Several of these are on by default on ublox board so let's disable them
-  myGPS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
-  myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
-  myGPS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-  myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1); //Only leaving GGA & VTG enabled at current navigation rate
-  myGPS.enableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
+  myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1); //Several of these are on by default on ublox board so let's disable them
+  myGNSS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+  myGNSS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+  myGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+  myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1); //Only leaving GGA & VTG enabled at current navigation rate
+  myGNSS.enableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
 
   //Here's the advanced configure method
   //Some of the other examples in this library enable the PVT message so let's disable it
-  myGPS.configureMessage(UBX_CLASS_NAV, UBX_NAV_PVT, COM_PORT_UART1, 0); //Message Class, ID, and port we want to configure, sendRate of 0 (disable).
+  myGNSS.configureMessage(UBX_CLASS_NAV, UBX_NAV_PVT, COM_PORT_UART1, 0); //Message Class, ID, and port we want to configure, sendRate of 0 (disable).
 
-  myGPS.setUART1Output(COM_TYPE_NMEA); //Turn off UBX and RTCM sentences on the UART1 interface
+  myGNSS.setUART1Output(COM_TYPE_NMEA); //Turn off UBX and RTCM sentences on the UART1 interface
 
-  myGPS.setSerialRate(57600); //Set UART1 to 57600bps.
+  myGNSS.setSerialRate(57600); //Set UART1 to 57600bps.
 
-  //myGPS.saveConfiguration(); //Optional: Save these settings to NVM
+  //myGNSS.saveConfiguration(); //Optional: Save these settings to NVM
 
   Serial.println(F("Messages configured. NMEA now being output over the UART1 port on the u-blox module at 57600bps."));
 }
@@ -73,7 +73,7 @@ void loop()
 {
   if (millis() - lastGNSSsend > 200)
   {
-    myGPS.checkUblox(); //See if new data is available, but we don't want to get NMEA here. Go check UART1.
+    myGNSS.checkUblox(); //See if new data is available, but we don't want to get NMEA here. Go check UART1.
     lastGNSSsend = millis();
   }
 }

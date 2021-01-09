@@ -31,8 +31,8 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 // Callback: printHPdata will be called when new NAV HPPOSLLH data arrives
 // See u-blox_structs.h for the full definition of UBX_NAV_HPPOSLLH_data_t
@@ -118,32 +118,32 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages
-  //myGPS.enableDebugging(Serial, true); // Uncomment this line to enable the minimum of helpful debug messages
+  //myGNSS.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages
+  //myGNSS.enableDebugging(Serial, true); // Uncomment this line to enable the minimum of helpful debug messages
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
   // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
-  //myGPS.factoryDefault(); delay(5000);
+  //myGNSS.factoryDefault(); delay(5000);
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
 
-  myGPS.setNavigationFrequency(2); //Produce two solutions per second
+  myGNSS.setNavigationFrequency(2); //Produce two solutions per second
 
-  myGPS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 
-  myGPS.setAutoHPPOSLLHcallback(&printHPdata); // Enable automatic NAV HPPOSLLH messages with callback to printHPdata
+  myGNSS.setAutoHPPOSLLHcallback(&printHPdata); // Enable automatic NAV HPPOSLLH messages with callback to printHPdata
 }
 
 void loop()
 {
-  myGPS.checkUblox(); // Check for the arrival of new data and process it. You could set up a timer interrupt to do this for you.
-  myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it. You could set up a timer interrupt to do this for you.
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   Serial.print(".");
   delay(50);

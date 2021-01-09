@@ -27,7 +27,7 @@
 */
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 // define a digital pin capable of driving HIGH and LOW
 #define WAKEUP_PIN 5
@@ -63,9 +63,9 @@ void setup() {
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Enable debug messages
+  //myGNSS.enableDebugging(); // Enable debug messages
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
@@ -74,8 +74,8 @@ void setup() {
   // Powering off for 20s, you should see the power consumption drop.
   Serial.println("-- Powering off module for 20s --");
 
-  myGPS.powerOff(20000);
-  //myGPS.powerOffWithInterrupt(20000, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
+  myGNSS.powerOff(20000);
+  //myGNSS.powerOffWithInterrupt(20000, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
 
   delay(10000);
 

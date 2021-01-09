@@ -28,7 +28,7 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -42,68 +42,68 @@ void setup()
   Wire.begin();
   Wire.setClock(400000); // Increase I2C clock speed to 400kHz
 
-  //myGPS.enableDebugging(); //Uncomment this line to enable debug messages over Serial
+  //myGNSS.enableDebugging(); //Uncomment this line to enable debug messages over Serial
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
   // Note: not all u-blox modules can output solutions at 10Hz - or not while tracking all satellite constellations
   // If the rate drops back to 1Hz, you're asking too much of your module
-  myGPS.setNavigationFrequency(10);           //Set output to 10 times a second
+  myGNSS.setNavigationFrequency(10);           //Set output to 10 times a second
   
-  byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
+  byte rate = myGNSS.getNavigationFrequency(); //Get the update rate of this module
   Serial.print("Current update rate:");
   Serial.println(rate);
 
-  //myGPS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
+  //myGNSS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
 }
 
 void loop()
 {
   // Calling getPVT returns true if there actually is a fresh navigation solution available.
-  if (myGPS.getPVT())
+  if (myGNSS.getPVT())
   {
     lastTime = millis(); //Update the timer
 
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));
 
-    byte SIV = myGPS.getSIV();
+    byte SIV = myGNSS.getSIV();
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 
     Serial.print(" ");
-    Serial.print(myGPS.getYear());
+    Serial.print(myGNSS.getYear());
     Serial.print("-");
-    Serial.print(myGPS.getMonth());
+    Serial.print(myGNSS.getMonth());
     Serial.print("-");
-    Serial.print(myGPS.getDay());
+    Serial.print(myGNSS.getDay());
     Serial.print(" ");
-    Serial.print(myGPS.getHour());
+    Serial.print(myGNSS.getHour());
     Serial.print(":");
-    Serial.print(myGPS.getMinute());
+    Serial.print(myGNSS.getMinute());
     Serial.print(":");
-    Serial.print(myGPS.getSecond());
+    Serial.print(myGNSS.getSecond());
     Serial.print(".");
     //Pretty print leading zeros
-    int mseconds = myGPS.getMillisecond();
+    int mseconds = myGNSS.getMillisecond();
     if (mseconds < 100)
       Serial.print("0");
     if (mseconds < 10)
@@ -111,7 +111,7 @@ void loop()
     Serial.print(mseconds);
 
     Serial.print(" nanoSeconds: ");
-    Serial.print(myGPS.getNanosecond());
+    Serial.print(myGNSS.getNanosecond());
 
     Serial.println();
   }

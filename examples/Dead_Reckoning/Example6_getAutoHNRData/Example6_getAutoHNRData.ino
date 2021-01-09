@@ -28,8 +28,8 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
 
 boolean usingAutoHNRAtt = false;
 boolean usingAutoHNRDyn = false;
@@ -43,65 +43,65 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("Warning! u-blox GPS did not begin correctly."));
     Serial.println(F("(This may be because the I2C port is busy with HNR messages.)"));
   }
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
-  if (myGPS.setHNRNavigationRate(10) == true) //Set the High Navigation Rate to 10Hz
+  if (myGNSS.setHNRNavigationRate(10) == true) //Set the High Navigation Rate to 10Hz
     Serial.println(F("setHNRNavigationRate was successful"));
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
     
-  usingAutoHNRAtt = myGPS.setAutoHNRATT(true); //Attempt to enable auto HNR attitude messages
+  usingAutoHNRAtt = myGNSS.setAutoHNRATT(true); //Attempt to enable auto HNR attitude messages
   if (usingAutoHNRAtt)
     Serial.println(F("AutoHNRATT successful"));
   
-  usingAutoHNRDyn = myGPS.setAutoHNRINS(true); //Attempt to enable auto HNR vehicle dynamics messages  
+  usingAutoHNRDyn = myGNSS.setAutoHNRINS(true); //Attempt to enable auto HNR vehicle dynamics messages  
   if (usingAutoHNRDyn)
     Serial.println(F("AutoHNRINS successful"));
   
-  usingAutoHNRPVT = myGPS.setAutoHNRPVT(true); //Attempt to enable auto HNR PVT messages
+  usingAutoHNRPVT = myGNSS.setAutoHNRPVT(true); //Attempt to enable auto HNR PVT messages
   if (usingAutoHNRPVT)
     Serial.println(F("AutoHNRPVT successful"));
 }
 
 void loop()
 {
-  if (usingAutoHNRAtt && (myGPS.getHNRAtt() == true)) // If setAutoHNRAtt was successful and new data is available
+  if (usingAutoHNRAtt && (myGNSS.getHNRAtt() == true)) // If setAutoHNRAtt was successful and new data is available
   {
     Serial.print(F("Roll: ")); // Print selected data
-    Serial.print(myGPS.getHNRroll(), 2); // Use the helper function to get the roll in degrees
+    Serial.print(myGNSS.getHNRroll(), 2); // Use the helper function to get the roll in degrees
     Serial.print(F(" Pitch: "));
-    Serial.print(myGPS.getHNRpitch(), 2); // Use the helper function to get the pitch in degrees
+    Serial.print(myGNSS.getHNRpitch(), 2); // Use the helper function to get the pitch in degrees
     Serial.print(F(" Heading: "));
-    Serial.println(myGPS.getHNRheading(), 2); // Use the helper function to get the heading in degrees
-    myGPS.flushHNRATT(); // Mark data as stale
+    Serial.println(myGNSS.getHNRheading(), 2); // Use the helper function to get the heading in degrees
+    myGNSS.flushHNRATT(); // Mark data as stale
   }
-  if (usingAutoHNRDyn && (myGPS.getHNRDyn() == true)) // If setAutoHNRDyn was successful and new data is available
+  if (usingAutoHNRDyn && (myGNSS.getHNRDyn() == true)) // If setAutoHNRDyn was successful and new data is available
   {
     Serial.print(F("xAccel: ")); // Print selected data
-    Serial.print(myGPS.packetUBXHNRINS->data.xAccel);
+    Serial.print(myGNSS.packetUBXHNRINS->data.xAccel);
     Serial.print(F(" yAccel: "));
-    Serial.print(myGPS.packetUBXHNRINS->data.yAccel);
+    Serial.print(myGNSS.packetUBXHNRINS->data.yAccel);
     Serial.print(F(" zAccel: "));
-    Serial.println(myGPS.packetUBXHNRINS->data.zAccel);
-    myGPS.flushHNRINS(); // Mark data as stale
+    Serial.println(myGNSS.packetUBXHNRINS->data.zAccel);
+    myGNSS.flushHNRINS(); // Mark data as stale
   }
-  if (usingAutoHNRPVT && (myGPS.getHNRPVT() == true)) // If setAutoHNRPVT was successful and new data is available
+  if (usingAutoHNRPVT && (myGNSS.getHNRPVT() == true)) // If setAutoHNRPVT was successful and new data is available
   {
     Serial.print(F("ns: ")); // Print selected data
-    Serial.print(myGPS.packetUBXHNRPVT->data.nano);
+    Serial.print(myGNSS.packetUBXHNRPVT->data.nano);
     Serial.print(F(" Lat: "));
-    Serial.print(myGPS.packetUBXHNRPVT->data.lat);
+    Serial.print(myGNSS.packetUBXHNRPVT->data.lat);
     Serial.print(F(" Lon: "));
-    Serial.println(myGPS.packetUBXHNRPVT->data.lon);
-    myGPS.flushHNRPVT(); // Mark data as stale
+    Serial.println(myGNSS.packetUBXHNRPVT->data.lon);
+    myGNSS.flushHNRPVT(); // Mark data as stale
   }
 }

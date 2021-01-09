@@ -28,7 +28,7 @@
 */
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGNSS;
 
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(10, 11); // RX, TX. Pin 10 on Uno goes to TX pin on GNSS module.
@@ -46,25 +46,25 @@ void setup()
   do {
     Serial.println("GNSS: trying 38400 baud");
     mySerial.begin(38400);
-    if (myGPS.begin(mySerial) == true) break;
+    if (myGNSS.begin(mySerial) == true) break;
 
     delay(100);
     Serial.println("GNSS: trying 9600 baud");
     mySerial.begin(9600);
-    if (myGPS.begin(mySerial) == true) {
+    if (myGNSS.begin(mySerial) == true) {
         Serial.println("GNSS: connected at 9600 baud, switching to 38400");
-        myGPS.setSerialRate(38400);
+        myGNSS.setSerialRate(38400);
         delay(100);
     } else {
-        //myGPS.factoryReset();
+        //myGNSS.factoryReset();
         delay(2000); //Wait a bit before trying again to limit the Serial output
     }
   } while(1);
   Serial.println("GNSS serial connected");
 
-  myGPS.setUART1Output(COM_TYPE_UBX); //Set the UART port to output UBX only
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  myGNSS.setUART1Output(COM_TYPE_UBX); //Set the UART port to output UBX only
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
 void loop()
@@ -75,21 +75,21 @@ void loop()
   {
     lastTime = millis(); //Update the timer
     
-    long latitude = myGPS.getLatitude();
+    long latitude = myGNSS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    long longitude = myGNSS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    long altitude = myGNSS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
     Serial.print(F(" (mm)"));
 
-    byte SIV = myGPS.getSIV();
+    byte SIV = myGNSS.getSIV();
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 
