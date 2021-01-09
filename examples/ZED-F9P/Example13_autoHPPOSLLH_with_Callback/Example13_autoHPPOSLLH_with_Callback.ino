@@ -61,7 +61,7 @@ void printHPdata(UBX_NAV_HPPOSLLH_data_t ubxDataStruct)
   Serial.print(F(" "));
   Serial.print(highResLongitudeHp);
 
-  unsigned long horizAccuracy = ubxDataStruct.hAcc;
+  float horizAccuracy = ((float)ubxDataStruct.hAcc) / 10000.0; // Convert hAcc from mm*0.1 to m
   Serial.print(F(" Horiz accuracy: "));
   Serial.println(horizAccuracy);
 }
