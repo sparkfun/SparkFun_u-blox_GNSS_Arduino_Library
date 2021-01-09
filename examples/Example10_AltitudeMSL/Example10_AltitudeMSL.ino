@@ -30,7 +30,7 @@
 
 #include <Wire.h> //Needed for I2C to GNSS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
 
 long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
