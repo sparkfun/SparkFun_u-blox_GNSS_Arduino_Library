@@ -56,18 +56,29 @@ void setup()
     while (1) ; // Do nothing more
   }
 
+  // Print the CFG TP5 version
+  Serial.print(F("UBX_CFG_TP5 version: "));
+  Serial.println(timePulseParameters.version);
+
   timePulseParameters.tpIdx = 0; // Select the TIMEPULSE pin
   //timePulseParameters.tpIdx = 1; // Or we could select the TIMEPULSE2 pin instead, if the module has one
 
   // We can configure the time pulse pin to produce a defined frequency or period
   // Here is how to set the frequency:
-  timePulseParameters.freqPeriod = 1000; // Set the frequency/period to 1000Hz
-  timePulseParameters.pulseLenRatio = 0x80000000; // Set the pulse ratio to 2^31 * 2^-32 to produce 50:50 mark:space
+
+  // While the module is _locking_ to GNSS time, make it generate 2kHz
+  timePulseParameters.freqPeriod = 2000; // Set the frequency/period to 2000Hz
+  timePulseParameters.pulseLenRatio = 0x55555555; // Set the pulse ratio to 1/3 * 2^32 to produce 33:67 mark:space
+
+  // When the module is _locked_ to GNSS time, make it generate 1kHz
+  timePulseParameters.freqPeriodLock = 1000; // Set the frequency/period to 1000Hz
+  timePulseParameters.pulseLenRatioLock = 0x80000000; // Set the pulse ratio to 1/2 * 2^32 to produce 50:50 mark:space
 
   timePulseParameters.flags.bits.active = 1; // Make sure the active flag is set to enable the time pulse. (Set to 0 to disable.)
+  timePulseParameters.flags.bits.lockedOtherSet = 1; // Tell the module to use freqPeriod while locking and freqPeriodLock when locked to GNSS time
   timePulseParameters.flags.bits.isFreq = 1; // Tell the module that we want to set the frequency (not the period)
-  timePulseParameters.flags.bits.isLength = 0; // Tell the module that pulseLenRatio is a ratio / duty cycle (2^-32) - not a length (in us)
-  timePulseParameters.flags.bits.polarity = 0; // Tell the module that we want the falling edge at the top of second. (Set to 1 for rising edge.)
+  timePulseParameters.flags.bits.isLength = 0; // Tell the module that pulseLenRatio is a ratio / duty cycle (* 2^-32) - not a length (in us)
+  timePulseParameters.flags.bits.polarity = 1; // Tell the module that we want the rising edge at the top of second. (Set to 0 for falling edge.)
 
   // Now set the time pulse parameters
   if (myGNSS.setTimePulseParameters(&timePulseParameters) == false)
