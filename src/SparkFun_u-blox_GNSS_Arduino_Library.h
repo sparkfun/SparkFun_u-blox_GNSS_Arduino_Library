@@ -645,6 +645,10 @@ public:
 	//Reset ESF automatic IMU-mount alignment
 	boolean resetIMUalignment(uint16_t maxWait = defaultMaxWait);
 
+	//Configure Time Pulse Parameters
+	boolean getTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the time pulse parameters using UBX_CFG_TP5
+	boolean setTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Set the time pulse parameters using UBX_CFG_TP5
+
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.

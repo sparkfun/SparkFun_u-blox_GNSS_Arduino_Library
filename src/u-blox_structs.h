@@ -1789,4 +1789,39 @@ typedef struct
   UBX_HNR_INS_data_t  *callbackData;
 } UBX_HNR_INS_t;
 
+// UBX-CFG-TP5 (0x06 0x31): Time pulse parameters
+const uint16_t UBX_CFG_TP5_LEN = 32;
+
+typedef struct
+{
+  uint8_t tpIdx; // Time pulse selection (0 = TIMEPULSE, 1 = TIMEPULSE2)
+  uint8_t version; // Message version (0x01 for this version)
+  uint8_t reserved1[2];
+  int16_t antCableDelay; // Antenna cable delay: ns
+  int16_t rfGroupDelay; // RF group delay: ns
+  uint32_t freqPeriod; // Frequency or period time, depending on setting of bit 'isFreq': Hz_or_us
+  uint32_t freqPeriodLock; // Frequency or period time when locked to GNSS time, only used if 'lockedOtherSet' is set: Hz_or_us
+  uint32_t pulseLenRatio; // Pulse length or duty cycle, depending on 'isLength': us_or_2^-32
+  uint32_t pulseLenRatioLock; // Pulse length or duty cycle when locked to GNSS time, only used if 'lockedOtherSet' is set: us_or_2^-32
+  int32_t userConfigDelay; // User-configurable time pulse delay: ns
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t active : 1; // If set enable time pulse; if pin assigned to another function, other function takes precedence.
+      uint32_t lockGnssFreq : 1; // If set, synchronize time pulse to GNSS as soon as GNSS time is valid. If not set, or before GNSS time is valid, use local clock.
+      uint32_t lockedOtherSet : 1; // If set the receiver switches between the timepulse settings given by 'freqPeriodLocked' & 'pulseLenLocked' and those given by 'freqPeriod' & 'pulseLen'.
+      uint32_t isFreq : 1; // If set 'freqPeriodLock' and 'freqPeriod' are interpreted as frequency, otherwise interpreted as period.
+      uint32_t isLength : 1; // If set 'pulseLenRatioLock' and 'pulseLenRatio' interpreted as pulse length, otherwise interpreted as duty cycle.
+      uint32_t alignToTow : 1; // Align pulse to top of second (period time must be integer fraction of 1s). Also set 'lockGnssFreq' to use this feature.
+      uint32_t polarity : 1; // Pulse polarity: 0: falling edge at top of second; 1: rising edge at top of second
+      uint32_t gridUtcGnss : 4; // Timegrid to use: 0: UTC; 1: GPS; 2: GLONASS; 3: BeiDou; 4: Galileo
+      uint32_t syncMode : 3; // Sync Manager lock mode to use:
+                             // 0: switch to 'freqPeriodLock' and 'pulseLenRatioLock' as soon as Sync Manager has an accurate time, never switch back to 'freqPeriod' and 'pulseLenRatio'
+                             // 1: switch to 'freqPeriodLock' and 'pulseLenRatioLock' as soon as Sync Manager has an accurate time, and switch back to 'freqPeriod' and 'pulseLenRatio' as soon as time gets inaccurate
+    } bits;
+  } flags;
+} UBX_CFG_TP5_data_t;
+
 #endif
