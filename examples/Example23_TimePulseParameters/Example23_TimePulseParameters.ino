@@ -9,6 +9,10 @@
   This example shows how to change the time pulse parameters and configure the TIMEPULSE (PPS)
   pin to produce a 1kHz squarewave
 
+  The SparkFun GPS-RTK-SMA Breakout - ZED-F9P (Qwiic) (https://www.sparkfun.com/products/16481)
+  has solder pads which will let you connect an SMA connector to the TIMEPULSE signal. Need an
+  accurate frequency or clock source for your latest project? This is the product for you!
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
