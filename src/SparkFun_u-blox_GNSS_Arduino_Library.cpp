@@ -4252,6 +4252,81 @@ boolean SFE_UBLOX_GNSS::resetIMUalignment(uint16_t maxWait)
   return (sendCommand(&packetCfg, maxWait, true) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+//Get the time pulse parameters using UBX_CFG_TP5
+boolean SFE_UBLOX_GNSS::getTimePulseParameters(UBX_CFG_TP5_data_t *data, uint16_t maxWait)
+{
+  if (data == NULL) // Check if the user forgot to include the data pointer
+    return (false); // Bail
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_TP5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Extract the data
+  data->tpIdx = extractByte(&packetCfg, 0);
+  data->version = extractByte(&packetCfg, 1);
+  data->antCableDelay = extractSignedInt(&packetCfg, 4);
+  data->rfGroupDelay = extractSignedInt(&packetCfg, 6);
+  data->freqPeriod = extractLong(&packetCfg, 8);
+  data->freqPeriodLock = extractLong(&packetCfg, 12);
+  data->pulseLenRatio = extractLong(&packetCfg, 16);
+  data->pulseLenRatioLock = extractLong(&packetCfg, 20);
+  data->userConfigDelay = extractSignedLong(&packetCfg, 24);
+  data->flags.all = extractLong(&packetCfg, 28);
+
+  return(true);
+}
+
+//Set the time pulse parameters using UBX_CFG_TP5
+boolean SFE_UBLOX_GNSS::setTimePulseParameters(UBX_CFG_TP5_data_t *data, uint16_t maxWait)
+{
+  if (data == NULL) // Check if the user forgot to include the data pointer
+    return (false); // Bail
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_TP5;
+  packetCfg.len = UBX_CFG_TP5_LEN;
+  packetCfg.startingSpot = 0;
+
+  // Insert the data
+  payloadCfg[0] = data->tpIdx;
+  payloadCfg[1] = data->version;
+  payloadCfg[4] = data->antCableDelay & 0xFF; // Little Endian
+  payloadCfg[5] = data->antCableDelay >> 8;
+  payloadCfg[6] = data->rfGroupDelay & 0xFF; // Little Endian
+  payloadCfg[7] = data->rfGroupDelay >> 8;
+  payloadCfg[8] = data->freqPeriod & 0xFF; // Little Endian
+  payloadCfg[9] = (data->freqPeriod >> 8) & 0xFF;
+  payloadCfg[10] = (data->freqPeriod >> 16) & 0xFF;
+  payloadCfg[11] = (data->freqPeriod >> 24) & 0xFF;
+  payloadCfg[12] = data->freqPeriodLock & 0xFF; // Little Endian
+  payloadCfg[13] = (data->freqPeriodLock >> 8) & 0xFF;
+  payloadCfg[14] = (data->freqPeriodLock >> 16) & 0xFF;
+  payloadCfg[15] = (data->freqPeriodLock >> 24) & 0xFF;
+  payloadCfg[16] = data->pulseLenRatio & 0xFF; // Little Endian
+  payloadCfg[17] = (data->pulseLenRatio >> 8) & 0xFF;
+  payloadCfg[18] = (data->pulseLenRatio >> 16) & 0xFF;
+  payloadCfg[19] = (data->pulseLenRatio >> 24) & 0xFF;
+  payloadCfg[20] = data->pulseLenRatioLock & 0xFF; // Little Endian
+  payloadCfg[21] = (data->pulseLenRatioLock >> 8) & 0xFF;
+  payloadCfg[22] = (data->pulseLenRatioLock >> 16) & 0xFF;
+  payloadCfg[23] = (data->pulseLenRatioLock >> 24) & 0xFF;
+  payloadCfg[24] = data->userConfigDelay & 0xFF; // Little Endian
+  payloadCfg[25] = (data->userConfigDelay >> 8) & 0xFF;
+  payloadCfg[26] = (data->userConfigDelay >> 16) & 0xFF;
+  payloadCfg[27] = (data->userConfigDelay >> 24) & 0xFF;
+  payloadCfg[28] = data->flags.all & 0xFF; // Little Endian
+  payloadCfg[29] = (data->flags.all >> 8) & 0xFF;
+  payloadCfg[30] = (data->flags.all >> 16) & 0xFF;
+  payloadCfg[31] = (data->flags.all >> 24) & 0xFF;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 // CONFIGURATION INTERFACE (protocol v27 and above)
 
 //Form 32-bit key from group/id/size
