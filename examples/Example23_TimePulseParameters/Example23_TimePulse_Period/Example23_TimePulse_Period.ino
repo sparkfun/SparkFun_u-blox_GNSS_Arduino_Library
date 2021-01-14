@@ -1,5 +1,5 @@
 /*
-  Time Pulse Parameters
+  Time Pulse Parameters - Period
   By: Paul Clark (PaulZC)
   Date: January 13th, 2021
 
@@ -7,11 +7,12 @@
   basically do whatever you want with this code.
 
   This example shows how to change the time pulse parameters and configure the TIMEPULSE (PPS)
-  pin to produce a 1kHz squarewave
+  pin to produce a 1 second pulse every 30 seconds. What's really cool is that if you run this
+  example on two GNSS boards, the pulses are precisely synchronised!
 
   The SparkFun GPS-RTK-SMA Breakout - ZED-F9P (Qwiic) (https://www.sparkfun.com/products/16481)
   has solder pads which will let you connect an SMA connector to the TIMEPULSE signal. Need an
-  accurate frequency or clock source for your latest project? This is the product for you!
+  accurate timelapse camera shutter signal? This is the product for you!
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -68,20 +69,23 @@ void setup()
   //timePulseParameters.tpIdx = 1; // Or we could select the TIMEPULSE2 pin instead, if the module has one
 
   // We can configure the time pulse pin to produce a defined frequency or period
-  // Here is how to set the frequency:
+  // Here is how to set the period:
 
-  // While the module is _locking_ to GNSS time, make it generate 2kHz
-  timePulseParameters.freqPeriod = 2000; // Set the frequency/period to 2000Hz
-  timePulseParameters.pulseLenRatio = 0x55555555; // Set the pulse ratio to 1/3 * 2^32 to produce 33:67 mark:space
+  // Let's say that we want our 1 pulse every 30 seconds to be as accurate as possible. So, let's tell the module
+  // to generate no signal while it is _locking_ to GNSS time. We want the signal to start only when the module is
+  // _locked_ to GNSS time.
+  timePulseParameters.freqPeriod = 0; // Set the frequency/period to zero
+  timePulseParameters.pulseLenRatio = 0; // Set the pulse ratio to zero
 
-  // When the module is _locked_ to GNSS time, make it generate 1kHz
-  timePulseParameters.freqPeriodLock = 1000; // Set the frequency/period to 1000Hz
-  timePulseParameters.pulseLenRatioLock = 0x80000000; // Set the pulse ratio to 1/2 * 2^32 to produce 50:50 mark:space
+  // When the module is _locked_ to GNSS time, make it generate a 1 second pulse every 30 seconds
+  // (Although the period can be a maximum of 2^32 microseconds (over one hour), the upper limit appears to be around 33 seconds)
+  timePulseParameters.freqPeriodLock = 30000000; // Set the period to 30,000,000 us
+  timePulseParameters.pulseLenRatioLock = 1000000; // Set the pulse length to 1,000,000 us
 
   timePulseParameters.flags.bits.active = 1; // Make sure the active flag is set to enable the time pulse. (Set to 0 to disable.)
   timePulseParameters.flags.bits.lockedOtherSet = 1; // Tell the module to use freqPeriod while locking and freqPeriodLock when locked to GNSS time
-  timePulseParameters.flags.bits.isFreq = 1; // Tell the module that we want to set the frequency (not the period)
-  timePulseParameters.flags.bits.isLength = 0; // Tell the module that pulseLenRatio is a ratio / duty cycle (* 2^-32) - not a length (in us)
+  timePulseParameters.flags.bits.isFreq = 0; // Tell the module that we want to set the period (not the frequency)
+  timePulseParameters.flags.bits.isLength = 1; // Tell the module that pulseLenRatio is a length (in us) - not a duty cycle
   timePulseParameters.flags.bits.polarity = 1; // Tell the module that we want the rising edge at the top of second. (Set to 0 for falling edge.)
 
   // Now set the time pulse parameters
@@ -93,6 +97,9 @@ void setup()
   {
     Serial.println(F("Success!"));
   }
+
+  // Finally, save the time pulse parameters in battery-backed memory so the pulse will automatically restart at power on
+  myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); // Save the configuration
 }
 
 void loop()
