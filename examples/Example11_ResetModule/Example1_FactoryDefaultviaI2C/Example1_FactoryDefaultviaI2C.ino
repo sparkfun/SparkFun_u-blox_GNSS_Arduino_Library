@@ -14,8 +14,8 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Connect the U-Blox serial port to Serial1
-  If you're using an Uno or don't have a 2nd serial port (Serial1), consider using software serial
+  Plug a Qwiic cable into the GNSS and a BlackBoard
+  If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
