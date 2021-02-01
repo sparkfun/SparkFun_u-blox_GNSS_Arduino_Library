@@ -393,6 +393,8 @@ getMillisecond	KEYWORD2
 getNanosecond	KEYWORD2
 getDateValid	KEYWORD2
 getTimeValid	KEYWORD2
+getconfirmedDate	KEYWORD2
+getConfirmedTime	KEYWORD2
 getFixType	KEYWORD2
 getGnssFixOk	KEYWORD2
 getDiffSoln	KEYWORD2
