@@ -927,6 +927,8 @@ public:
 
 	bool getDateValid(uint16_t maxWait = defaultMaxWait);
 	bool getTimeValid(uint16_t maxWait = defaultMaxWait);
+	bool getConfirmedDate(uint16_t maxWait = defaultMaxWait);
+	bool getConfirmedTime(uint16_t maxWait = defaultMaxWait);
 
 	uint8_t getFixType(uint16_t maxWait = defaultMaxWait); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 

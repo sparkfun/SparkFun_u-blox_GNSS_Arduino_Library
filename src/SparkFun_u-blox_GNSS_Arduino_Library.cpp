@@ -8895,6 +8895,34 @@ bool SFE_UBLOX_GNSS::getTimeValid(uint16_t maxWait)
   return ((bool)packetUBXNAVPVT->data.valid.bits.validTime);
 }
 
+//Get the confirmed date validity
+bool SFE_UBLOX_GNSS:: getConfirmedDate(uint16_t maxWait)
+{
+  if (packetUBXNAVPVT == NULL) initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
+  if (packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate == false)
+    getPVT(maxWait);
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  return ((bool)packetUBXNAVPVT->data.flags2.bits.confirmedDate);
+}
+
+//Get the confirmed time validity
+bool SFE_UBLOX_GNSS:: getConfirmedTime(uint16_t maxWait)
+{
+  if (packetUBXNAVPVT == NULL) initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
+  if (packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedTime == false)
+    getPVT(maxWait);
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedTime = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  return ((bool)packetUBXNAVPVT->data.flags2.bits.confirmedTime);
+}
+
 //Get the current fix type
 //0=no fix, 1=dead reckoning, 2=2D, 3=3D, 4=GNSS, 5=Time fix
 uint8_t SFE_UBLOX_GNSS::getFixType(uint16_t maxWait)
