@@ -9597,7 +9597,7 @@ boolean SFE_UBLOX_GNSS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *se
   if (packetUBXESFMEAS == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data & (1 << sensor) == 0)
+  if (packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data & ((1 << sensor) == 0))
     getESFMEAS(maxWait);
   packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data &= ~(1 << sensor); //Since we are about to give this to user, mark this data as stale
   packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all = false;
@@ -9617,7 +9617,7 @@ boolean SFE_UBLOX_GNSS::getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensor
   if (packetUBXESFRAW == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXESFRAW->moduleQueried.moduleQueried.bits.data & (1 << sensor) == 0)
+  if (packetUBXESFRAW->moduleQueried.moduleQueried.bits.data & ((1 << sensor) == 0))
     getESFRAW(maxWait);
   packetUBXESFRAW->moduleQueried.moduleQueried.bits.data &= ~(1 << sensor); //Since we are about to give this to user, mark this data as stale
   packetUBXESFRAW->moduleQueried.moduleQueried.bits.all = false;
@@ -9639,7 +9639,7 @@ boolean SFE_UBLOX_GNSS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sen
   if (packetUBXESFSTATUS == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.status & (1 << sensor) == 0)
+  if (packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.status & ((1 << sensor) == 0))
     getESFSTATUS(maxWait);
   packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.status &= ~(1 << sensor); //Since we are about to give this to user, mark this data as stale
   packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.all = false;
