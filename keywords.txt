@@ -84,6 +84,8 @@ setFileBufferSize	KEYWORD2
 extractFileBufferData	KEYWORD2
 fileBufferAvailable	KEYWORD2
 getMaxFileBufferAvail	KEYWORD2
+clearFileBuffer	KEYWORD2
+clearMaxFileBufferAvail	KEYWORD2
 
 getPortSettings	KEYWORD2
 setPortOutput	KEYWORD2
@@ -369,6 +371,10 @@ logHNRPVT	KEYWORD2
 
 setNavigationFrequency	KEYWORD2
 getNavigationFrequency	KEYWORD2
+setMeasurementRate	KEYWORD2
+getMeasurementRate	KEYWORD2
+setNavigationRate	KEYWORD2
+getNavigationRate	KEYWORD2
 
 getGeometricDOP	KEYWORD2
 getPositionDOP	KEYWORD2
@@ -391,8 +397,11 @@ getMinute	KEYWORD2
 getSecond	KEYWORD2
 getMillisecond	KEYWORD2
 getNanosecond	KEYWORD2
+getUnixEpoch	KEYWORD2
 getDateValid	KEYWORD2
 getTimeValid	KEYWORD2
+getConfirmedDate	KEYWORD2
+getConfirmedTime	KEYWORD2
 getFixType	KEYWORD2
 getGnssFixOk	KEYWORD2
 getDiffSoln	KEYWORD2
@@ -602,3 +611,5 @@ SFE_UBLOX_GNSS_ID_BEIDOU	LITERAL1
 SFE_UBLOX_GNSS_ID_IMES	LITERAL1
 SFE_UBLOX_GNSS_ID_QZSS	LITERAL1
 SFE_UBLOX_GNSS_ID_GLONASS	LITERAL1
+
+DAYS_SINCE_MONTH	LITERAL1
