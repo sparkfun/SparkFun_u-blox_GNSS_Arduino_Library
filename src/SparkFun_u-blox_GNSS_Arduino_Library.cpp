@@ -8984,7 +8984,7 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t& microsecond, uint16_t maxWait)
                       packetUBXNAVPVT->data.sec);
     int32_t us = packetUBXNAVPVT->data.nano / 1000;
     microsecond = (uint32_t)us;
-    // ajust t if nano is negative
+    // adjust t if nano is negative
     if(us < 0) {
       microsecond = (uint32_t)(us + 1000000);
       t--;
