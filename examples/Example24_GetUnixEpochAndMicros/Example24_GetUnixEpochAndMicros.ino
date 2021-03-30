@@ -27,8 +27,6 @@
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
 
-#include <ezTime.h> //https://github.com/ropg/ezTime
-#include <WiFi.h>
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
@@ -81,10 +79,6 @@ void loop()
     Serial.print(myGNSS.getMinute());
     Serial.print(":");
     Serial.print(myGNSS.getSecond());
-    Serial.print("  makeTime(tm): ");
-    Serial.print(makeTime(myGNSS.getHour(), myGNSS.getMinute(), myGNSS.getSecond(), myGNSS.getDay(), myGNSS.getMonth(), myGNSS.getYear()));
-    Serial.print(" micros: ");
-    Serial.print((int32_t)(myGNSS.getNanosecond() / 1000));
     Serial.print("  getUnixEpoch(micros): ");
     Serial.print(myGNSS.getUnixEpoch(us));
     Serial.print("  micros: ");
