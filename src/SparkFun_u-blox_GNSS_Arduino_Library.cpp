@@ -3055,6 +3055,20 @@ uint16_t SFE_UBLOX_GNSS::getMaxFileBufferAvail(void)
   return (fileBufferMaxAvail);
 }
 
+// Clear the file buffer - discard all contents
+void SFE_UBLOX_GNSS::clearFileBuffer(void)
+{
+  if (fileBufferSize == 0) // Bail if the user has not called setFileBufferSize (probably redundant)
+    return;
+  fileBufferTail = fileBufferHead;
+}
+
+// Reset fileBufferMaxAvail
+void SFE_UBLOX_GNSS::clearMaxFileBufferAvail(void)
+{
+  fileBufferMaxAvail = 0;
+}
+
 // PRIVATE: Create the file buffer. Called by .begin
 boolean SFE_UBLOX_GNSS::createFileBuffer(void)
 {

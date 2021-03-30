@@ -84,6 +84,8 @@ setFileBufferSize	KEYWORD2
 extractFileBufferData	KEYWORD2
 fileBufferAvailable	KEYWORD2
 getMaxFileBufferAvail	KEYWORD2
+clearFileBuffer	KEYWORD2
+clearMaxFileBufferAvail	KEYWORD2
 
 getPortSettings	KEYWORD2
 setPortOutput	KEYWORD2
