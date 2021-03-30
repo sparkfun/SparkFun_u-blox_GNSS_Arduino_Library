@@ -8569,7 +8569,7 @@ boolean SFE_UBLOX_GNSS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait
   //Adjust the I2C polling timeout based on update rate
   i2cPollingWait = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data
 
-  //Query the module for the latest lat/long
+  //Query the module
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_RATE;
   packetCfg.len = 0;
@@ -8604,6 +8604,79 @@ uint8_t SFE_UBLOX_GNSS::getNavigationFrequency(uint16_t maxWait)
 
   measurementRate = 1000 / measurementRate; //This may return an int when it's a float, but I'd rather not return 4 bytes
   return (measurementRate);
+}
+
+//Set the elapsed time between GNSS measurements in milliseconds, which defines the rate
+boolean SFE_UBLOX_GNSS::setMeasurementRate(uint16_t rate, uint16_t maxWait)
+{
+  //Adjust the I2C polling timeout based on update rate
+  i2cPollingWait = rate / 4; //This is the number of ms to wait between checks for new I2C data
+
+  //Query the module
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RATE;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //This will load the payloadCfg array with current settings of the given register
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);                                                       //If command send fails then bail
+
+  //payloadCfg is now loaded with current bytes. Change only the ones we need to
+  payloadCfg[0] = rate & 0xFF; //measRate LSB
+  payloadCfg[1] = rate >> 8;   //measRate MSB
+
+  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//Return the elapsed time between GNSS measurements in milliseconds, which defines the rate
+uint16_t SFE_UBLOX_GNSS::getMeasurementRate(uint16_t maxWait)
+{
+  if (packetUBXCFGRATE == NULL) initPacketUBXCFGRATE(); //Check that RAM has been allocated for the RATE data
+  if (packetUBXCFGRATE == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXCFGRATE->moduleQueried.moduleQueried.bits.measRate == false)
+    getNavigationFrequencyInternal(maxWait);
+  packetUBXCFGRATE->moduleQueried.moduleQueried.bits.measRate = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXCFGRATE->data.measRate);
+}
+
+//Set the ratio between the number of measurements and the number of navigation solutions. Unit is cycles. Max is 127.
+boolean SFE_UBLOX_GNSS::setNavigationRate(uint16_t rate, uint16_t maxWait)
+{
+  //Query the module
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RATE;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //This will load the payloadCfg array with current settings of the given register
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);                                                       //If command send fails then bail
+
+  //payloadCfg is now loaded with current bytes. Change only the ones we need to
+  payloadCfg[2] = rate & 0xFF; //navRate LSB
+  payloadCfg[3] = rate >> 8;   //navRate MSB
+
+  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//Return the ratio between the number of measurements and the number of navigation solutions. Unit is cycles
+uint16_t SFE_UBLOX_GNSS::getNavigationRate(uint16_t maxWait)
+{
+  if (packetUBXCFGRATE == NULL) initPacketUBXCFGRATE(); //Check that RAM has been allocated for the RATE data
+  if (packetUBXCFGRATE == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXCFGRATE->moduleQueried.moduleQueried.bits.navRate == false)
+    getNavigationFrequencyInternal(maxWait);
+  packetUBXCFGRATE->moduleQueried.moduleQueried.bits.navRate = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXCFGRATE->data.navRate);
 }
 
 // ***** DOP Helper Functions

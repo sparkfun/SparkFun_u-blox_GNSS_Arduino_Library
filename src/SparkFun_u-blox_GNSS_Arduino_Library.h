@@ -894,8 +894,12 @@ public:
 
 	// Helper functions for CFG RATE
 
-	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	 //Set the number of nav solutions sent per second
-	uint8_t getNavigationFrequency(uint16_t maxWait = defaultMaxWait);					 //Get the number of nav solutions sent per second currently being output by module
+	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	//Set the number of nav solutions sent per second
+	uint8_t getNavigationFrequency(uint16_t maxWait = defaultMaxWait);					//Get the number of nav solutions sent per second currently being output by module
+	boolean setMeasurementRate(uint16_t rate, uint16_t maxWait = defaultMaxWait);		//Set the elapsed time between GNSS measurements in milliseconds, which defines the rate
+	uint16_t getMeasurementRate(uint16_t maxWait = defaultMaxWait);					 	//Return the elapsed time between GNSS measurements in milliseconds
+	boolean setNavigationRate(uint16_t rate, uint16_t maxWait = defaultMaxWait);		//Set the ratio between the number of measurements and the number of navigation solutions. Unit is cycles. Max is 127
+	uint16_t getNavigationRate(uint16_t maxWait = defaultMaxWait);					 	//Return the ratio between the number of measurements and the number of navigation solutions. Unit is cycles
 
 	// Helper functions for DOP
 
