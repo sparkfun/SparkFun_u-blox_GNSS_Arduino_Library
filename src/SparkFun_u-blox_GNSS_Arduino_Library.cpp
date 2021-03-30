@@ -8954,6 +8954,45 @@ int32_t SFE_UBLOX_GNSS::getNanosecond(uint16_t maxWait)
   return (packetUBXNAVPVT->data.nano);
 }
 
+//Get the current Unix epoch - includes microseconds
+uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t& microsecond, uint16_t maxWait)
+{
+  if (packetUBXNAVPVT == NULL) initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
+  if (packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedTime == false)
+    getPVT(maxWait);
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedTime = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.year = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.month = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.day = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.hour = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.min = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  uint32_t t = 0;
+  if((bool)packetUBXNAVPVT->data.flags2.bits.confirmedTime)
+  {
+    // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
+    t = (uint32_t)(((((((packetUBXNAVPVT->data.year - 1970) * 365) + (((packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
+                              DAYS_SINCE_MONTH[(packetUBXNAVPVT->data.year - 1970) & 3][packetUBXNAVPVT->data.month] +
+                            (packetUBXNAVPVT->data.day - 1)) * 24 +
+                          packetUBXNAVPVT->data.hour) * 60 +
+                        packetUBXNAVPVT->data.min) * 60 +
+                      packetUBXNAVPVT->data.sec);
+    int32_t us = packetUBXNAVPVT->data.nano / 1000;
+    microsecond = (uint32_t)us;
+    // ajust t if nano is negative
+    if(us < 0) {
+      microsecond = (uint32_t)(us + 1000000);
+      t--;
+    }
+  }
+  return t;
+}
+
 //Get the current date validity
 bool SFE_UBLOX_GNSS::getDateValid(uint16_t maxWait)
 {
