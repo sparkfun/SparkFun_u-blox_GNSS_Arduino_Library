@@ -1170,7 +1170,7 @@ private:
 	//Limit checking of new data to every X ms
 	//If we are expecting an update every X Hz then we should check every half that amount of time
 	//Otherwise we may block ourselves from seeing new data
-	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency() or setHNRNavigationRate()
+	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency() or setHNRNavigationRate() or setMeasurementRate()
 
 	unsigned long lastCheck = 0;
 
