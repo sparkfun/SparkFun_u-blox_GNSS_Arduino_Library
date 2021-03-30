@@ -454,6 +454,14 @@ typedef struct
 	bool moduleQueried;
 } moduleSWVersion_t;
 
+const uint16_t DAYS_SINCE_MONTH[4][16] = 
+{
+    {   0,   0,  31,  60,  91, 121, 152, 182, 213, 244, 274, 305, 335, 335, 335, 335 },
+    {   0,   0,  31,  59,  90, 120, 151, 181, 212, 243, 273, 304, 334, 334, 334, 334 },
+    {   0,   0,  31,  59,  90, 120, 151, 181, 212, 243, 273, 304, 334, 334, 334, 334 },
+    {   0,   0,  31,  59,  90, 120, 151, 181, 212, 243, 273, 304, 334, 334, 334, 334 },
+};
+
 class SFE_UBLOX_GNSS
 {
 public:
@@ -924,6 +932,7 @@ public:
 	uint8_t getSecond(uint16_t maxWait = defaultMaxWait);
 	uint16_t getMillisecond(uint16_t maxWait = defaultMaxWait);
 	int32_t getNanosecond(uint16_t maxWait = defaultMaxWait);
+	uint32_t getUnixEpoch(uint32_t& microsecond, uint16_t maxWait = defaultMaxWait);
 
 	bool getDateValid(uint16_t maxWait = defaultMaxWait);
 	bool getTimeValid(uint16_t maxWait = defaultMaxWait);
