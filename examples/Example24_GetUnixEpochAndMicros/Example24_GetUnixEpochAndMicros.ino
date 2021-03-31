@@ -1,7 +1,7 @@
 /*
   Getting Unix Epoch Time and micros using u-blox commands
   By: UT2UH
-  Date: March 30th, 2021
+  Date: March 31th, 2021
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
@@ -69,8 +69,11 @@ void loop()
     // getUnixEpoch marks the PVT data as stale so you will get Unix time and PVT time on alternate seconds
 
     uint32_t us;  //microseconds returned by getUnixEpoch()
-    uint32_t epoch = myGNSS.getUnixEpoch(us);
-    Serial.print("Unix Epoch: ");
+    uint32_t epoch = myGNSS.getUnixEpoch();
+    Serial.print("Unix Epoch rounded: ");
+    Serial.print(epoch, DEC);    
+    epoch = myGNSS.getUnixEpoch(us);
+    Serial.print("  Exact Unix Epoch: ");
     Serial.print(epoch, DEC);
     Serial.print("  micros: ");
     Serial.println(us, DEC);
