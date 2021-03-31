@@ -1052,7 +1052,7 @@ typedef struct
   uint8_t rcvTow[8]; // Measurement time of week in receiver local time [64-bit float]
   uint16_t week; // GPS week number
   int8_t leapS; // GPS leap seconds
-  uint8_t numMeas; // Numnber of measurements to follow
+  uint8_t numMeas; // Number of measurements to follow
   union
   {
     uint8_t all;
