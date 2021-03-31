@@ -938,6 +938,7 @@ public:
 	uint8_t getSecond(uint16_t maxWait = defaultMaxWait);
 	uint16_t getMillisecond(uint16_t maxWait = defaultMaxWait);
 	int32_t getNanosecond(uint16_t maxWait = defaultMaxWait);
+	uint32_t getUnixEpoch(uint16_t maxWait = defaultMaxWait);
 	uint32_t getUnixEpoch(uint32_t& microsecond, uint16_t maxWait = defaultMaxWait);
 
 	bool getDateValid(uint16_t maxWait = defaultMaxWait);
