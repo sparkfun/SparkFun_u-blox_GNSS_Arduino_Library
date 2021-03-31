@@ -8,6 +8,8 @@
   This example shows how to query a u-blox module for the current time and date as Unix Epoch uint32_t type to avoid time.h dependency.
   We also turn off the NMEA output on the I2C port. This decreases the amount of I2C traffic dramatically.
 
+  Note: this example works best on modules like the ZED_F9P. Modules like the ZOE_M8Q do not support confirmedTime.
+
   Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
 
   Feel like supporting open source hardware?
@@ -29,8 +31,6 @@ SFE_UBLOX_GNSS myGNSS;
 
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
-
-uint32_t us;  //microseconds returned by getUnixEpoch()
   
 void setup()
 {
@@ -48,6 +48,9 @@ void setup()
       ;
   }
 
+  // Uncomment the next line if you need to completely reset your module
+  //myGNSS.factoryDefault(); delay(5000); // Reset everything and wait while the module restarts
+
   myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   //myGNSS.saveConfiguration();        //Optional: Save the current settings to flash and BBR
 
@@ -63,11 +66,15 @@ void loop()
   {
     lastTime = millis(); //Update the timer
 
-    byte SIV = myGNSS.getSIV();
-    Serial.print(F(" SIV: "));
-    Serial.print(SIV);
+    // getUnixEpoch marks the PVT data as stale so you will get Unix time and PVT time on alternate seconds
 
-    Serial.print("  ");
+    uint32_t us;  //microseconds returned by getUnixEpoch()
+    uint32_t epoch = myGNSS.getUnixEpoch(us);
+    Serial.print("Unix Epoch: ");
+    Serial.print(epoch, DEC);
+    Serial.print("  micros: ");
+    Serial.println(us, DEC);
+
     Serial.print(myGNSS.getYear());
     Serial.print("-");
     Serial.print(myGNSS.getMonth());
@@ -79,10 +86,6 @@ void loop()
     Serial.print(myGNSS.getMinute());
     Serial.print(":");
     Serial.print(myGNSS.getSecond());
-    Serial.print("  getUnixEpoch(micros): ");
-    Serial.print(myGNSS.getUnixEpoch(us));
-    Serial.print("  micros: ");
-    Serial.print(us, DEC);
     
     Serial.print("  Time is ");
     if (myGNSS.getTimeValid() == false)
@@ -98,6 +101,8 @@ void loop()
     }
     Serial.print("confirmed");
 
-    Serial.println();
+    byte SIV = myGNSS.getSIV();
+    Serial.print(F("  SIV: "));
+    Serial.println(SIV);
   }
 }

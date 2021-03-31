@@ -87,6 +87,7 @@ If you would like to learn more about how this library works, including the big 
 * [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun GPS-RTK Board - NEO-M8P-2 (Qwiic)
 * [GPS-15210](https://www.sparkfun.com/products/15210) - SparkFun GPS Breakout - Chip Antenna, SAM-M8Q (Qwiic)
 * [GPS-15193](https://www.sparkfun.com/products/15193) - SparkFun GPS Breakout - Chip Antenna, ZOE-M8Q (Qwiic)
+* [GPS-17285](https://www.sparkfun.com/products/17285) - SparkFun GPS Breakout - NEO-M9N, SMA (Qwiic)
 * [GPS-15733](https://www.sparkfun.com/products/15733) - SparkFun GPS Breakout - NEO-M9N, Chip Antenna (Qwiic)
 * [GPS-15712](https://www.sparkfun.com/products/15712) - SparkFun GPS Breakout - NEO-M9N, U.FL (Qwiic)
 * [GPS-16329](https://www.sparkfun.com/products/16329) - SparkFun GPS Dead Reckoning Breakout - NEO-M8U (Qwiic)
