@@ -7,9 +7,9 @@
   basically do whatever you want with this code.
 
   This example shows how to configure the U-Blox GNSS to output multiple messages at different rates:
-  PVT is output once per measurement;
-  POS_ECEF is output every second measurement;
-  VEL_NED is output every third measurement.
+  PVT is output every second;
+  POSECEF is output every five seconds;
+  VELNED is output every ten seconds.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -46,9 +46,9 @@ void setup()
   myGNSS.setMeasurementRate(1000); //Produce a measurement every 1000ms
   myGNSS.setNavigationRate(1); //Produce a navigation solution every measurement
   
-  myGNSS.setAutoPVTrate(1); //Tell the GNSS to "send" each PVT solution every measurement
-  //myGNSS.setAutoPOSECEFrate(2); //Tell the GNSS to "send" each POS_ECEF solution every second measurement
-  myGNSS.setAutoNAVVELNEDrate(3); //Tell the GNSS to "send" each VEL_NED solution every third measurement
+  myGNSS.setAutoPVTrate(1); //Tell the GNSS to send the PVT solution every measurement
+  myGNSS.setAutoNAVPOSECEFrate(5); //Tell the GNSS to send each POSECEF solution every 5th measurement
+  myGNSS.setAutoNAVVELNEDrate(10); //Tell the GNSS to send each VELNED solution every 10th measurement
   //myGNSS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
 }
 
@@ -72,7 +72,23 @@ void loop()
     Serial.println(F(" (mm)"));
   }
 
-  // Calling getVELNED returns true if there actually is fresh velocity data available.
+  // Calling getNAVPOSECEF returns true if there actually is a fresh position solution available.
+  if (myGNSS.getNAVPOSECEF())
+  {
+    Serial.print(F("ecefX: "));
+    Serial.print((float)myGNSS.packetUBXNAVPOSECEF->data.ecefX / 100.0, 2); // convert ecefX to m
+
+    Serial.print(F(" ecefY: "));
+    Serial.print((float)myGNSS.packetUBXNAVPOSECEF->data.ecefY / 100.0, 2); // convert ecefY to m
+
+    Serial.print(F(" ecefZ: "));
+    Serial.print((float)myGNSS.packetUBXNAVPOSECEF->data.ecefZ / 100.0, 2); // convert ecefY to m
+    Serial.println(F(" (m)"));
+
+    myGNSS.flushNAVPOSECEF(); //Mark all the data as read/stale so we get fresh data next time
+  }
+
+  // Calling getNAVVELNED returns true if there actually is fresh velocity data available.
   if (myGNSS.getNAVVELNED())
   {
     Serial.print(F("velN: "));
