@@ -110,7 +110,7 @@ void loop()
       Serial.print("0");
     Serial.print(mseconds);
 
-    Serial.print(" nanoSeconds: ");
+    Serial.print(" nanoseconds: ");
     Serial.print(myGNSS.getNanosecond());
 
     Serial.println();

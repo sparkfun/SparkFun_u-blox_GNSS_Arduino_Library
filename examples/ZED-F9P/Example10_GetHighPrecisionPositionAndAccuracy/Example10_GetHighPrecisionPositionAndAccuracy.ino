@@ -115,11 +115,12 @@ void loop()
     Serial.print("Lat (deg): ");
     Serial.print(lat_int); // Print the integer part of the latitude
     Serial.print(".");
-    Serial.print(lat_frac); // Print the fractional part of the latitude
+    printFractional(lat_frac, 9); // Print the fractional part of the latitude with leading zeros
     Serial.print(", Lon (deg): ");
     Serial.print(lon_int); // Print the integer part of the latitude
     Serial.print(".");
-    Serial.println(lon_frac); // Print the fractional part of the latitude
+    printFractional(lon_frac, 9); // Print the fractional part of the latitude with leading zeros
+    Serial.println();
 
     // Now define float storage for the heights and accuracy
     float f_ellipsoid;
@@ -151,4 +152,21 @@ void loop()
     Serial.print(", Accuracy (m): ");
     Serial.println(f_accuracy, 4); // Print the accuracy with 4 decimal places
   }
+}
+
+// Pretty-print the fractional part with leading zeros - without using printf
+// (Only works with positive numbers)
+void printFractional(int32_t fractional, uint8_t places)
+{
+  if (places > 1)
+  {
+    for (uint8_t place = places - 1; place > 0; place--)
+    {
+      if (fractional < pow(10, place))
+      {
+        Serial.print("0");
+      }
+    }
+  }
+  Serial.print(fractional);
 }
