@@ -5755,12 +5755,19 @@ boolean SFE_UBLOX_GNSS::getPVT(uint16_t maxWait)
 //works.
 boolean SFE_UBLOX_GNSS::setAutoPVT(boolean enable, uint16_t maxWait)
 {
-  return setAutoPVT(enable, true, maxWait);
+  return setAutoPVTrate(enable ? 1 : 0, true, maxWait);
 }
 
 //Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GNSS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  return setAutoPVTrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVT
+//works.
+boolean SFE_UBLOX_GNSS::setAutoPVTrate(uint8_t rate, boolean implicitUpdate, uint16_t maxWait)
 {
   if (packetUBXNAVPVT == NULL) initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
   if (packetUBXNAVPVT == NULL) //Only attempt this if RAM allocation was successful
@@ -5772,12 +5779,12 @@ boolean SFE_UBLOX_GNSS::setAutoPVT(boolean enable, boolean implicitUpdate, uint1
   packetCfg.startingSpot = 0;
   payloadCfg[0] = UBX_CLASS_NAV;
   payloadCfg[1] = UBX_NAV_PVT;
-  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+  payloadCfg[2] = rate; // rate relative to navigation freq.
 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVPVT->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVPVT->automaticFlags.flags.bits.automatic = (rate > 0);
     packetUBXNAVPVT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
@@ -6199,12 +6206,19 @@ boolean SFE_UBLOX_GNSS::getNAVVELNED(uint16_t maxWait)
 //works.
 boolean SFE_UBLOX_GNSS::setAutoNAVVELNED(boolean enable, uint16_t maxWait)
 {
-  return setAutoNAVVELNED(enable, true, maxWait);
+  return setAutoNAVVELNEDrate(enable ? 1 : 0, true, maxWait);
 }
 
 //Enable or disable automatic navigation message generation by the GNSS. This changes the way getVELNED
 //works.
 boolean SFE_UBLOX_GNSS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  return setAutoNAVVELNEDrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getVELNED
+//works.
+boolean SFE_UBLOX_GNSS::setAutoNAVVELNEDrate(uint8_t rate, boolean implicitUpdate, uint16_t maxWait)
 {
   if (packetUBXNAVVELNED == NULL) initPacketUBXNAVVELNED(); //Check that RAM has been allocated for the data
   if (packetUBXNAVVELNED == NULL) //Only attempt this if RAM allocation was successful
@@ -6216,12 +6230,12 @@ boolean SFE_UBLOX_GNSS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate,
   packetCfg.startingSpot = 0;
   payloadCfg[0] = UBX_CLASS_NAV;
   payloadCfg[1] = UBX_NAV_VELNED;
-  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+  payloadCfg[2] = rate; // rate relative to navigation freq.
 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVVELNED->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVVELNED->automaticFlags.flags.bits.automatic = (rate > 0);
     packetUBXNAVVELNED->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVVELNED->moduleQueried.moduleQueried.bits.all = false;
