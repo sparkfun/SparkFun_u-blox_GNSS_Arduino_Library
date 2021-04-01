@@ -53,7 +53,7 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
 }
 
 //Stop all automatic message processing. Free all used RAM
-boolean SFE_UBLOX_GNSS::end(void)
+void SFE_UBLOX_GNSS::end(void)
 {
   //Note: payloadCfg is not deleted
 
@@ -9283,12 +9283,12 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
-  uint32_t t = (uint32_t)(((((((packetUBXNAVPVT->data.year - 1970) * 365) + (((packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
-                              DAYS_SINCE_MONTH[(packetUBXNAVPVT->data.year - 1970) & 3][packetUBXNAVPVT->data.month] +
-                            (packetUBXNAVPVT->data.day - 1)) * 24 +
-                          packetUBXNAVPVT->data.hour) * 60 +
-                        packetUBXNAVPVT->data.min) * 60 +
-                      packetUBXNAVPVT->data.sec);
+  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
+                            DAYS_SINCE_MONTH[((uint32_t)packetUBXNAVPVT->data.year - 1970) & 3][(uint32_t)packetUBXNAVPVT->data.month] +
+                          ((uint32_t)packetUBXNAVPVT->data.day - 1)) * 24 +
+                        (uint32_t)packetUBXNAVPVT->data.hour) * 60 +
+                      (uint32_t)packetUBXNAVPVT->data.min) * 60 +
+                    (uint32_t)packetUBXNAVPVT->data.sec);
   return t;
 }
 
@@ -9310,12 +9310,12 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t& microsecond, uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
-  uint32_t t = (uint32_t)(((((((packetUBXNAVPVT->data.year - 1970) * 365) + (((packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
-                              DAYS_SINCE_MONTH[(packetUBXNAVPVT->data.year - 1970) & 3][packetUBXNAVPVT->data.month] +
-                            (packetUBXNAVPVT->data.day - 1)) * 24 +
-                          packetUBXNAVPVT->data.hour) * 60 +
-                        packetUBXNAVPVT->data.min) * 60 +
-                      packetUBXNAVPVT->data.sec);
+  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
+                            DAYS_SINCE_MONTH[((uint32_t)packetUBXNAVPVT->data.year - 1970) & 3][(uint32_t)packetUBXNAVPVT->data.month] +
+                          ((uint32_t)packetUBXNAVPVT->data.day - 1)) * 24 +
+                        (uint32_t)packetUBXNAVPVT->data.hour) * 60 +
+                      (uint32_t)packetUBXNAVPVT->data.min) * 60 +
+                    (uint32_t)packetUBXNAVPVT->data.sec);
   int32_t us = packetUBXNAVPVT->data.nano / 1000;
   microsecond = (uint32_t)us;
   // adjust t if nano is negative

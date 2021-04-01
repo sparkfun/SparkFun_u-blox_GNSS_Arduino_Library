@@ -482,7 +482,7 @@ public:
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
 
-	boolean end(void); //Stop all automatic message processing. Free all used RAM
+	void end(void); //Stop all automatic message processing. Free all used RAM
 
 	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
 
