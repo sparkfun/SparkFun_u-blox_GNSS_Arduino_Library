@@ -52,6 +52,297 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
   }
 }
 
+//Stop all automatic message processing. Free all used RAM
+boolean SFE_UBLOX_GNSS::end(void)
+{
+  //Note: payloadCfg is not deleted
+
+  //Note: payloadAuto is not deleted
+
+  if (ubxFileBuffer != NULL)  // Check if RAM has been allocated for the file buffer
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("end: the file buffer has been deleted. You will need to call setFileBufferSize before .begin to create a new one."));
+    }
+    delete[] ubxFileBuffer;
+    ubxFileBuffer = NULL; // Redundant?
+    fileBufferSize = 0; // Reset file buffer size. User will have to call setFileBufferSize again
+    fileBufferMaxAvail = 0;
+  }
+
+  if (moduleSWVersion != NULL)
+  {
+    delete[] moduleSWVersion;
+    moduleSWVersion = NULL; // Redundant?
+  }
+
+  if (currentGeofenceParams != NULL)
+  {
+    delete[] currentGeofenceParams;
+    currentGeofenceParams = NULL; // Redundant?
+  }
+  
+  if (packetUBXNAVPOSECEF != NULL)
+  {
+    if (packetUBXNAVPOSECEF->callbackData != NULL)
+    {
+      delete[] packetUBXNAVPOSECEF->callbackData;
+    }
+    delete[] packetUBXNAVPOSECEF;
+    packetUBXNAVPOSECEF = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVSTATUS != NULL)
+  {
+    if (packetUBXNAVSTATUS->callbackData != NULL)
+    {
+      delete[] packetUBXNAVSTATUS->callbackData;
+    }
+    delete[] packetUBXNAVSTATUS;
+    packetUBXNAVSTATUS = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVDOP != NULL)
+  {
+    if (packetUBXNAVDOP->callbackData != NULL)
+    {
+      delete[] packetUBXNAVDOP->callbackData;
+    }
+    delete[] packetUBXNAVDOP;
+    packetUBXNAVDOP = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVATT != NULL)
+  {
+    if (packetUBXNAVATT->callbackData != NULL)
+    {
+      delete[] packetUBXNAVATT->callbackData;
+    }
+    delete[] packetUBXNAVATT;
+    packetUBXNAVATT = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVPVT != NULL)
+  {
+    if (packetUBXNAVPVT->callbackData != NULL)
+    {
+      delete[] packetUBXNAVPVT->callbackData;
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("end: packetUBXNAVPVT->callbackData has been deleted"));
+      }
+    }
+    delete[] packetUBXNAVPVT;
+    packetUBXNAVPVT = NULL; // Redundant?  
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("end: packetUBXNAVPVT has been deleted"));
+    }
+  }
+
+  if (packetUBXNAVODO != NULL)
+  {
+    if (packetUBXNAVODO->callbackData != NULL)
+    {
+      delete[] packetUBXNAVODO->callbackData;
+    }
+    delete[] packetUBXNAVODO;
+    packetUBXNAVODO = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVVELECEF != NULL)
+  {
+    if (packetUBXNAVVELECEF->callbackData != NULL)
+    {
+      delete[] packetUBXNAVVELECEF->callbackData;
+    }
+    delete[] packetUBXNAVVELECEF;
+    packetUBXNAVVELECEF = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVVELNED != NULL)
+  {
+    if (packetUBXNAVVELNED->callbackData != NULL)
+    {
+      delete[] packetUBXNAVVELNED->callbackData;
+    }
+    delete[] packetUBXNAVVELNED;
+    packetUBXNAVVELNED = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVHPPOSECEF != NULL)
+  {
+    if (packetUBXNAVHPPOSECEF->callbackData != NULL)
+    {
+      delete[] packetUBXNAVHPPOSECEF->callbackData;
+    }
+    delete[] packetUBXNAVHPPOSECEF;
+    packetUBXNAVHPPOSECEF = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVHPPOSLLH != NULL)
+  {
+    if (packetUBXNAVHPPOSLLH->callbackData != NULL)
+    {
+      delete[] packetUBXNAVHPPOSLLH->callbackData;
+    }
+    delete[] packetUBXNAVHPPOSLLH;
+    packetUBXNAVHPPOSLLH = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVCLOCK != NULL)
+  {
+    if (packetUBXNAVCLOCK->callbackData != NULL)
+    {
+      delete[] packetUBXNAVCLOCK->callbackData;
+    }
+    delete[] packetUBXNAVCLOCK;
+    packetUBXNAVCLOCK = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVSVIN != NULL)
+  {
+    if (packetUBXNAVSVIN->callbackData != NULL)
+    {
+      delete[] packetUBXNAVSVIN->callbackData;
+    }
+    delete[] packetUBXNAVSVIN;
+    packetUBXNAVSVIN = NULL; // Redundant?  
+  }
+
+  if (packetUBXNAVRELPOSNED != NULL)
+  {
+    if (packetUBXNAVRELPOSNED->callbackData != NULL)
+    {
+      delete[] packetUBXNAVRELPOSNED->callbackData;
+    }
+    delete[] packetUBXNAVRELPOSNED;
+    packetUBXNAVRELPOSNED = NULL; // Redundant?  
+  }
+
+  if (packetUBXRXMSFRBX != NULL)
+  {
+    if (packetUBXRXMSFRBX->callbackData != NULL)
+    {
+      delete[] packetUBXRXMSFRBX->callbackData;
+    }
+    delete[] packetUBXRXMSFRBX;
+    packetUBXRXMSFRBX = NULL; // Redundant?  
+  }
+
+  if (packetUBXRXMRAWX != NULL)
+  {
+    if (packetUBXRXMRAWX->callbackData != NULL)
+    {
+      delete[] packetUBXRXMRAWX->callbackData;
+    }
+    delete[] packetUBXRXMRAWX;
+    packetUBXRXMRAWX = NULL; // Redundant?  
+  }
+
+  if (packetUBXCFGRATE != NULL)
+  {
+    if (packetUBXCFGRATE->callbackData != NULL)
+    {
+      delete[] packetUBXCFGRATE->callbackData;
+    }
+    delete[] packetUBXCFGRATE;
+    packetUBXCFGRATE = NULL; // Redundant?  
+  }
+
+  if (packetUBXTIMTM2 != NULL)
+  {
+    if (packetUBXTIMTM2->callbackData != NULL)
+    {
+      delete[] packetUBXTIMTM2->callbackData;
+    }
+    delete[] packetUBXTIMTM2;
+    packetUBXTIMTM2 = NULL; // Redundant?  
+  }
+
+  if (packetUBXESFALG != NULL)
+  {
+    if (packetUBXESFALG->callbackData != NULL)
+    {
+      delete[] packetUBXESFALG->callbackData;
+    }
+    delete[] packetUBXESFALG;
+    packetUBXESFALG = NULL; // Redundant?  
+  }
+
+  if (packetUBXESFSTATUS != NULL)
+  {
+    if (packetUBXESFSTATUS->callbackData != NULL)
+    {
+      delete[] packetUBXESFSTATUS->callbackData;
+    }
+    delete[] packetUBXESFSTATUS;
+    packetUBXESFSTATUS = NULL; // Redundant?  
+  }
+
+  if (packetUBXESFINS != NULL)
+  {
+    if (packetUBXESFINS->callbackData != NULL)
+    {
+      delete[] packetUBXESFINS->callbackData;
+    }
+    delete[] packetUBXESFINS;
+    packetUBXESFINS = NULL; // Redundant?  
+  }
+
+  if (packetUBXESFMEAS != NULL)
+  {
+    if (packetUBXESFMEAS->callbackData != NULL)
+    {
+      delete[] packetUBXESFMEAS->callbackData;
+    }
+    delete[] packetUBXESFMEAS;
+    packetUBXESFMEAS = NULL; // Redundant?  
+  }
+
+  if (packetUBXESFRAW != NULL)
+  {
+    if (packetUBXESFRAW->callbackData != NULL)
+    {
+      delete[] packetUBXESFRAW->callbackData;
+    }
+    delete[] packetUBXESFRAW;
+    packetUBXESFRAW = NULL; // Redundant?  
+  }
+
+  if (packetUBXHNRATT != NULL)
+  {
+    if (packetUBXHNRATT->callbackData != NULL)
+    {
+      delete[] packetUBXHNRATT->callbackData;
+    }
+    delete[] packetUBXHNRATT;
+    packetUBXHNRATT = NULL; // Redundant?  
+  }
+
+  if (packetUBXHNRINS != NULL)
+  {
+    if (packetUBXHNRINS->callbackData != NULL)
+    {
+      delete[] packetUBXHNRINS->callbackData;
+    }
+    delete[] packetUBXHNRINS;
+    packetUBXHNRINS = NULL; // Redundant?  
+  }
+
+  if (packetUBXHNRPVT != NULL)
+  {
+    if (packetUBXHNRPVT->callbackData != NULL)
+    {
+      delete[] packetUBXHNRPVT->callbackData;
+    }
+    delete[] packetUBXHNRPVT;
+    packetUBXHNRPVT = NULL; // Redundant?  
+  }
+
+}
+
 //Allow the user to change packetCfgPayloadSize. Handy if you want to process big messages like RAWX
 //This can be called before .begin if required / desired
 void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
@@ -63,7 +354,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
     payloadCfg = NULL; // Redundant?
     packetCfg.payload = payloadCfg;
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("setPacketCfgPayloadSize: Zero payloadSize! This will end _very_ badly..."));
+      _debugSerial->println(F("setPacketCfgPayloadSize: Zero payloadSize!"));
   }
 
   else if (payloadCfg == NULL) //Memory has not yet been allocated - so use new
@@ -72,7 +363,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
     packetCfg.payload = payloadCfg;
     if (payloadCfg == NULL)
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-        _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM allocation failed! This will end _very_ badly..."));
+        _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM allocation failed!"));
   }
 
   else //Memory has already been allocated - so resize
@@ -85,7 +376,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
     packetCfg.payload = payloadCfg;
     if (payloadCfg == NULL)
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-        _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM resize failed! This will end _very_ badly..."));
+        _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM resize failed!"));
   }
 
   packetCfgPayloadSize = payloadSize;
@@ -3009,6 +3300,12 @@ void SFE_UBLOX_GNSS::setFileBufferSize(uint16_t bufferSize)
   fileBufferSize = bufferSize;
 }
 
+//Return the file buffer size
+uint16_t SFE_UBLOX_GNSS::getFileBufferSize(void)
+{
+  return (fileBufferSize);
+}
+
 // Extract numBytes of data from the file buffer. Copy it to destination.
 // It is the user's responsibility to ensure destination is large enough.
 // Returns the number of bytes extracted - which may be less than numBytes.
@@ -3076,7 +3373,16 @@ boolean SFE_UBLOX_GNSS::createFileBuffer(void)
   {
     if (_printDebug == true)
     {
-      _debugSerial->println(F("createFileBuffer: Warning. FileBufferSize is zero. Data logging is not possible."));
+      _debugSerial->println(F("createFileBuffer: Warning. fileBufferSize is zero. Data logging is not possible."));
+    }
+    return(false);
+  }
+
+  if (ubxFileBuffer != NULL)  // Bail if RAM has already been allocated for the file buffer
+  {                           // This will happen if you call .begin more than once - without calling .end first
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("createFileBuffer: Warning. File buffer already exists. Skipping..."));
     }
     return(false);
   }
@@ -3090,6 +3396,12 @@ boolean SFE_UBLOX_GNSS::createFileBuffer(void)
       _debugSerial->println(F("createFileBuffer: RAM alloc failed!"));
     }
     return(false);
+  }
+
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("createFileBuffer: fileBufferSize is: "));
+    _debugSerial->println(fileBufferSize);
   }
 
   fileBufferHead = 0; // Initialize head and tail
@@ -3743,7 +4055,7 @@ boolean SFE_UBLOX_GNSS::initModuleSWVersion()
   if (moduleSWVersion == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initModuleSWVersion: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initModuleSWVersion: PANIC! RAM allocation failed!"));
     return (false);
   }
   moduleSWVersion->versionHigh = 0;
@@ -3928,7 +4240,7 @@ boolean SFE_UBLOX_GNSS::initGeofenceParams()
   if (currentGeofenceParams == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initGeofenceParams: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initGeofenceParams: PANIC! RAM allocation failed!"));
     return (false);
   }
   currentGeofenceParams->numFences = 0;
@@ -4877,7 +5189,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVPOSECEF()
   if (packetUBXNAVPOSECEF == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVPOSECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVPOSECEF: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVPOSECEF->automaticFlags.flags.all = 0;
@@ -5025,7 +5337,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVSTATUS()
   if (packetUBXNAVSTATUS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVSTATUS: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVSTATUS->automaticFlags.flags.all = 0;
@@ -5195,7 +5507,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVDOP()
   if (packetUBXNAVDOP == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVDOP: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVDOP: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVDOP->automaticFlags.flags.all = 0;
@@ -5349,7 +5661,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVATT()
   if (packetUBXNAVATT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVATT: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVATT->automaticFlags.flags.all = 0;
@@ -5521,7 +5833,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVPVT()
   if (packetUBXNAVPVT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVPVT: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVPVT->automaticFlags.flags.all = 0;
@@ -5670,7 +5982,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVODO()
   if (packetUBXNAVODO == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVODO: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVODO: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVODO->automaticFlags.flags.all = 0;
@@ -5817,7 +6129,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVVELECEF()
   if (packetUBXNAVVELECEF == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVVELECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVVELECEF: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVVELECEF->automaticFlags.flags.all = 0;
@@ -5964,7 +6276,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVVELNED()
   if (packetUBXNAVVELNED == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVVELNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVVELNED: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVVELNED->automaticFlags.flags.all = 0;
@@ -6111,7 +6423,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVHPPOSECEF()
   if (packetUBXNAVHPPOSECEF == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVHPPOSECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVHPPOSECEF: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVHPPOSECEF->automaticFlags.flags.all = 0;
@@ -6280,7 +6592,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVHPPOSLLH()
   if (packetUBXNAVHPPOSLLH == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVHPPOSLLH: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVHPPOSLLH: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVHPPOSLLH->automaticFlags.flags.all = 0;
@@ -6427,7 +6739,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVCLOCK()
   if (packetUBXNAVCLOCK == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVCLOCK: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVCLOCK: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVCLOCK->automaticFlags.flags.all = 0;
@@ -6488,7 +6800,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVSVIN()
   if (packetUBXNAVSVIN == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVSVIN: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVSVIN: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVSVIN->automaticFlags.flags.all = 0;
@@ -6626,7 +6938,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXNAVRELPOSNED()
   if (packetUBXNAVRELPOSNED == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXNAVRELPOSNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVRELPOSNED: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXNAVRELPOSNED->automaticFlags.flags.all = 0;
@@ -6773,7 +7085,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXRXMSFRBX()
   if (packetUBXRXMSFRBX == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXRXMSFRBX: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXRXMSFRBX: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXRXMSFRBX->automaticFlags.flags.all = 0;
@@ -6920,7 +7232,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXRXMRAWX()
   if (packetUBXRXMRAWX == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXRXMRAWX: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXRXMRAWX: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXRXMRAWX->automaticFlags.flags.all = 0;
@@ -6994,7 +7306,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXCFGRATE()
   if (packetUBXCFGRATE == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXCFGRATE: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXCFGRATE: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXCFGRATE->automaticFlags.flags.all = 0;
@@ -7127,7 +7439,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXTIMTM2()
   if (packetUBXTIMTM2 == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXTIMTM2: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXTIMTM2: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXTIMTM2->automaticFlags.flags.all = 0;
@@ -7303,7 +7615,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXESFALG()
   if (packetUBXESFALG == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXESFALG: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFALG: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXESFALG->automaticFlags.flags.all = 0;
@@ -7480,7 +7792,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXESFSTATUS()
   if (packetUBXESFSTATUS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXESFSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFSTATUS: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXESFSTATUS->automaticFlags.flags.all = 0;
@@ -7656,7 +7968,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXESFINS()
   if (packetUBXESFINS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXESFINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFINS: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXESFINS->automaticFlags.flags.all = 0;
@@ -7832,7 +8144,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXESFMEAS()
   if (packetUBXESFMEAS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXESFMEAS: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFMEAS: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXESFMEAS->automaticFlags.flags.all = 0;
@@ -8008,7 +8320,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXESFRAW()
   if (packetUBXESFRAW == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXESFRAW: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFRAW: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXESFRAW->automaticFlags.flags.all = 0;
@@ -8189,7 +8501,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXHNRATT()
   if (packetUBXHNRATT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXHNRATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXHNRATT: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXHNRATT->automaticFlags.flags.all = 0;
@@ -8371,7 +8683,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXHNRINS()
   if (packetUBXHNRINS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXHNRINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXHNRINS: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXHNRINS->automaticFlags.flags.all = 0;
@@ -8547,7 +8859,7 @@ boolean SFE_UBLOX_GNSS::initPacketUBXHNRPVT()
   if (packetUBXHNRPVT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("initPacketUBXHNRPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXHNRPVT: PANIC! RAM allocation failed!"));
     return (false);
   }
   packetUBXHNRPVT->automaticFlags.flags.all = 0;

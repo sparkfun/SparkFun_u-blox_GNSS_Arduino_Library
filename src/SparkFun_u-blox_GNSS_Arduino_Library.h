@@ -482,6 +482,8 @@ public:
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
 
+	boolean end(void); //Stop all automatic message processing. Free all used RAM
+
 	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
 
 	//Control the size of the internal I2C transaction amount
@@ -564,6 +566,7 @@ public:
 
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
+	uint16_t getFileBufferSize(void); // Return the size of the file buffer
 	uint16_t extractFileBufferData(uint8_t *destination, uint16_t numBytes); // Extract numBytes of data from the file buffer. Copy it to destination. It is the user's responsibility to ensure destination is large enough.
 	uint16_t fileBufferAvailable(void);		// Returns the number of bytes available in file buffer which are waiting to be read
 	uint16_t getMaxFileBufferAvail(void);	// Returns the maximum number of bytes which the file buffer has contained. Handy for checking the buffer is large enough to handle all the incoming data.

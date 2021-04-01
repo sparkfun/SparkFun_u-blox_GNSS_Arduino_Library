@@ -50,6 +50,7 @@ UBX_HNR_INS_data_t	KEYWORD1
 
 setPacketCfgPayloadSize	KEYWORD2
 begin	KEYWORD2
+end	KEYWORD2
 setI2CpollingWait	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
@@ -81,6 +82,7 @@ checkCallbacks	KEYWORD2
 pushRawData	KEYWORD2
 
 setFileBufferSize	KEYWORD2
+getFileBufferSize	KEYWORD2
 extractFileBufferData	KEYWORD2
 fileBufferAvailable	KEYWORD2
 getMaxFileBufferAvail	KEYWORD2
