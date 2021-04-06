@@ -99,8 +99,8 @@ void loop()
     Serial.print(myGNSS.getMinute());
     Serial.print(":");
     Serial.print(myGNSS.getSecond());
-    Serial.print(".");
-    Serial.print(myGNSS.getNanosecond());
+    Serial.print(" nanoseconds: ");
+    Serial.print(myGNSS.getNanosecond()); // Nanoseconds can be negative
 
     myGNSS.flushPVT();
 
