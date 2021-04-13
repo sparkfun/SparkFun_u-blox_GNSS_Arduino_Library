@@ -936,6 +936,7 @@ public:
 	uint16_t getMeasurementRate(uint16_t maxWait = defaultMaxWait);					 	//Return the elapsed time between GNSS measurements in milliseconds
 	boolean setNavigationRate(uint16_t rate, uint16_t maxWait = defaultMaxWait);		//Set the ratio between the number of measurements and the number of navigation solutions. Unit is cycles. Max is 127
 	uint16_t getNavigationRate(uint16_t maxWait = defaultMaxWait);					 	//Return the ratio between the number of measurements and the number of navigation solutions. Unit is cycles
+	void flushCFGRATE(); // Mark the measurement and navigation rate data as stale - used by the set rate functions
 
 	// Helper functions for DOP
 

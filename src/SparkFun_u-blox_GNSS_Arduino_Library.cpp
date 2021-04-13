@@ -7387,38 +7387,25 @@ boolean SFE_UBLOX_GNSS::getNavigationFrequencyInternal(uint16_t maxWait)
   if (packetUBXCFGRATE == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXCFGRATE->automaticFlags.flags.bits.automatic && packetUBXCFGRATE->automaticFlags.flags.bits.implicitUpdate)
+  // The CFG RATE message will never be produced automatically - that would be pointless.
+  // There is no setAutoCFGRATE function. We always need to poll explicitly.
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RATE;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //The data is parsed as part of processing the response
+  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (true);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
   {
-    //The GPS is automatically reporting, we just check whether we got unread data
-    checkUbloxInternal(&packetCfg, UBX_CLASS_CFG, UBX_CFG_RATE);
-    return packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all;
+    return (true);
   }
-  else if (packetUBXCFGRATE->automaticFlags.flags.bits.automatic && !packetUBXCFGRATE->automaticFlags.flags.bits.implicitUpdate)
-  {
-    //Someone else has to call checkUblox for us...
-    return (false);
-  }
-  else
-  {
-    //The GPS is not automatically reporting navigation rate so we have to poll explicitly
-    packetCfg.cls = UBX_CLASS_CFG;
-    packetCfg.id = UBX_CFG_RATE;
-    packetCfg.len = 0;
-    packetCfg.startingSpot = 0;
 
-    //The data is parsed as part of processing the response
-    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
-      return (true);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
-    {
-      return (true);
-    }
-
-    return (false);
-  }
+  return (false);
 }
 
 // PRIVATE: Allocate RAM for packetUBXCFGRATE and initialize it
@@ -7431,10 +7418,10 @@ boolean SFE_UBLOX_GNSS::initPacketUBXCFGRATE()
       _debugSerial->println(F("initPacketUBXCFGRATE: PANIC! RAM allocation failed!"));
     return (false);
   }
-  packetUBXCFGRATE->automaticFlags.flags.all = 0;
-  packetUBXCFGRATE->callbackPointer = NULL;
-  packetUBXCFGRATE->callbackData = NULL;
-  packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0;
+  packetUBXCFGRATE->automaticFlags.flags.all = 0; // Redundant
+  packetUBXCFGRATE->callbackPointer = NULL; // Redundant
+  packetUBXCFGRATE->callbackData = NULL; // Redundant
+  packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0; // Mark all data as stale/read
   return (true);
 }
 
@@ -9114,7 +9101,11 @@ boolean SFE_UBLOX_GNSS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait
   payloadCfg[0] = measurementRate & 0xFF; //measRate LSB
   payloadCfg[1] = measurementRate >> 8;   //measRate MSB
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  boolean result = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+
+  flushCFGRATE(); // Mark the polled measurement and navigation rate data as stale
+
+  return (result);
 }
 
 //Get the rate at which the module is outputting nav solutions
@@ -9155,7 +9146,11 @@ boolean SFE_UBLOX_GNSS::setMeasurementRate(uint16_t rate, uint16_t maxWait)
   payloadCfg[0] = rate & 0xFF; //measRate LSB
   payloadCfg[1] = rate >> 8;   //measRate MSB
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  boolean result = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+
+  flushCFGRATE(); // Mark the polled measurement and navigation rate data as stale
+
+  return (result);
 }
 
 //Return the elapsed time between GNSS measurements in milliseconds, which defines the rate
@@ -9190,7 +9185,11 @@ boolean SFE_UBLOX_GNSS::setNavigationRate(uint16_t rate, uint16_t maxWait)
   payloadCfg[2] = rate & 0xFF; //navRate LSB
   payloadCfg[3] = rate >> 8;   //navRate MSB
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  boolean result = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+
+  flushCFGRATE(); // Mark the polled measurement and navigation rate data as stale
+
+  return (result);
 }
 
 //Return the ratio between the number of measurements and the number of navigation solutions. Unit is cycles
@@ -9206,6 +9205,13 @@ uint16_t SFE_UBLOX_GNSS::getNavigationRate(uint16_t maxWait)
   packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all = false;
 
   return (packetUBXCFGRATE->data.navRate);
+}
+
+//Mark the CFG RATE data as read/stale
+void SFE_UBLOX_GNSS::flushCFGRATE()
+{
+  if (packetUBXCFGRATE == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
 }
 
 // ***** DOP Helper Functions

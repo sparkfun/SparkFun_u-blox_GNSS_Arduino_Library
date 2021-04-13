@@ -388,6 +388,7 @@ setMeasurementRate	KEYWORD2
 getMeasurementRate	KEYWORD2
 setNavigationRate	KEYWORD2
 getNavigationRate	KEYWORD2
+flushCFGRATE	KEYWORD2
 
 getGeometricDOP	KEYWORD2
 getPositionDOP	KEYWORD2
