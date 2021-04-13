@@ -99,7 +99,9 @@ typedef enum
 	SFE_UBLOX_PACKET_PACKETAUTO
 } sfe_ublox_packet_buffer_e;
 
-// Define a struct to allow selective logging of NMEA messages
+// Define a struct to allow selective logging / processing of NMEA messages
+// Set the individual bits to pass the NMEA messages to the file buffer and/or processNMEA
+// Setting bits.all will pass all messages to the file buffer and processNMEA
 typedef struct
 {
 	union
@@ -131,33 +133,34 @@ typedef struct
 			uint32_t UBX_NMEA_ZDA : 1;
 		} bits;
 	};
-} sfe_ublox_nmea_logging_t;
-// Define an enum to make it easy to enable/disable selected NMEA messages for logging
+} sfe_ublox_nmea_filtering_t;
+
+// Define an enum to make it easy to enable/disable selected NMEA messages for logging / processing
 typedef enum
 {
-	SFE_UBLOX_LOG_NMEA_ALL = 0x00000001,
-	SFE_UBLOX_LOG_NMEA_DTM = 0x00000002,
-	SFE_UBLOX_LOG_NMEA_GAQ = 0x00000004,
-	SFE_UBLOX_LOG_NMEA_GBQ = 0x00000008,
-	SFE_UBLOX_LOG_NMEA_GBS = 0x00000010,
-	SFE_UBLOX_LOG_NMEA_GGA = 0x00000020,
-	SFE_UBLOX_LOG_NMEA_GLL = 0x00000040,
-	SFE_UBLOX_LOG_NMEA_GLQ = 0x00000080,
-	SFE_UBLOX_LOG_NMEA_GNQ = 0x00000100,
-	SFE_UBLOX_LOG_NMEA_GNS = 0x00000200,
-	SFE_UBLOX_LOG_NMEA_GPQ = 0x00000400,
-	SFE_UBLOX_LOG_NMEA_GQQ = 0x00000800,
-	SFE_UBLOX_LOG_NMEA_GRS = 0x00001000,
-	SFE_UBLOX_LOG_NMEA_GSA = 0x00002000,
-	SFE_UBLOX_LOG_NMEA_GST = 0x00004000,
-	SFE_UBLOX_LOG_NMEA_GSV = 0x00008000,
-	SFE_UBLOX_LOG_NMEA_RLM = 0x00010000,
-	SFE_UBLOX_LOG_NMEA_RMC = 0x00020000,
-	SFE_UBLOX_LOG_NMEA_TXT = 0x00040000,
-	SFE_UBLOX_LOG_NMEA_VLW = 0x00080000,
-	SFE_UBLOX_LOG_NMEA_VTG = 0x00100000,
-	SFE_UBLOX_LOG_NMEA_ZDA = 0x00200000
-} sfe_ublox_nmea_logging_selective_e;
+	SFE_UBLOX_FILTER_NMEA_ALL = 0x00000001,
+	SFE_UBLOX_FILTER_NMEA_DTM = 0x00000002,
+	SFE_UBLOX_FILTER_NMEA_GAQ = 0x00000004,
+	SFE_UBLOX_FILTER_NMEA_GBQ = 0x00000008,
+	SFE_UBLOX_FILTER_NMEA_GBS = 0x00000010,
+	SFE_UBLOX_FILTER_NMEA_GGA = 0x00000020,
+	SFE_UBLOX_FILTER_NMEA_GLL = 0x00000040,
+	SFE_UBLOX_FILTER_NMEA_GLQ = 0x00000080,
+	SFE_UBLOX_FILTER_NMEA_GNQ = 0x00000100,
+	SFE_UBLOX_FILTER_NMEA_GNS = 0x00000200,
+	SFE_UBLOX_FILTER_NMEA_GPQ = 0x00000400,
+	SFE_UBLOX_FILTER_NMEA_GQQ = 0x00000800,
+	SFE_UBLOX_FILTER_NMEA_GRS = 0x00001000,
+	SFE_UBLOX_FILTER_NMEA_GSA = 0x00002000,
+	SFE_UBLOX_FILTER_NMEA_GST = 0x00004000,
+	SFE_UBLOX_FILTER_NMEA_GSV = 0x00008000,
+	SFE_UBLOX_FILTER_NMEA_RLM = 0x00010000,
+	SFE_UBLOX_FILTER_NMEA_RMC = 0x00020000,
+	SFE_UBLOX_FILTER_NMEA_TXT = 0x00040000,
+	SFE_UBLOX_FILTER_NMEA_VLW = 0x00080000,
+	SFE_UBLOX_FILTER_NMEA_VTG = 0x00100000,
+	SFE_UBLOX_FILTER_NMEA_ZDA = 0x00200000
+} sfe_ublox_nmea_filtering_e;
 
 //Registers
 const uint8_t UBX_SYNCH_1 = 0xB5;
@@ -991,8 +994,12 @@ public:
 	void logHNRPVT(boolean enabled = true); // Log data to file buffer
 
 	// Helper functions for NMEA logging
-	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_LOG_NMEA_ALL); // Log selected NMEA messages to file buffer - if enabled
+	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
 	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
+
+	// Helper functions to control which NMEA messages are passed to processNMEA
+	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
+	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
 
 	// Helper functions for CFG RATE
 
@@ -1249,7 +1256,8 @@ private:
 
 	boolean ubx7FcheckDisabled = false; // Flag to indicate if the "7F" check should be ignored in checkUbloxI2C
 
-	sfe_ublox_nmea_logging_t _logNMEA; // Flags to indicate which NMEA messages should be added to the file buffer for logging
+	sfe_ublox_nmea_filtering_t _logNMEA; // Flags to indicate which NMEA messages should be added to the file buffer for logging
+	sfe_ublox_nmea_filtering_t _processNMEA; // Flags to indicate which NMEA messages should be passed to processNMEA
 
 	//The packet buffers
 	//These are pointed at from within the ubxPacket
@@ -1289,6 +1297,7 @@ private:
 	const int16_t maxNMEAByteCount = 1024;	// Abort NMEA message reception if nmeaByteCounter exceeds this
 	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
 	boolean logThisNMEA();				// Return true if we should log this NMEA message
+	boolean processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
 
 	uint16_t rtcmLen = 0;
 
