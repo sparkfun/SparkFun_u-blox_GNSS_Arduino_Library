@@ -1243,6 +1243,10 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
   }
   else if (currentSentence == NMEA)
   {
+    //If _logNMEA is true, attempt to store incoming in the file buffer
+    if (_logNMEA)
+      storeFileBytes(&incoming, 1);
+
     processNMEA(incoming); //Process each NMEA character
   }
   else if (currentSentence == RTCM)
@@ -1259,10 +1263,6 @@ void SFE_UBLOX_GNSS::processNMEA(char incoming)
   //If user has assigned an output port then pipe the characters there
   if (_nmeaOutputPort != NULL)
     _nmeaOutputPort->write(incoming); //Echo this byte to the serial port
-
-  //If _logNMEA is true, attempt to store incoming in the file buffer
-  if (_logNMEA)
-    storeFileBytes((uint8_t *)&incoming, 1);
 }
 
 //We need to be able to identify an RTCM packet and then the length

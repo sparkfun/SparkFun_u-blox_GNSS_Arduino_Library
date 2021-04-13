@@ -9,9 +9,6 @@
   This example shows how to configure the u-blox GNSS to send PVT reports automatically
   and log those and any incoming NMEA messages to SD card in UBX format
 
-  ** Please note: NMEA logging relies upon processNMEA **
-  ** You will not be able to log NMEA data automatically through the library if you overwrite processNMEA with your own function **
-
   ** Please note: this example will only work on processors like the Artemis which have plenty of RAM available **
 
   This code is intended to be run on the MicroMod Data Logging Carrier Board using the Artemis Processor
