@@ -382,6 +382,8 @@ initPacketUBXHNRPVT	KEYWORD2
 flushHNRPVT	KEYWORD2
 logHNRPVT	KEYWORD2
 
+logNMEA	KEYWORD2
+
 setNavigationFrequency	KEYWORD2
 getNavigationFrequency	KEYWORD2
 setMeasurementRate	KEYWORD2

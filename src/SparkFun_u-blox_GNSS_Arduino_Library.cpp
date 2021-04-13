@@ -1259,6 +1259,10 @@ void SFE_UBLOX_GNSS::processNMEA(char incoming)
   //If user has assigned an output port then pipe the characters there
   if (_nmeaOutputPort != NULL)
     _nmeaOutputPort->write(incoming); //Echo this byte to the serial port
+
+  //If _logNMEA is true, attempt to store incoming in the file buffer
+  if (_logNMEA)
+    storeFileBytes((uint8_t *)&incoming, 1);
 }
 
 //We need to be able to identify an RTCM packet and then the length
@@ -9071,6 +9075,14 @@ void SFE_UBLOX_GNSS::logHNRPVT(boolean enabled)
 {
   if (packetUBXHNRPVT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
   packetUBXHNRPVT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
+
+// ***** Helper Functions for NMEA Logging
+
+//Log NMEA data in file buffer - if it exists! User needs to call setFileBufferSize before .begin
+void SFE_UBLOX_GNSS::logNMEA(boolean enabled)
+{
+  _logNMEA = enabled;
 }
 
 // ***** CFG RATE Helper Functions
