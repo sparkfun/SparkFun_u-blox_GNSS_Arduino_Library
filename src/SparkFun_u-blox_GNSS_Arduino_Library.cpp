@@ -52,7 +52,7 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
   }
 
   _logNMEA.all = 0; // Default to passing no NMEA messages to the file buffer
-  _processNMEA.all = SFE_UBLOX_FILTER_NMEA_ALL; // Default to passing all NMEA messages to process NMEA
+  _processNMEA.all = SFE_UBLOX_FILTER_NMEA_ALL; // Default to passing all NMEA messages to processNMEA
 }
 
 //Stop all automatic message processing. Free all used RAM

@@ -1289,12 +1289,12 @@ private:
 
 	unsigned long lastCheck = 0;
 
-	uint16_t ubxFrameCounter;			//Count all UBX frame bytes. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
+	uint16_t ubxFrameCounter; //Count all UBX frame bytes. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 
-	int16_t nmeaByteCounter;			//Count all NMEA message bytes.
-	const int16_t maxNMEAByteCount = 1024;	// Abort NMEA message reception if nmeaByteCounter exceeds this
+	int8_t nmeaByteCounter;				//Count all NMEA message bytes.
+	const int8_t maxNMEAByteCount = 82;	// Abort NMEA message reception if nmeaByteCounter exceeds this (https://en.wikipedia.org/wiki/NMEA_0183#Message_structure)
 	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
 	boolean logThisNMEA();				// Return true if we should log this NMEA message
 	boolean processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
