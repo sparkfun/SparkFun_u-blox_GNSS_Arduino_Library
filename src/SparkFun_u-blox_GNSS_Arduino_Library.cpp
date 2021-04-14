@@ -50,6 +50,9 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
     pinMode((uint8_t)debugPin, OUTPUT);
     digitalWrite((uint8_t)debugPin, HIGH);
   }
+
+  _logNMEA.all = 0; // Default to passing no NMEA messages to the file buffer
+  _processNMEA.all = SFE_UBLOX_FILTER_NMEA_ALL; // Default to passing all NMEA messages to processNMEA
 }
 
 //Stop all automatic message processing. Free all used RAM
@@ -1020,6 +1023,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
     }
     else if (incoming == '$')
     {
+      nmeaByteCounter = 0; // Reset the NMEA byte counter
       currentSentence = NMEA;
     }
     else if (incoming == 0xD3) //RTCM frames start with 0xD3
@@ -1241,18 +1245,125 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
     //Finally, increment the frame counter
     ubxFrameCounter++;
   }
-  else if (currentSentence == NMEA)
+  else if (currentSentence == NMEA) // Process incoming NMEA mesages. Selectively log if desired.
   {
-    //If _logNMEA is true, attempt to store incoming in the file buffer
-    if (_logNMEA)
-      storeFileBytes(&incoming, 1);
+    if ((nmeaByteCounter == 0) && (incoming != '$'))
+    {
+      currentSentence = NONE; //Something went wrong. Reset. (Almost certainly redundant!)
+    }
+    else if ((nmeaByteCounter == 1) && (incoming != 'G'))
+    {
+      currentSentence = NONE; //Something went wrong. Reset.
+    }
+    else if ((nmeaByteCounter >= 0) && (nmeaByteCounter <= 5))
+    {
+      nmeaAddressField[nmeaByteCounter] = incoming; // Store the start character and NMEA address field
+    }
 
-    processNMEA(incoming); //Process each NMEA character
+    if (nmeaByteCounter == 5)
+    {
+      // We've just received the end of the address field. Check if it is selected for logging
+      if (logThisNMEA())
+      {
+        storeFileBytes(&nmeaAddressField[0], 6); // Add start character and address field to the file buffer
+      }
+      // Check if it should be passed to processNMEA
+      if (processThisNMEA())
+      {
+        processNMEA(nmeaAddressField[0]); //Process the start character and address field
+        processNMEA(nmeaAddressField[1]);
+        processNMEA(nmeaAddressField[2]);
+        processNMEA(nmeaAddressField[3]);
+        processNMEA(nmeaAddressField[4]);
+        processNMEA(nmeaAddressField[5]);
+      }
+    }
+
+    if ((nmeaByteCounter > 5) || (nmeaByteCounter < 0)) // Should we add incoming to the file buffer and/or pass it to processNMEA?
+    {
+      if (logThisNMEA())
+        storeFileBytes(&incoming, 1); // Add incoming to the file buffer
+      if (processThisNMEA())
+        processNMEA(incoming); // Pass incoming to processNMEA
+    }
+
+    if (incoming == '*')
+      nmeaByteCounter = -5; // We are expecting * plus two checksum bytes plus CR and LF
+
+    nmeaByteCounter++; // Increment the byte counter
+
+    if (nmeaByteCounter == maxNMEAByteCount) // Check if we have processed too many bytes
+      currentSentence = NONE; //Something went wrong. Reset.
+
+    if (nmeaByteCounter == 0) // Check if we are done
+      currentSentence = NONE; // All done!
   }
   else if (currentSentence == RTCM)
   {
     processRTCMframe(incoming); //Deal with RTCM bytes
   }
+}
+
+// PRIVATE: Return true if we should add this NMEA message to the file buffer for logging
+boolean SFE_UBLOX_GNSS::logThisNMEA()
+{
+  if (_logNMEA.bits.all == 1) return (true);
+  if ((nmeaAddressField[3] == 'D') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'M') && (_logNMEA.bits.UBX_NMEA_DTM == 1)) return (true);
+  if (nmeaAddressField[3] == 'G')
+  {
+    if ((nmeaAddressField[4] == 'A') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GAQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GBQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'S') && (_logNMEA.bits.UBX_NMEA_GBS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'G') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_GGA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'L') && (_logNMEA.bits.UBX_NMEA_GLL == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GLQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GNQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'S') && (_logNMEA.bits.UBX_NMEA_GNS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'P') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GPQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'Q') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GQQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'R') && (nmeaAddressField[5] == 'S') && (_logNMEA.bits.UBX_NMEA_GRS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_GSA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'T') && (_logNMEA.bits.UBX_NMEA_GST == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'V') && (_logNMEA.bits.UBX_NMEA_GSV == 1)) return (true);
+  }
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'M') && (_logNMEA.bits.UBX_NMEA_RLM == 1)) return (true);
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'M') && (nmeaAddressField[5] == 'C') && (_logNMEA.bits.UBX_NMEA_RMC == 1)) return (true);
+  if ((nmeaAddressField[3] == 'T') && (nmeaAddressField[4] == 'X') && (nmeaAddressField[5] == 'T') && (_logNMEA.bits.UBX_NMEA_TXT == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'W') && (_logNMEA.bits.UBX_NMEA_VLW == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'G') && (_logNMEA.bits.UBX_NMEA_VTG == 1)) return (true);
+  if ((nmeaAddressField[3] == 'Z') && (nmeaAddressField[4] == 'D') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_ZDA == 1)) return (true);
+  return (false);
+}
+
+// PRIVATE: Return true if we should pass this NMEA message to processNMEA
+boolean SFE_UBLOX_GNSS::processThisNMEA()
+{
+  if (_processNMEA.bits.all == 1) return (true);
+  if ((nmeaAddressField[3] == 'D') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'M') && (_processNMEA.bits.UBX_NMEA_DTM == 1)) return (true);
+  if (nmeaAddressField[3] == 'G')
+  {
+    if ((nmeaAddressField[4] == 'A') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GAQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GBQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'S') && (_processNMEA.bits.UBX_NMEA_GBS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'G') && (nmeaAddressField[5] == 'A') && (_processNMEA.bits.UBX_NMEA_GGA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'L') && (_processNMEA.bits.UBX_NMEA_GLL == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GLQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GNQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'S') && (_processNMEA.bits.UBX_NMEA_GNS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'P') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GPQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'Q') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GQQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'R') && (nmeaAddressField[5] == 'S') && (_processNMEA.bits.UBX_NMEA_GRS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'A') && (_processNMEA.bits.UBX_NMEA_GSA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'T') && (_processNMEA.bits.UBX_NMEA_GST == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'V') && (_processNMEA.bits.UBX_NMEA_GSV == 1)) return (true);
+  }
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'M') && (_processNMEA.bits.UBX_NMEA_RLM == 1)) return (true);
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'M') && (nmeaAddressField[5] == 'C') && (_processNMEA.bits.UBX_NMEA_RMC == 1)) return (true);
+  if ((nmeaAddressField[3] == 'T') && (nmeaAddressField[4] == 'X') && (nmeaAddressField[5] == 'T') && (_processNMEA.bits.UBX_NMEA_TXT == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'W') && (_processNMEA.bits.UBX_NMEA_VLW == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'G') && (_processNMEA.bits.UBX_NMEA_VTG == 1)) return (true);
+  if ((nmeaAddressField[3] == 'Z') && (nmeaAddressField[4] == 'D') && (nmeaAddressField[5] == 'A') && (_processNMEA.bits.UBX_NMEA_ZDA == 1)) return (true);
+  return (false);
 }
 
 //This is the default or generic NMEA processor. We're only going to pipe the data to serial port so we can see it.
@@ -9077,12 +9188,27 @@ void SFE_UBLOX_GNSS::logHNRPVT(boolean enabled)
   packetUBXHNRPVT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
-// ***** Helper Functions for NMEA Logging
+// ***** Helper Functions for NMEA Logging / Processing
 
-//Log NMEA data in file buffer - if it exists! User needs to call setFileBufferSize before .begin
-void SFE_UBLOX_GNSS::logNMEA(boolean enabled)
+// Log selected NMEA messages to file buffer - if the messages are enabled and if the file buffer exists
+// User needs to call setFileBufferSize before .begin
+void SFE_UBLOX_GNSS::setNMEALoggingMask(uint32_t messages)
 {
-  _logNMEA = enabled;
+  _logNMEA.all = messages;
+}
+uint32_t SFE_UBLOX_GNSS::getNMEALoggingMask()
+{
+  return (_logNMEA.all);
+}
+
+// Pass selected NMEA messages to processNMEA
+void SFE_UBLOX_GNSS::setProcessNMEAMask(uint32_t messages)
+{
+  _processNMEA.all = messages;
+}
+uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
+{
+  return (_processNMEA.all);
 }
 
 // ***** CFG RATE Helper Functions

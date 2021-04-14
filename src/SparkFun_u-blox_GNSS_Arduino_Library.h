@@ -99,6 +99,69 @@ typedef enum
 	SFE_UBLOX_PACKET_PACKETAUTO
 } sfe_ublox_packet_buffer_e;
 
+// Define a struct to allow selective logging / processing of NMEA messages
+// Set the individual bits to pass the NMEA messages to the file buffer and/or processNMEA
+// Setting bits.all will pass all messages to the file buffer and processNMEA
+typedef struct
+{
+	union
+	{
+		uint32_t all;
+		struct
+		{
+			uint32_t all : 1;
+			uint32_t UBX_NMEA_DTM : 1;
+			uint32_t UBX_NMEA_GAQ : 1;
+			uint32_t UBX_NMEA_GBQ : 1;
+			uint32_t UBX_NMEA_GBS : 1;
+			uint32_t UBX_NMEA_GGA : 1;
+			uint32_t UBX_NMEA_GLL : 1;
+			uint32_t UBX_NMEA_GLQ : 1;
+			uint32_t UBX_NMEA_GNQ : 1;
+			uint32_t UBX_NMEA_GNS : 1;
+			uint32_t UBX_NMEA_GPQ : 1;
+			uint32_t UBX_NMEA_GQQ : 1;
+			uint32_t UBX_NMEA_GRS : 1;
+			uint32_t UBX_NMEA_GSA : 1;
+			uint32_t UBX_NMEA_GST : 1;
+			uint32_t UBX_NMEA_GSV : 1;
+			uint32_t UBX_NMEA_RLM : 1;
+			uint32_t UBX_NMEA_RMC : 1;
+			uint32_t UBX_NMEA_TXT : 1;
+			uint32_t UBX_NMEA_VLW : 1;
+			uint32_t UBX_NMEA_VTG : 1;
+			uint32_t UBX_NMEA_ZDA : 1;
+		} bits;
+	};
+} sfe_ublox_nmea_filtering_t;
+
+// Define an enum to make it easy to enable/disable selected NMEA messages for logging / processing
+typedef enum
+{
+	SFE_UBLOX_FILTER_NMEA_ALL = 0x00000001,
+	SFE_UBLOX_FILTER_NMEA_DTM = 0x00000002,
+	SFE_UBLOX_FILTER_NMEA_GAQ = 0x00000004,
+	SFE_UBLOX_FILTER_NMEA_GBQ = 0x00000008,
+	SFE_UBLOX_FILTER_NMEA_GBS = 0x00000010,
+	SFE_UBLOX_FILTER_NMEA_GGA = 0x00000020,
+	SFE_UBLOX_FILTER_NMEA_GLL = 0x00000040,
+	SFE_UBLOX_FILTER_NMEA_GLQ = 0x00000080,
+	SFE_UBLOX_FILTER_NMEA_GNQ = 0x00000100,
+	SFE_UBLOX_FILTER_NMEA_GNS = 0x00000200,
+	SFE_UBLOX_FILTER_NMEA_GPQ = 0x00000400,
+	SFE_UBLOX_FILTER_NMEA_GQQ = 0x00000800,
+	SFE_UBLOX_FILTER_NMEA_GRS = 0x00001000,
+	SFE_UBLOX_FILTER_NMEA_GSA = 0x00002000,
+	SFE_UBLOX_FILTER_NMEA_GST = 0x00004000,
+	SFE_UBLOX_FILTER_NMEA_GSV = 0x00008000,
+	SFE_UBLOX_FILTER_NMEA_RLM = 0x00010000,
+	SFE_UBLOX_FILTER_NMEA_RMC = 0x00020000,
+	SFE_UBLOX_FILTER_NMEA_TXT = 0x00040000,
+	SFE_UBLOX_FILTER_NMEA_VLW = 0x00080000,
+	SFE_UBLOX_FILTER_NMEA_VTG = 0x00100000,
+	SFE_UBLOX_FILTER_NMEA_ZDA = 0x00200000
+} sfe_ublox_nmea_filtering_e;
+
 //Registers
 const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
@@ -159,7 +222,7 @@ const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version u-blox 
 
 //Class: NMEA
 //The following are used to enable NMEA messages. Descriptions come from the NMEA messages overview in the ZED-F9P Interface Description
-const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB
+const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB. Equal to UBX_CLASS_NMEA
 const uint8_t UBX_NMEA_DTM = 0x0A;	//GxDTM (datum reference)
 const uint8_t UBX_NMEA_GAQ = 0x45;	//GxGAQ (poll a standard message (if the current talker ID is GA))
 const uint8_t UBX_NMEA_GBQ = 0x44;	//GxGBQ (poll a standard message (if the current Talker ID is GB))
@@ -169,11 +232,13 @@ const uint8_t UBX_NMEA_GLL = 0x01;	//GxGLL (latitude and long, whith time of pos
 const uint8_t UBX_NMEA_GLQ = 0x43;	//GxGLQ (poll a standard message (if the current Talker ID is GL))
 const uint8_t UBX_NMEA_GNQ = 0x42;	//GxGNQ (poll a standard message (if the current Talker ID is GN))
 const uint8_t UBX_NMEA_GNS = 0x0D;	//GxGNS (GNSS fix data)
-const uint8_t UBX_NMEA_GPQ = 0x040; //GxGPQ (poll a standard message (if the current Talker ID is GP))
+const uint8_t UBX_NMEA_GPQ = 0x40;	//GxGPQ (poll a standard message (if the current Talker ID is GP))
+const uint8_t UBX_NMEA_GQQ = 0x47;	//GxGQQ (poll a standard message (if the current Talker ID is GQ))
 const uint8_t UBX_NMEA_GRS = 0x06;	//GxGRS (GNSS range residuals)
 const uint8_t UBX_NMEA_GSA = 0x02;	//GxGSA (GNSS DOP and Active satellites)
 const uint8_t UBX_NMEA_GST = 0x07;	//GxGST (GNSS Pseudo Range Error Statistics)
 const uint8_t UBX_NMEA_GSV = 0x03;	//GxGSV (GNSS satellites in view)
+const uint8_t UBX_NMEA_RLM = 0x0B;	//GxRMC (Return link message (RLM))
 const uint8_t UBX_NMEA_RMC = 0x04;	//GxRMC (Recommended minimum data)
 const uint8_t UBX_NMEA_TXT = 0x41;	//GxTXT (text transmission)
 const uint8_t UBX_NMEA_VLW = 0x0F;	//GxVLW (dual ground/water distance)
@@ -928,8 +993,13 @@ public:
 	void flushHNRPVT(); //Mark all the data as read/stale
 	void logHNRPVT(boolean enabled = true); // Log data to file buffer
 
-	// Helper function for NMEA logging
-	void logNMEA(boolean enabled = true); // Log NMEA data to file buffer
+	// Helper functions for NMEA logging
+	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
+	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
+
+	// Helper functions to control which NMEA messages are passed to processNMEA
+	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
+	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
 
 	// Helper functions for CFG RATE
 
@@ -1186,7 +1256,8 @@ private:
 
 	boolean ubx7FcheckDisabled = false; // Flag to indicate if the "7F" check should be ignored in checkUbloxI2C
 
-	boolean _logNMEA = false; // Flag to indicate if NMEA data should be added to the file buffer
+	sfe_ublox_nmea_filtering_t _logNMEA; // Flags to indicate which NMEA messages should be added to the file buffer for logging
+	sfe_ublox_nmea_filtering_t _processNMEA; // Flags to indicate which NMEA messages should be passed to processNMEA
 
 	//The packet buffers
 	//These are pointed at from within the ubxPacket
@@ -1218,10 +1289,15 @@ private:
 
 	unsigned long lastCheck = 0;
 
-	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
-
+	uint16_t ubxFrameCounter; //Count all UBX frame bytes. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
+
+	int8_t nmeaByteCounter;				//Count all NMEA message bytes.
+	const int8_t maxNMEAByteCount = 82;	// Abort NMEA message reception if nmeaByteCounter exceeds this (https://en.wikipedia.org/wiki/NMEA_0183#Message_structure)
+	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
+	boolean logThisNMEA();				// Return true if we should log this NMEA message
+	boolean processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
 
 	uint16_t rtcmLen = 0;
 

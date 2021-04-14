@@ -144,7 +144,9 @@ void setup()
   myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, 1); // Ensure the GxGGA (Global positioning system fix data) message is enabled. Send every measurement.
   myGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, 1); // Ensure the GxGSA (GNSS DOP and Active satellites) message is enabled. Send every measurement.
   myGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, 1); // Ensure the GxGSV (GNSS satellites in view) message is enabled. Send every measurement.
-  myGNSS.logNMEA(); // Enable NMEA logging
+
+  myGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_ALL); // Enable logging of all enabled NMEA messages
+  //myGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_GGA | SFE_UBLOX_FILTER_NMEA_GSA); // Or we can, for example, log only GxGGA & GxGSA and ignore GxGSV
 
   Serial.println(F("Press any key to stop logging."));
 
