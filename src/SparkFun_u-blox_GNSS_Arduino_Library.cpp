@@ -85,6 +85,12 @@ void SFE_UBLOX_GNSS::end(void)
     delete[] currentGeofenceParams;
     currentGeofenceParams = NULL; // Redundant?
   }
+
+  if (packetUBXNAVTIMELS != NULL)
+  {
+    delete[] packetUBXNAVTIMELS;
+    packetUBXNAVTIMELS = NULL; // Redundant?
+  }
   
   if (packetUBXNAVPOSECEF != NULL)
   {
