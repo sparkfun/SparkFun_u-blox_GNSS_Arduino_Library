@@ -85,6 +85,12 @@ void SFE_UBLOX_GNSS::end(void)
     delete[] currentGeofenceParams;
     currentGeofenceParams = NULL; // Redundant?
   }
+
+  if (packetUBXNAVTIMELS != NULL)
+  {
+    delete[] packetUBXNAVTIMELS;
+    packetUBXNAVTIMELS = NULL; // Redundant?
+  }
   
   if (packetUBXNAVPOSECEF != NULL)
   {
@@ -792,6 +798,9 @@ boolean SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_CLOCK:
           if (packetUBXNAVCLOCK != NULL) result = true;
         break;
+        case UBX_NAV_TIMELS:
+          if (packetUBXNAVTIMELS != NULL) result = true;
+        break;
         case UBX_NAV_SVIN:
           if (packetUBXNAVSVIN != NULL) result = true;
         break;
@@ -918,6 +927,9 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
         break;
         case UBX_NAV_CLOCK:
           maxSize = UBX_NAV_CLOCK_LEN;
+        break;
+        case UBX_NAV_TIMELS:
+          maxSize = UBX_NAV_TIMELS_LEN;
         break;
         case UBX_NAV_SVIN:
           maxSize = UBX_NAV_SVIN_LEN;
@@ -2058,6 +2070,26 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         {
           storePacket(msg);
         }
+      }
+    }
+    else if (msg->id == UBX_NAV_TIMELS && msg->len == UBX_NAV_TIMELS_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVTIMELS != NULL)
+      {
+        packetUBXNAVTIMELS->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVTIMELS->data.version = extractByte(msg, 4);
+        packetUBXNAVTIMELS->data.srcOfCurrLs = extractByte(msg, 8);
+        packetUBXNAVTIMELS->data.currLs = extractSignedChar(msg, 9);
+        packetUBXNAVTIMELS->data.srcOfLsChange = extractByte(msg, 10);
+        packetUBXNAVTIMELS->data.lsChange = extractSignedChar(msg, 11);
+        packetUBXNAVTIMELS->data.timeToLsEvent = extractSignedLong(msg, 12);
+        packetUBXNAVTIMELS->data.dateOfLsGpsWn = extractInt(msg, 16);
+        packetUBXNAVTIMELS->data.dateOfLsGpsDn = extractInt(msg, 18);
+        packetUBXNAVTIMELS->data.valid.all = extractSignedChar(msg, 23);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVTIMELS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
     else if (msg->id == UBX_NAV_SVIN && msg->len == UBX_NAV_SVIN_LEN)
@@ -6973,6 +7005,53 @@ void SFE_UBLOX_GNSS::logNAVCLOCK(boolean enabled)
   packetUBXNAVCLOCK->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
+// ***** NAV TIMELS automatic support
+
+//Reads leap second event information and sets the global variables
+//for future leap second change and number of leap seconds since GPS epoch
+//Returns true if commands was successful
+boolean SFE_UBLOX_GNSS::getLeapSecondEvent(uint16_t maxWait)
+{
+  if (packetUBXNAVTIMELS == NULL) initPacketUBXNAVTIMELS(); //Check that RAM has been allocated for the TIMELS data
+  if (packetUBXNAVTIMELS == NULL) // Abort if the RAM allocation failed
+    return (false);
+
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_TIMELS;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //The data is parsed as part of processing the response
+  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (true);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+  {
+    return (true);
+  }
+
+  return (false);
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVTIMELS and initialize it
+boolean SFE_UBLOX_GNSS::initPacketUBXNAVTIMELS()
+{
+  packetUBXNAVTIMELS = new UBX_NAV_TIMELS_t; //Allocate RAM for the main struct
+  if (packetUBXNAVTIMELS == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVTIMELS: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+  packetUBXNAVTIMELS->automaticFlags.flags.all = 0;
+  packetUBXNAVTIMELS->callbackPointer = NULL;
+  packetUBXNAVTIMELS->callbackData = NULL;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.all = 0;
+  return (true);
+}
+
 // ***** NAV SVIN automatic support
 
 //Reads survey in status and sets the global variables
@@ -10302,6 +10381,45 @@ float SFE_UBLOX_GNSS::getSurveyInMeanAccuracy(uint16_t maxWait) // Returned as m
   // meanAcc is U4 (uint32_t) in 0.1mm. We convert this to float.
   uint32_t tempFloat = packetUBXNAVSVIN->data.meanAcc;
   return (((float)tempFloat) / 10000.0); //Convert 0.1mm to m
+}
+
+// ***** TIMELS Helper Functions
+
+uint8_t SFE_UBLOX_GNSS::getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWait)
+{
+  if (packetUBXNAVTIMELS == NULL) initPacketUBXNAVTIMELS(); //Check that RAM has been allocated for the TIMELS data
+  if (packetUBXNAVTIMELS == NULL) //Bail if the RAM allocation failed
+    return 3;
+
+  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent == false)
+    getLeapSecondEvent(maxWait);
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.lsChange = false;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.timeToLsEvent = false;  
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;
+  timeToLsEvent = packetUBXNAVTIMELS->data.timeToLsEvent;
+  // returns NTP Leap Indicator
+  // 0 -no warning
+  // 1 -last minute of the day has 61 seconds
+  // 2 -last minute of the day has 59 seconds
+  // 3 -unknown (clock unsynchronized)
+  return ((boolean)packetUBXNAVTIMELS->data.valid.bits.validTimeToLsEvent ? (uint8_t)(packetUBXNAVTIMELS->data.lsChange == -1 ? 2 : packetUBXNAVTIMELS->data.lsChange) : 3);
+}
+
+int8_t SFE_UBLOX_GNSS::getCurrentLeapSeconds(sfe_ublox_ls_src_e& source, uint16_t maxWait)
+{
+  if (packetUBXNAVTIMELS == NULL) initPacketUBXNAVTIMELS(); //Check that RAM has been allocated for the TIMELS data
+  if (packetUBXNAVTIMELS == NULL) //Bail if the RAM allocation failed
+    return false;
+
+  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validCurrLs == false)
+    getLeapSecondEvent(maxWait);
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validCurrLs = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.srcOfCurrLs = false;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.currLs = false;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;
+  source = ((sfe_ublox_ls_src_e)packetUBXNAVTIMELS->data.srcOfCurrLs);
+  return ((int8_t)packetUBXNAVTIMELS->data.currLs);
 }
 
 // ***** RELPOSNED Helper Functions and automatic support

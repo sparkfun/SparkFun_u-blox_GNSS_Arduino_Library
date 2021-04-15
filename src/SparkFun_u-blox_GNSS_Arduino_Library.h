@@ -472,6 +472,20 @@ enum sfe_ublox_gnss_ids_e
 	SFE_UBLOX_GNSS_ID_GLONASS
 };
 
+// The GNSS identifiers of leap second event info source - used by UBX-NAV-TIMELS
+enum sfe_ublox_ls_src_e
+{
+	SFE_UBLOX_LS_SRC_DEFAULT,
+	SFE_UBLOX_LS_SRC_GLONASS,
+	SFE_UBLOX_LS_SRC_GPS,
+	SFE_UBLOX_LS_SRC_SBAS,
+	SFE_UBLOX_LS_SRC_BEIDOU,
+	SFE_UBLOX_LS_SRC_GALILEO,
+	SFE_UBLOX_LS_SRC_AIDED,
+	SFE_UBLOX_LS_SRC_CONFIGURED,
+	SFE_UBLOX_LS_SRC_UNKNOWN = 255
+};
+
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
 #define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
@@ -865,6 +879,9 @@ public:
 	// Add "auto" support for NAV SVIN - to avoid needing 'global' storage
 	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status
 
+	// Add "auto" support for NAV TIMELS - to avoid needing 'global' storage
+	boolean getLeapSecondEvent(uint16_t maxWait); //Reads leap second event info
+
 	boolean getRELPOSNED(uint16_t maxWait = defaultMaxWait); //Get Relative Positioning Information of the NED frame
 	boolean setAutoRELPOSNED(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED reports
 	boolean setAutoRELPOSNED(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -1102,6 +1119,11 @@ public:
 	uint16_t getSurveyInObservationTime(uint16_t maxWait = defaultMaxWait); // Truncated to 65535 seconds
 	float getSurveyInMeanAccuracy(uint16_t maxWait = defaultMaxWait); // Returned as m
 
+	// Helper functions for TIMELS
+
+	uint8_t getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWait = defaultMaxWait);
+	int8_t getCurrentLeapSeconds(sfe_ublox_ls_src_e& source, uint16_t maxWait = defaultMaxWait);
+
 	// Helper functions for RELPOSNED
 
 	float getRelPosN(uint16_t maxWait = defaultMaxWait); // Returned as m
@@ -1154,6 +1176,7 @@ public:
 	UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_HPPOSLLH_t *packetUBXNAVHPPOSLLH = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
@@ -1227,6 +1250,7 @@ private:
 	boolean initPacketUBXNAVHPPOSECEF(); // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
 	boolean initPacketUBXNAVHPPOSLLH(); // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
 	boolean initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
+	boolean initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	boolean initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
 	boolean initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 	boolean initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
