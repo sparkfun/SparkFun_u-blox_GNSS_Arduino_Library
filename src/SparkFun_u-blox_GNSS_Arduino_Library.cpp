@@ -2086,7 +2086,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVTIMELS->data.timeToLsEvent = extractSignedLong(msg, 12);
         packetUBXNAVTIMELS->data.dateOfLsGpsWn = extractInt(msg, 16);
         packetUBXNAVTIMELS->data.dateOfLsGpsDn = extractInt(msg, 18);
-        packetUBXNAVTIMELS->data.valid = extractSignedChar(msg, 23);
+        packetUBXNAVTIMELS->data.valid.all = extractSignedChar(msg, 23);
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVTIMELS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
@@ -10391,9 +10391,9 @@ uint8_t SFE_UBLOX_GNSS::getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWai
   if (packetUBXNAVTIMELS == NULL) //Bail if the RAM allocation failed
     return 3;
 
-  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.valid == false)
+  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent == false)
     getLeapSecondEvent(maxWait);
-  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.valid = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent = false; //Since we are about to give this to user, mark this data as stale
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.lsChange = false;
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.timeToLsEvent = false;  
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;
@@ -10403,7 +10403,7 @@ uint8_t SFE_UBLOX_GNSS::getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWai
   // 1 -last minute of the day has 61 seconds
   // 2 -last minute of the day has 59 seconds
   // 3 -unknown (clock unsynchronized)
-  return ((boolean)packetUBXNAVTIMELS->data.valid ? (uint8_t)(packetUBXNAVTIMELS->data.lsChange == -1 ? 2 : packetUBXNAVTIMELS->data.lsChange) : 3);
+  return ((boolean)packetUBXNAVTIMELS->data.valid.bits.validTimeToLsEvent ? (uint8_t)(packetUBXNAVTIMELS->data.lsChange == -1 ? 2 : packetUBXNAVTIMELS->data.lsChange) : 3);
 }
 
 int8_t SFE_UBLOX_GNSS::getCurrentLeapSeconds(sfe_ublox_ls_src_e& source, uint16_t maxWait)
@@ -10412,9 +10412,9 @@ int8_t SFE_UBLOX_GNSS::getCurrentLeapSeconds(sfe_ublox_ls_src_e& source, uint16_
   if (packetUBXNAVTIMELS == NULL) //Bail if the RAM allocation failed
     return false;
 
-  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.valid == false)
+  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validCurrLs == false)
     getLeapSecondEvent(maxWait);
-  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.valid = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validCurrLs = false; //Since we are about to give this to user, mark this data as stale
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.srcOfCurrLs = false;
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.currLs = false;
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;

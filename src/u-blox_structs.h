@@ -870,7 +870,15 @@ typedef struct
   uint16_t dateOfLsGpsWn; //GPS week num (WN) of the next or the last leap second event
   uint16_t dateOfLsGpsDn; //GPS day of week num (DN) for the next or last leap second event
   uint8_t reserved2[3];
-  int8_t valid; // Validity flag, 1 = valid, otherwise 0
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t validCurrLs : 1; // 1 = Valid current number of leap seconds value
+      uint8_t validTimeToLsEvent : 1; // 1 = Valid time to next leap second event or from the last leap second event if no future event scheduled
+    } bits;
+  } valid;
 } UBX_NAV_TIMELS_data_t;
 
 typedef struct
@@ -891,7 +899,8 @@ typedef struct
       uint32_t timeToLsEvent : 1;
       uint32_t dateOfLsGpsWn : 1;
       uint32_t dateOfLsGpsDn : 1;
-      uint32_t valid : 1;
+      uint32_t validCurrLs : 1;
+      uint32_t validTimeToLsEvent : 1;
     } bits;
   } moduleQueried;
 } UBX_NAV_TIMELS_moduleQueried_t;
