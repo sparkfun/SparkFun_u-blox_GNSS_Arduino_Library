@@ -99,6 +99,69 @@ typedef enum
 	SFE_UBLOX_PACKET_PACKETAUTO
 } sfe_ublox_packet_buffer_e;
 
+// Define a struct to allow selective logging / processing of NMEA messages
+// Set the individual bits to pass the NMEA messages to the file buffer and/or processNMEA
+// Setting bits.all will pass all messages to the file buffer and processNMEA
+typedef struct
+{
+	union
+	{
+		uint32_t all;
+		struct
+		{
+			uint32_t all : 1;
+			uint32_t UBX_NMEA_DTM : 1;
+			uint32_t UBX_NMEA_GAQ : 1;
+			uint32_t UBX_NMEA_GBQ : 1;
+			uint32_t UBX_NMEA_GBS : 1;
+			uint32_t UBX_NMEA_GGA : 1;
+			uint32_t UBX_NMEA_GLL : 1;
+			uint32_t UBX_NMEA_GLQ : 1;
+			uint32_t UBX_NMEA_GNQ : 1;
+			uint32_t UBX_NMEA_GNS : 1;
+			uint32_t UBX_NMEA_GPQ : 1;
+			uint32_t UBX_NMEA_GQQ : 1;
+			uint32_t UBX_NMEA_GRS : 1;
+			uint32_t UBX_NMEA_GSA : 1;
+			uint32_t UBX_NMEA_GST : 1;
+			uint32_t UBX_NMEA_GSV : 1;
+			uint32_t UBX_NMEA_RLM : 1;
+			uint32_t UBX_NMEA_RMC : 1;
+			uint32_t UBX_NMEA_TXT : 1;
+			uint32_t UBX_NMEA_VLW : 1;
+			uint32_t UBX_NMEA_VTG : 1;
+			uint32_t UBX_NMEA_ZDA : 1;
+		} bits;
+	};
+} sfe_ublox_nmea_filtering_t;
+
+// Define an enum to make it easy to enable/disable selected NMEA messages for logging / processing
+typedef enum
+{
+	SFE_UBLOX_FILTER_NMEA_ALL = 0x00000001,
+	SFE_UBLOX_FILTER_NMEA_DTM = 0x00000002,
+	SFE_UBLOX_FILTER_NMEA_GAQ = 0x00000004,
+	SFE_UBLOX_FILTER_NMEA_GBQ = 0x00000008,
+	SFE_UBLOX_FILTER_NMEA_GBS = 0x00000010,
+	SFE_UBLOX_FILTER_NMEA_GGA = 0x00000020,
+	SFE_UBLOX_FILTER_NMEA_GLL = 0x00000040,
+	SFE_UBLOX_FILTER_NMEA_GLQ = 0x00000080,
+	SFE_UBLOX_FILTER_NMEA_GNQ = 0x00000100,
+	SFE_UBLOX_FILTER_NMEA_GNS = 0x00000200,
+	SFE_UBLOX_FILTER_NMEA_GPQ = 0x00000400,
+	SFE_UBLOX_FILTER_NMEA_GQQ = 0x00000800,
+	SFE_UBLOX_FILTER_NMEA_GRS = 0x00001000,
+	SFE_UBLOX_FILTER_NMEA_GSA = 0x00002000,
+	SFE_UBLOX_FILTER_NMEA_GST = 0x00004000,
+	SFE_UBLOX_FILTER_NMEA_GSV = 0x00008000,
+	SFE_UBLOX_FILTER_NMEA_RLM = 0x00010000,
+	SFE_UBLOX_FILTER_NMEA_RMC = 0x00020000,
+	SFE_UBLOX_FILTER_NMEA_TXT = 0x00040000,
+	SFE_UBLOX_FILTER_NMEA_VLW = 0x00080000,
+	SFE_UBLOX_FILTER_NMEA_VTG = 0x00100000,
+	SFE_UBLOX_FILTER_NMEA_ZDA = 0x00200000
+} sfe_ublox_nmea_filtering_e;
+
 //Registers
 const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
@@ -159,7 +222,7 @@ const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version u-blox 
 
 //Class: NMEA
 //The following are used to enable NMEA messages. Descriptions come from the NMEA messages overview in the ZED-F9P Interface Description
-const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB
+const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB. Equal to UBX_CLASS_NMEA
 const uint8_t UBX_NMEA_DTM = 0x0A;	//GxDTM (datum reference)
 const uint8_t UBX_NMEA_GAQ = 0x45;	//GxGAQ (poll a standard message (if the current talker ID is GA))
 const uint8_t UBX_NMEA_GBQ = 0x44;	//GxGBQ (poll a standard message (if the current Talker ID is GB))
@@ -169,11 +232,13 @@ const uint8_t UBX_NMEA_GLL = 0x01;	//GxGLL (latitude and long, whith time of pos
 const uint8_t UBX_NMEA_GLQ = 0x43;	//GxGLQ (poll a standard message (if the current Talker ID is GL))
 const uint8_t UBX_NMEA_GNQ = 0x42;	//GxGNQ (poll a standard message (if the current Talker ID is GN))
 const uint8_t UBX_NMEA_GNS = 0x0D;	//GxGNS (GNSS fix data)
-const uint8_t UBX_NMEA_GPQ = 0x040; //GxGPQ (poll a standard message (if the current Talker ID is GP))
+const uint8_t UBX_NMEA_GPQ = 0x40;	//GxGPQ (poll a standard message (if the current Talker ID is GP))
+const uint8_t UBX_NMEA_GQQ = 0x47;	//GxGQQ (poll a standard message (if the current Talker ID is GQ))
 const uint8_t UBX_NMEA_GRS = 0x06;	//GxGRS (GNSS range residuals)
 const uint8_t UBX_NMEA_GSA = 0x02;	//GxGSA (GNSS DOP and Active satellites)
 const uint8_t UBX_NMEA_GST = 0x07;	//GxGST (GNSS Pseudo Range Error Statistics)
 const uint8_t UBX_NMEA_GSV = 0x03;	//GxGSV (GNSS satellites in view)
+const uint8_t UBX_NMEA_RLM = 0x0B;	//GxRMC (Return link message (RLM))
 const uint8_t UBX_NMEA_RMC = 0x04;	//GxRMC (Recommended minimum data)
 const uint8_t UBX_NMEA_TXT = 0x41;	//GxTXT (text transmission)
 const uint8_t UBX_NMEA_VLW = 0x0F;	//GxVLW (dual ground/water distance)
@@ -407,6 +472,20 @@ enum sfe_ublox_gnss_ids_e
 	SFE_UBLOX_GNSS_ID_GLONASS
 };
 
+// The GNSS identifiers of leap second event info source - used by UBX-NAV-TIMELS
+enum sfe_ublox_ls_src_e
+{
+	SFE_UBLOX_LS_SRC_DEFAULT,
+	SFE_UBLOX_LS_SRC_GLONASS,
+	SFE_UBLOX_LS_SRC_GPS,
+	SFE_UBLOX_LS_SRC_SBAS,
+	SFE_UBLOX_LS_SRC_BEIDOU,
+	SFE_UBLOX_LS_SRC_GALILEO,
+	SFE_UBLOX_LS_SRC_AIDED,
+	SFE_UBLOX_LS_SRC_CONFIGURED,
+	SFE_UBLOX_LS_SRC_UNKNOWN = 255
+};
+
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
 #define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
@@ -580,15 +659,15 @@ public:
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait);  //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
 
-	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = defaultMaxWait);										 //Changes the I2C address of the u-blox module
+	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = defaultMaxWait);			   //Changes the I2C address of the u-blox module
 	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the u-blox module, uartPort should be COM_PORT_UART1/2
 
 	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setUART2Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUART2Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
-	void setNMEAOutputPort(Stream &nmeaOutputPort);																 //Sets the internal variable for the port to direct NMEA characters to
+	void setNMEAOutputPort(Stream &nmeaOutputPort);												//Sets the internal variable for the port to direct NMEA characters to
 
 	//Reset to defaults
 
@@ -800,6 +879,9 @@ public:
 	// Add "auto" support for NAV SVIN - to avoid needing 'global' storage
 	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status
 
+	// Add "auto" support for NAV TIMELS - to avoid needing 'global' storage
+	boolean getLeapSecondEvent(uint16_t maxWait); //Reads leap second event info
+
 	boolean getRELPOSNED(uint16_t maxWait = defaultMaxWait); //Get Relative Positioning Information of the NED frame
 	boolean setAutoRELPOSNED(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED reports
 	boolean setAutoRELPOSNED(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -928,6 +1010,14 @@ public:
 	void flushHNRPVT(); //Mark all the data as read/stale
 	void logHNRPVT(boolean enabled = true); // Log data to file buffer
 
+	// Helper functions for NMEA logging
+	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
+	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
+
+	// Helper functions to control which NMEA messages are passed to processNMEA
+	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
+	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
+
 	// Helper functions for CFG RATE
 
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	//Set the number of nav solutions sent per second
@@ -936,6 +1026,7 @@ public:
 	uint16_t getMeasurementRate(uint16_t maxWait = defaultMaxWait);					 	//Return the elapsed time between GNSS measurements in milliseconds
 	boolean setNavigationRate(uint16_t rate, uint16_t maxWait = defaultMaxWait);		//Set the ratio between the number of measurements and the number of navigation solutions. Unit is cycles. Max is 127
 	uint16_t getNavigationRate(uint16_t maxWait = defaultMaxWait);					 	//Return the ratio between the number of measurements and the number of navigation solutions. Unit is cycles
+	void flushCFGRATE(); // Mark the measurement and navigation rate data as stale - used by the set rate functions
 
 	// Helper functions for DOP
 
@@ -1028,6 +1119,11 @@ public:
 	uint16_t getSurveyInObservationTime(uint16_t maxWait = defaultMaxWait); // Truncated to 65535 seconds
 	float getSurveyInMeanAccuracy(uint16_t maxWait = defaultMaxWait); // Returned as m
 
+	// Helper functions for TIMELS
+
+	uint8_t getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWait = defaultMaxWait);
+	int8_t getCurrentLeapSeconds(sfe_ublox_ls_src_e& source, uint16_t maxWait = defaultMaxWait);
+
 	// Helper functions for RELPOSNED
 
 	float getRelPosN(uint16_t maxWait = defaultMaxWait); // Returned as m
@@ -1080,6 +1176,7 @@ public:
 	UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_HPPOSLLH_t *packetUBXNAVHPPOSLLH = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
@@ -1153,6 +1250,7 @@ private:
 	boolean initPacketUBXNAVHPPOSECEF(); // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
 	boolean initPacketUBXNAVHPPOSLLH(); // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
 	boolean initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
+	boolean initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	boolean initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
 	boolean initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 	boolean initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
@@ -1181,6 +1279,9 @@ private:
 	boolean _printLimitedDebug = false; //Flag to print limited debug messages. Useful for I2C debugging or high navigation rates
 
 	boolean ubx7FcheckDisabled = false; // Flag to indicate if the "7F" check should be ignored in checkUbloxI2C
+
+	sfe_ublox_nmea_filtering_t _logNMEA; // Flags to indicate which NMEA messages should be added to the file buffer for logging
+	sfe_ublox_nmea_filtering_t _processNMEA; // Flags to indicate which NMEA messages should be passed to processNMEA
 
 	//The packet buffers
 	//These are pointed at from within the ubxPacket
@@ -1212,10 +1313,15 @@ private:
 
 	unsigned long lastCheck = 0;
 
-	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
-
+	uint16_t ubxFrameCounter; //Count all UBX frame bytes. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
+
+	int8_t nmeaByteCounter;				//Count all NMEA message bytes.
+	const int8_t maxNMEAByteCount = 82;	// Abort NMEA message reception if nmeaByteCounter exceeds this (https://en.wikipedia.org/wiki/NMEA_0183#Message_structure)
+	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
+	boolean logThisNMEA();				// Return true if we should log this NMEA message
+	boolean processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
 
 	uint16_t rtcmLen = 0;
 

@@ -45,6 +45,10 @@ void setup()
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
+
+  myGNSS.setProcessNMEAMask(SFE_UBLOX_FILTER_NMEA_ALL); // Make sure the library is passing all NMEA messages to processNMEA
+
+  myGNSS.setProcessNMEAMask(SFE_UBLOX_FILTER_NMEA_GGA); // Or, we can be kind to MicroNMEA and _only_ pass the GGA messages to it
 }
 
 void loop()
@@ -60,12 +64,12 @@ void loop()
     Serial.println(latitude_mdeg / 1000000., 6);
     Serial.print("Longitude (deg): ");
     Serial.println(longitude_mdeg / 1000000., 6);
+
+    nmea.clear(); // Clear the MicroNMEA storage to make sure we are getting fresh data
   }
   else
   {
-    Serial.print("No Fix - ");
-    Serial.print("Num. satellites: ");
-    Serial.println(nmea.getNumSatellites());
+    Serial.println("Waiting for fresh data");
   }
 
   delay(250); //Don't pound too hard on the I2C bus
