@@ -81,9 +81,6 @@ void setup()
     while (1);
   }
 
-  // Another trick we can use is to mark the CFG RATE data as stale so we can be sure we read fresh data
-  myGNSS.packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0; // Mark all of the CFG RATE data as stale
-
   // Read and print the updated measurement rate and navigation rate
 
   rate = myGNSS.getMeasurementRate(); //Get the measurement rate of this module

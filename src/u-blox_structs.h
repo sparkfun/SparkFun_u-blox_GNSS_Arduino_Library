@@ -854,6 +854,66 @@ typedef struct
   UBX_NAV_CLOCK_data_t  *callbackData;
 } UBX_NAV_CLOCK_t;
 
+// UBX-NAV-TIMELS (0x01 0x26): Leap second event information
+const uint16_t UBX_NAV_TIMELS_LEN = 24;
+
+typedef struct
+{
+  uint32_t iTOW; // GPS time of week of the navigation epoch: ms
+  uint8_t version; // Message version (0x00 for this version)
+  uint8_t reserved1[3];
+  uint8_t srcOfCurrLs; //Information source for the current number of leap seconds
+  int8_t currLs; //Current number of leap seconds since start of GPS (Jan 6, 1980), s
+  uint8_t srcOfLsChange; //Information source for the future leap second event
+  int8_t lsChange; //Future leap second change if one is scheduled, +1, 0, -1s
+  int32_t timeToLsEvent; //Num of secs until the next or from the last leap second, s
+  uint16_t dateOfLsGpsWn; //GPS week num (WN) of the next or the last leap second event
+  uint16_t dateOfLsGpsDn; //GPS day of week num (DN) for the next or last leap second event
+  uint8_t reserved2[3];
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t validCurrLs : 1; // 1 = Valid current number of leap seconds value
+      uint8_t validTimeToLsEvent : 1; // 1 = Valid time to next leap second event or from the last leap second event if no future event scheduled
+    } bits;
+  } valid;
+} UBX_NAV_TIMELS_data_t;
+
+typedef struct
+{
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t all : 1;
+
+      uint32_t iTOW : 1;
+      uint32_t version : 1;
+      uint32_t srcOfCurrLs : 1;
+      uint32_t currLs : 1;
+      uint32_t srcOfLsChange : 1;
+      uint32_t lsChange : 1;
+      uint32_t timeToLsEvent : 1;
+      uint32_t dateOfLsGpsWn : 1;
+      uint32_t dateOfLsGpsDn : 1;
+      uint32_t validCurrLs : 1;
+      uint32_t validTimeToLsEvent : 1;
+    } bits;
+  } moduleQueried;
+} UBX_NAV_TIMELS_moduleQueried_t;
+
+typedef struct
+{
+	ubxAutomaticFlags automaticFlags;
+  UBX_NAV_TIMELS_data_t data;
+  UBX_NAV_TIMELS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_TIMELS_data_t);
+  UBX_NAV_TIMELS_data_t  *callbackData;
+} UBX_NAV_TIMELS_t;
+
 // UBX-NAV-SVIN (0x01 0x3B): Survey-in data
 const uint16_t UBX_NAV_SVIN_LEN = 40;
 

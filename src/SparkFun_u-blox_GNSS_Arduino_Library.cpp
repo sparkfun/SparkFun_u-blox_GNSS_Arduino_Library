@@ -50,6 +50,9 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
     pinMode((uint8_t)debugPin, OUTPUT);
     digitalWrite((uint8_t)debugPin, HIGH);
   }
+
+  _logNMEA.all = 0; // Default to passing no NMEA messages to the file buffer
+  _processNMEA.all = SFE_UBLOX_FILTER_NMEA_ALL; // Default to passing all NMEA messages to processNMEA
 }
 
 //Stop all automatic message processing. Free all used RAM
@@ -81,6 +84,12 @@ void SFE_UBLOX_GNSS::end(void)
   {
     delete[] currentGeofenceParams;
     currentGeofenceParams = NULL; // Redundant?
+  }
+
+  if (packetUBXNAVTIMELS != NULL)
+  {
+    delete[] packetUBXNAVTIMELS;
+    packetUBXNAVTIMELS = NULL; // Redundant?
   }
   
   if (packetUBXNAVPOSECEF != NULL)
@@ -789,6 +798,9 @@ boolean SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_CLOCK:
           if (packetUBXNAVCLOCK != NULL) result = true;
         break;
+        case UBX_NAV_TIMELS:
+          if (packetUBXNAVTIMELS != NULL) result = true;
+        break;
         case UBX_NAV_SVIN:
           if (packetUBXNAVSVIN != NULL) result = true;
         break;
@@ -916,6 +928,9 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
         case UBX_NAV_CLOCK:
           maxSize = UBX_NAV_CLOCK_LEN;
         break;
+        case UBX_NAV_TIMELS:
+          maxSize = UBX_NAV_TIMELS_LEN;
+        break;
         case UBX_NAV_SVIN:
           maxSize = UBX_NAV_SVIN_LEN;
         break;
@@ -1020,6 +1035,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
     }
     else if (incoming == '$')
     {
+      nmeaByteCounter = 0; // Reset the NMEA byte counter
       currentSentence = NMEA;
     }
     else if (incoming == 0xD3) //RTCM frames start with 0xD3
@@ -1241,14 +1257,125 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
     //Finally, increment the frame counter
     ubxFrameCounter++;
   }
-  else if (currentSentence == NMEA)
+  else if (currentSentence == NMEA) // Process incoming NMEA mesages. Selectively log if desired.
   {
-    processNMEA(incoming); //Process each NMEA character
+    if ((nmeaByteCounter == 0) && (incoming != '$'))
+    {
+      currentSentence = NONE; //Something went wrong. Reset. (Almost certainly redundant!)
+    }
+    else if ((nmeaByteCounter == 1) && (incoming != 'G'))
+    {
+      currentSentence = NONE; //Something went wrong. Reset.
+    }
+    else if ((nmeaByteCounter >= 0) && (nmeaByteCounter <= 5))
+    {
+      nmeaAddressField[nmeaByteCounter] = incoming; // Store the start character and NMEA address field
+    }
+
+    if (nmeaByteCounter == 5)
+    {
+      // We've just received the end of the address field. Check if it is selected for logging
+      if (logThisNMEA())
+      {
+        storeFileBytes(&nmeaAddressField[0], 6); // Add start character and address field to the file buffer
+      }
+      // Check if it should be passed to processNMEA
+      if (processThisNMEA())
+      {
+        processNMEA(nmeaAddressField[0]); //Process the start character and address field
+        processNMEA(nmeaAddressField[1]);
+        processNMEA(nmeaAddressField[2]);
+        processNMEA(nmeaAddressField[3]);
+        processNMEA(nmeaAddressField[4]);
+        processNMEA(nmeaAddressField[5]);
+      }
+    }
+
+    if ((nmeaByteCounter > 5) || (nmeaByteCounter < 0)) // Should we add incoming to the file buffer and/or pass it to processNMEA?
+    {
+      if (logThisNMEA())
+        storeFileBytes(&incoming, 1); // Add incoming to the file buffer
+      if (processThisNMEA())
+        processNMEA(incoming); // Pass incoming to processNMEA
+    }
+
+    if (incoming == '*')
+      nmeaByteCounter = -5; // We are expecting * plus two checksum bytes plus CR and LF
+
+    nmeaByteCounter++; // Increment the byte counter
+
+    if (nmeaByteCounter == maxNMEAByteCount) // Check if we have processed too many bytes
+      currentSentence = NONE; //Something went wrong. Reset.
+
+    if (nmeaByteCounter == 0) // Check if we are done
+      currentSentence = NONE; // All done!
   }
   else if (currentSentence == RTCM)
   {
     processRTCMframe(incoming); //Deal with RTCM bytes
   }
+}
+
+// PRIVATE: Return true if we should add this NMEA message to the file buffer for logging
+boolean SFE_UBLOX_GNSS::logThisNMEA()
+{
+  if (_logNMEA.bits.all == 1) return (true);
+  if ((nmeaAddressField[3] == 'D') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'M') && (_logNMEA.bits.UBX_NMEA_DTM == 1)) return (true);
+  if (nmeaAddressField[3] == 'G')
+  {
+    if ((nmeaAddressField[4] == 'A') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GAQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GBQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'S') && (_logNMEA.bits.UBX_NMEA_GBS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'G') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_GGA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'L') && (_logNMEA.bits.UBX_NMEA_GLL == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GLQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GNQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'S') && (_logNMEA.bits.UBX_NMEA_GNS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'P') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GPQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'Q') && (nmeaAddressField[5] == 'Q') && (_logNMEA.bits.UBX_NMEA_GQQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'R') && (nmeaAddressField[5] == 'S') && (_logNMEA.bits.UBX_NMEA_GRS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_GSA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'T') && (_logNMEA.bits.UBX_NMEA_GST == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'V') && (_logNMEA.bits.UBX_NMEA_GSV == 1)) return (true);
+  }
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'M') && (_logNMEA.bits.UBX_NMEA_RLM == 1)) return (true);
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'M') && (nmeaAddressField[5] == 'C') && (_logNMEA.bits.UBX_NMEA_RMC == 1)) return (true);
+  if ((nmeaAddressField[3] == 'T') && (nmeaAddressField[4] == 'X') && (nmeaAddressField[5] == 'T') && (_logNMEA.bits.UBX_NMEA_TXT == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'W') && (_logNMEA.bits.UBX_NMEA_VLW == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'G') && (_logNMEA.bits.UBX_NMEA_VTG == 1)) return (true);
+  if ((nmeaAddressField[3] == 'Z') && (nmeaAddressField[4] == 'D') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_ZDA == 1)) return (true);
+  return (false);
+}
+
+// PRIVATE: Return true if we should pass this NMEA message to processNMEA
+boolean SFE_UBLOX_GNSS::processThisNMEA()
+{
+  if (_processNMEA.bits.all == 1) return (true);
+  if ((nmeaAddressField[3] == 'D') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'M') && (_processNMEA.bits.UBX_NMEA_DTM == 1)) return (true);
+  if (nmeaAddressField[3] == 'G')
+  {
+    if ((nmeaAddressField[4] == 'A') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GAQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GBQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'S') && (_processNMEA.bits.UBX_NMEA_GBS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'G') && (nmeaAddressField[5] == 'A') && (_processNMEA.bits.UBX_NMEA_GGA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'L') && (_processNMEA.bits.UBX_NMEA_GLL == 1)) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GLQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GNQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'S') && (_processNMEA.bits.UBX_NMEA_GNS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'P') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GPQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'Q') && (nmeaAddressField[5] == 'Q') && (_processNMEA.bits.UBX_NMEA_GQQ == 1)) return (true);
+    if ((nmeaAddressField[4] == 'R') && (nmeaAddressField[5] == 'S') && (_processNMEA.bits.UBX_NMEA_GRS == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'A') && (_processNMEA.bits.UBX_NMEA_GSA == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'T') && (_processNMEA.bits.UBX_NMEA_GST == 1)) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'V') && (_processNMEA.bits.UBX_NMEA_GSV == 1)) return (true);
+  }
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'M') && (_processNMEA.bits.UBX_NMEA_RLM == 1)) return (true);
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'M') && (nmeaAddressField[5] == 'C') && (_processNMEA.bits.UBX_NMEA_RMC == 1)) return (true);
+  if ((nmeaAddressField[3] == 'T') && (nmeaAddressField[4] == 'X') && (nmeaAddressField[5] == 'T') && (_processNMEA.bits.UBX_NMEA_TXT == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'W') && (_processNMEA.bits.UBX_NMEA_VLW == 1)) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'G') && (_processNMEA.bits.UBX_NMEA_VTG == 1)) return (true);
+  if ((nmeaAddressField[3] == 'Z') && (nmeaAddressField[4] == 'D') && (nmeaAddressField[5] == 'A') && (_processNMEA.bits.UBX_NMEA_ZDA == 1)) return (true);
+  return (false);
 }
 
 //This is the default or generic NMEA processor. We're only going to pipe the data to serial port so we can see it.
@@ -1943,6 +2070,26 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         {
           storePacket(msg);
         }
+      }
+    }
+    else if (msg->id == UBX_NAV_TIMELS && msg->len == UBX_NAV_TIMELS_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVTIMELS != NULL)
+      {
+        packetUBXNAVTIMELS->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVTIMELS->data.version = extractByte(msg, 4);
+        packetUBXNAVTIMELS->data.srcOfCurrLs = extractByte(msg, 8);
+        packetUBXNAVTIMELS->data.currLs = extractSignedChar(msg, 9);
+        packetUBXNAVTIMELS->data.srcOfLsChange = extractByte(msg, 10);
+        packetUBXNAVTIMELS->data.lsChange = extractSignedChar(msg, 11);
+        packetUBXNAVTIMELS->data.timeToLsEvent = extractSignedLong(msg, 12);
+        packetUBXNAVTIMELS->data.dateOfLsGpsWn = extractInt(msg, 16);
+        packetUBXNAVTIMELS->data.dateOfLsGpsDn = extractInt(msg, 18);
+        packetUBXNAVTIMELS->data.valid.all = extractSignedChar(msg, 23);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVTIMELS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
     else if (msg->id == UBX_NAV_SVIN && msg->len == UBX_NAV_SVIN_LEN)
@@ -6858,6 +7005,53 @@ void SFE_UBLOX_GNSS::logNAVCLOCK(boolean enabled)
   packetUBXNAVCLOCK->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
+// ***** NAV TIMELS automatic support
+
+//Reads leap second event information and sets the global variables
+//for future leap second change and number of leap seconds since GPS epoch
+//Returns true if commands was successful
+boolean SFE_UBLOX_GNSS::getLeapSecondEvent(uint16_t maxWait)
+{
+  if (packetUBXNAVTIMELS == NULL) initPacketUBXNAVTIMELS(); //Check that RAM has been allocated for the TIMELS data
+  if (packetUBXNAVTIMELS == NULL) // Abort if the RAM allocation failed
+    return (false);
+
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_TIMELS;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //The data is parsed as part of processing the response
+  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (true);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+  {
+    return (true);
+  }
+
+  return (false);
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVTIMELS and initialize it
+boolean SFE_UBLOX_GNSS::initPacketUBXNAVTIMELS()
+{
+  packetUBXNAVTIMELS = new UBX_NAV_TIMELS_t; //Allocate RAM for the main struct
+  if (packetUBXNAVTIMELS == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVTIMELS: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+  packetUBXNAVTIMELS->automaticFlags.flags.all = 0;
+  packetUBXNAVTIMELS->callbackPointer = NULL;
+  packetUBXNAVTIMELS->callbackData = NULL;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.all = 0;
+  return (true);
+}
+
 // ***** NAV SVIN automatic support
 
 //Reads survey in status and sets the global variables
@@ -7387,38 +7581,25 @@ boolean SFE_UBLOX_GNSS::getNavigationFrequencyInternal(uint16_t maxWait)
   if (packetUBXCFGRATE == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXCFGRATE->automaticFlags.flags.bits.automatic && packetUBXCFGRATE->automaticFlags.flags.bits.implicitUpdate)
+  // The CFG RATE message will never be produced automatically - that would be pointless.
+  // There is no setAutoCFGRATE function. We always need to poll explicitly.
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RATE;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //The data is parsed as part of processing the response
+  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (true);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
   {
-    //The GPS is automatically reporting, we just check whether we got unread data
-    checkUbloxInternal(&packetCfg, UBX_CLASS_CFG, UBX_CFG_RATE);
-    return packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all;
+    return (true);
   }
-  else if (packetUBXCFGRATE->automaticFlags.flags.bits.automatic && !packetUBXCFGRATE->automaticFlags.flags.bits.implicitUpdate)
-  {
-    //Someone else has to call checkUblox for us...
-    return (false);
-  }
-  else
-  {
-    //The GPS is not automatically reporting navigation rate so we have to poll explicitly
-    packetCfg.cls = UBX_CLASS_CFG;
-    packetCfg.id = UBX_CFG_RATE;
-    packetCfg.len = 0;
-    packetCfg.startingSpot = 0;
 
-    //The data is parsed as part of processing the response
-    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
-      return (true);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
-    {
-      return (true);
-    }
-
-    return (false);
-  }
+  return (false);
 }
 
 // PRIVATE: Allocate RAM for packetUBXCFGRATE and initialize it
@@ -7431,10 +7612,10 @@ boolean SFE_UBLOX_GNSS::initPacketUBXCFGRATE()
       _debugSerial->println(F("initPacketUBXCFGRATE: PANIC! RAM allocation failed!"));
     return (false);
   }
-  packetUBXCFGRATE->automaticFlags.flags.all = 0;
-  packetUBXCFGRATE->callbackPointer = NULL;
-  packetUBXCFGRATE->callbackData = NULL;
-  packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0;
+  packetUBXCFGRATE->automaticFlags.flags.all = 0; // Redundant
+  packetUBXCFGRATE->callbackPointer = NULL; // Redundant
+  packetUBXCFGRATE->callbackData = NULL; // Redundant
+  packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0; // Mark all data as stale/read
   return (true);
 }
 
@@ -9086,6 +9267,29 @@ void SFE_UBLOX_GNSS::logHNRPVT(boolean enabled)
   packetUBXHNRPVT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
+// ***** Helper Functions for NMEA Logging / Processing
+
+// Log selected NMEA messages to file buffer - if the messages are enabled and if the file buffer exists
+// User needs to call setFileBufferSize before .begin
+void SFE_UBLOX_GNSS::setNMEALoggingMask(uint32_t messages)
+{
+  _logNMEA.all = messages;
+}
+uint32_t SFE_UBLOX_GNSS::getNMEALoggingMask()
+{
+  return (_logNMEA.all);
+}
+
+// Pass selected NMEA messages to processNMEA
+void SFE_UBLOX_GNSS::setProcessNMEAMask(uint32_t messages)
+{
+  _processNMEA.all = messages;
+}
+uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
+{
+  return (_processNMEA.all);
+}
+
 // ***** CFG RATE Helper Functions
 
 //Set the rate at which the module will give us an updated navigation solution
@@ -9114,7 +9318,11 @@ boolean SFE_UBLOX_GNSS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait
   payloadCfg[0] = measurementRate & 0xFF; //measRate LSB
   payloadCfg[1] = measurementRate >> 8;   //measRate MSB
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  boolean result = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+
+  flushCFGRATE(); // Mark the polled measurement and navigation rate data as stale
+
+  return (result);
 }
 
 //Get the rate at which the module is outputting nav solutions
@@ -9155,7 +9363,11 @@ boolean SFE_UBLOX_GNSS::setMeasurementRate(uint16_t rate, uint16_t maxWait)
   payloadCfg[0] = rate & 0xFF; //measRate LSB
   payloadCfg[1] = rate >> 8;   //measRate MSB
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  boolean result = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+
+  flushCFGRATE(); // Mark the polled measurement and navigation rate data as stale
+
+  return (result);
 }
 
 //Return the elapsed time between GNSS measurements in milliseconds, which defines the rate
@@ -9190,7 +9402,11 @@ boolean SFE_UBLOX_GNSS::setNavigationRate(uint16_t rate, uint16_t maxWait)
   payloadCfg[2] = rate & 0xFF; //navRate LSB
   payloadCfg[3] = rate >> 8;   //navRate MSB
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  boolean result = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+
+  flushCFGRATE(); // Mark the polled measurement and navigation rate data as stale
+
+  return (result);
 }
 
 //Return the ratio between the number of measurements and the number of navigation solutions. Unit is cycles
@@ -9206,6 +9422,13 @@ uint16_t SFE_UBLOX_GNSS::getNavigationRate(uint16_t maxWait)
   packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all = false;
 
   return (packetUBXCFGRATE->data.navRate);
+}
+
+//Mark the CFG RATE data as read/stale
+void SFE_UBLOX_GNSS::flushCFGRATE()
+{
+  if (packetUBXCFGRATE == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
 }
 
 // ***** DOP Helper Functions
@@ -10158,6 +10381,45 @@ float SFE_UBLOX_GNSS::getSurveyInMeanAccuracy(uint16_t maxWait) // Returned as m
   // meanAcc is U4 (uint32_t) in 0.1mm. We convert this to float.
   uint32_t tempFloat = packetUBXNAVSVIN->data.meanAcc;
   return (((float)tempFloat) / 10000.0); //Convert 0.1mm to m
+}
+
+// ***** TIMELS Helper Functions
+
+uint8_t SFE_UBLOX_GNSS::getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWait)
+{
+  if (packetUBXNAVTIMELS == NULL) initPacketUBXNAVTIMELS(); //Check that RAM has been allocated for the TIMELS data
+  if (packetUBXNAVTIMELS == NULL) //Bail if the RAM allocation failed
+    return 3;
+
+  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent == false)
+    getLeapSecondEvent(maxWait);
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.lsChange = false;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.timeToLsEvent = false;  
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;
+  timeToLsEvent = packetUBXNAVTIMELS->data.timeToLsEvent;
+  // returns NTP Leap Indicator
+  // 0 -no warning
+  // 1 -last minute of the day has 61 seconds
+  // 2 -last minute of the day has 59 seconds
+  // 3 -unknown (clock unsynchronized)
+  return ((boolean)packetUBXNAVTIMELS->data.valid.bits.validTimeToLsEvent ? (uint8_t)(packetUBXNAVTIMELS->data.lsChange == -1 ? 2 : packetUBXNAVTIMELS->data.lsChange) : 3);
+}
+
+int8_t SFE_UBLOX_GNSS::getCurrentLeapSeconds(sfe_ublox_ls_src_e& source, uint16_t maxWait)
+{
+  if (packetUBXNAVTIMELS == NULL) initPacketUBXNAVTIMELS(); //Check that RAM has been allocated for the TIMELS data
+  if (packetUBXNAVTIMELS == NULL) //Bail if the RAM allocation failed
+    return false;
+
+  if (packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validCurrLs == false)
+    getLeapSecondEvent(maxWait);
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validCurrLs = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.srcOfCurrLs = false;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.currLs = false;
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;
+  source = ((sfe_ublox_ls_src_e)packetUBXNAVTIMELS->data.srcOfCurrLs);
+  return ((int8_t)packetUBXNAVTIMELS->data.currLs);
 }
 
 // ***** RELPOSNED Helper Functions and automatic support
