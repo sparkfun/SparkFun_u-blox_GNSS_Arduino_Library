@@ -2437,8 +2437,8 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
       {
         for (int i = 0; (i < DEF_NUM_SENS) && ((i * 8) < (msg->len - 4)); i++)
         {
-          packetUBXESFRAW->data.data[i].data.all = extractLong(msg, 8 + (i * 8));
-          packetUBXESFRAW->data.data[i].sTag = extractLong(msg, 8 + (i * 8) + 4);
+          packetUBXESFRAW->data.data[i].data.all = extractLong(msg, 4 + (i * 8));
+          packetUBXESFRAW->data.data[i].sTag = extractLong(msg, 8 + (i * 8));
         }
 
         //Mark all datums as fresh (not read before)
