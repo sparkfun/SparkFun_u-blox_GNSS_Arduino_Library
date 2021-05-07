@@ -91,7 +91,7 @@ void SFE_UBLOX_GNSS::end(void)
     delete[] packetUBXNAVTIMELS;
     packetUBXNAVTIMELS = NULL; // Redundant?
   }
-  
+
   if (packetUBXNAVPOSECEF != NULL)
   {
     if (packetUBXNAVPOSECEF->callbackData != NULL)
@@ -99,7 +99,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVPOSECEF->callbackData;
     }
     delete[] packetUBXNAVPOSECEF;
-    packetUBXNAVPOSECEF = NULL; // Redundant?  
+    packetUBXNAVPOSECEF = NULL; // Redundant?
   }
 
   if (packetUBXNAVSTATUS != NULL)
@@ -109,7 +109,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVSTATUS->callbackData;
     }
     delete[] packetUBXNAVSTATUS;
-    packetUBXNAVSTATUS = NULL; // Redundant?  
+    packetUBXNAVSTATUS = NULL; // Redundant?
   }
 
   if (packetUBXNAVDOP != NULL)
@@ -119,7 +119,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVDOP->callbackData;
     }
     delete[] packetUBXNAVDOP;
-    packetUBXNAVDOP = NULL; // Redundant?  
+    packetUBXNAVDOP = NULL; // Redundant?
   }
 
   if (packetUBXNAVATT != NULL)
@@ -129,7 +129,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVATT->callbackData;
     }
     delete[] packetUBXNAVATT;
-    packetUBXNAVATT = NULL; // Redundant?  
+    packetUBXNAVATT = NULL; // Redundant?
   }
 
   if (packetUBXNAVPVT != NULL)
@@ -143,7 +143,7 @@ void SFE_UBLOX_GNSS::end(void)
       }
     }
     delete[] packetUBXNAVPVT;
-    packetUBXNAVPVT = NULL; // Redundant?  
+    packetUBXNAVPVT = NULL; // Redundant?
     if (_printDebug == true)
     {
       _debugSerial->println(F("end: packetUBXNAVPVT has been deleted"));
@@ -157,7 +157,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVODO->callbackData;
     }
     delete[] packetUBXNAVODO;
-    packetUBXNAVODO = NULL; // Redundant?  
+    packetUBXNAVODO = NULL; // Redundant?
   }
 
   if (packetUBXNAVVELECEF != NULL)
@@ -167,7 +167,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVVELECEF->callbackData;
     }
     delete[] packetUBXNAVVELECEF;
-    packetUBXNAVVELECEF = NULL; // Redundant?  
+    packetUBXNAVVELECEF = NULL; // Redundant?
   }
 
   if (packetUBXNAVVELNED != NULL)
@@ -177,7 +177,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVVELNED->callbackData;
     }
     delete[] packetUBXNAVVELNED;
-    packetUBXNAVVELNED = NULL; // Redundant?  
+    packetUBXNAVVELNED = NULL; // Redundant?
   }
 
   if (packetUBXNAVHPPOSECEF != NULL)
@@ -187,7 +187,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVHPPOSECEF->callbackData;
     }
     delete[] packetUBXNAVHPPOSECEF;
-    packetUBXNAVHPPOSECEF = NULL; // Redundant?  
+    packetUBXNAVHPPOSECEF = NULL; // Redundant?
   }
 
   if (packetUBXNAVHPPOSLLH != NULL)
@@ -197,7 +197,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVHPPOSLLH->callbackData;
     }
     delete[] packetUBXNAVHPPOSLLH;
-    packetUBXNAVHPPOSLLH = NULL; // Redundant?  
+    packetUBXNAVHPPOSLLH = NULL; // Redundant?
   }
 
   if (packetUBXNAVCLOCK != NULL)
@@ -207,7 +207,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVCLOCK->callbackData;
     }
     delete[] packetUBXNAVCLOCK;
-    packetUBXNAVCLOCK = NULL; // Redundant?  
+    packetUBXNAVCLOCK = NULL; // Redundant?
   }
 
   if (packetUBXNAVSVIN != NULL)
@@ -217,7 +217,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVSVIN->callbackData;
     }
     delete[] packetUBXNAVSVIN;
-    packetUBXNAVSVIN = NULL; // Redundant?  
+    packetUBXNAVSVIN = NULL; // Redundant?
   }
 
   if (packetUBXNAVRELPOSNED != NULL)
@@ -227,7 +227,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXNAVRELPOSNED->callbackData;
     }
     delete[] packetUBXNAVRELPOSNED;
-    packetUBXNAVRELPOSNED = NULL; // Redundant?  
+    packetUBXNAVRELPOSNED = NULL; // Redundant?
   }
 
   if (packetUBXRXMSFRBX != NULL)
@@ -237,7 +237,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXRXMSFRBX->callbackData;
     }
     delete[] packetUBXRXMSFRBX;
-    packetUBXRXMSFRBX = NULL; // Redundant?  
+    packetUBXRXMSFRBX = NULL; // Redundant?
   }
 
   if (packetUBXRXMRAWX != NULL)
@@ -247,7 +247,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXRXMRAWX->callbackData;
     }
     delete[] packetUBXRXMRAWX;
-    packetUBXRXMRAWX = NULL; // Redundant?  
+    packetUBXRXMRAWX = NULL; // Redundant?
   }
 
   if (packetUBXCFGRATE != NULL)
@@ -257,7 +257,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXCFGRATE->callbackData;
     }
     delete[] packetUBXCFGRATE;
-    packetUBXCFGRATE = NULL; // Redundant?  
+    packetUBXCFGRATE = NULL; // Redundant?
   }
 
   if (packetUBXTIMTM2 != NULL)
@@ -267,7 +267,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXTIMTM2->callbackData;
     }
     delete[] packetUBXTIMTM2;
-    packetUBXTIMTM2 = NULL; // Redundant?  
+    packetUBXTIMTM2 = NULL; // Redundant?
   }
 
   if (packetUBXESFALG != NULL)
@@ -277,7 +277,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXESFALG->callbackData;
     }
     delete[] packetUBXESFALG;
-    packetUBXESFALG = NULL; // Redundant?  
+    packetUBXESFALG = NULL; // Redundant?
   }
 
   if (packetUBXESFSTATUS != NULL)
@@ -287,7 +287,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXESFSTATUS->callbackData;
     }
     delete[] packetUBXESFSTATUS;
-    packetUBXESFSTATUS = NULL; // Redundant?  
+    packetUBXESFSTATUS = NULL; // Redundant?
   }
 
   if (packetUBXESFINS != NULL)
@@ -297,7 +297,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXESFINS->callbackData;
     }
     delete[] packetUBXESFINS;
-    packetUBXESFINS = NULL; // Redundant?  
+    packetUBXESFINS = NULL; // Redundant?
   }
 
   if (packetUBXESFMEAS != NULL)
@@ -307,7 +307,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXESFMEAS->callbackData;
     }
     delete[] packetUBXESFMEAS;
-    packetUBXESFMEAS = NULL; // Redundant?  
+    packetUBXESFMEAS = NULL; // Redundant?
   }
 
   if (packetUBXESFRAW != NULL)
@@ -317,7 +317,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXESFRAW->callbackData;
     }
     delete[] packetUBXESFRAW;
-    packetUBXESFRAW = NULL; // Redundant?  
+    packetUBXESFRAW = NULL; // Redundant?
   }
 
   if (packetUBXHNRATT != NULL)
@@ -327,7 +327,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXHNRATT->callbackData;
     }
     delete[] packetUBXHNRATT;
-    packetUBXHNRATT = NULL; // Redundant?  
+    packetUBXHNRATT = NULL; // Redundant?
   }
 
   if (packetUBXHNRINS != NULL)
@@ -337,7 +337,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXHNRINS->callbackData;
     }
     delete[] packetUBXHNRINS;
-    packetUBXHNRINS = NULL; // Redundant?  
+    packetUBXHNRINS = NULL; // Redundant?
   }
 
   if (packetUBXHNRPVT != NULL)
@@ -347,7 +347,7 @@ void SFE_UBLOX_GNSS::end(void)
       delete[] packetUBXHNRPVT->callbackData;
     }
     delete[] packetUBXHNRPVT;
-    packetUBXHNRPVT = NULL; // Redundant?  
+    packetUBXHNRPVT = NULL; // Redundant?
   }
 
 }
@@ -9709,7 +9709,7 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
-  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
+  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) +
                             DAYS_SINCE_MONTH[((uint32_t)packetUBXNAVPVT->data.year - 1970) & 3][(uint32_t)packetUBXNAVPVT->data.month] +
                           ((uint32_t)packetUBXNAVPVT->data.day - 1)) * 24 +
                         (uint32_t)packetUBXNAVPVT->data.hour) * 60 +
@@ -9736,7 +9736,7 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t& microsecond, uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
-  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) + 
+  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) +
                             DAYS_SINCE_MONTH[((uint32_t)packetUBXNAVPVT->data.year - 1970) & 3][(uint32_t)packetUBXNAVPVT->data.month] +
                           ((uint32_t)packetUBXNAVPVT->data.day - 1)) * 24 +
                         (uint32_t)packetUBXNAVPVT->data.hour) * 60 +
@@ -10395,7 +10395,7 @@ uint8_t SFE_UBLOX_GNSS::getLeapIndicator(int32_t& timeToLsEvent, uint16_t maxWai
     getLeapSecondEvent(maxWait);
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.validTimeToLsEvent = false; //Since we are about to give this to user, mark this data as stale
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.lsChange = false;
-  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.timeToLsEvent = false;  
+  packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.timeToLsEvent = false;
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.bits.all = false;
   timeToLsEvent = packetUBXNAVTIMELS->data.timeToLsEvent;
   // returns NTP Leap Indicator
