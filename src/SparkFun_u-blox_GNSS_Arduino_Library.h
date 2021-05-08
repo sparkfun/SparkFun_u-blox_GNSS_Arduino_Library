@@ -641,7 +641,8 @@ public:
 
 	// Push (e.g.) RTCM data directly to the module
 	// Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
-	boolean pushRawData(uint8_t *dataBytes, size_t numDataBytes);
+	// Default to using a restart between transmissions. But processors like ESP32 seem to need a stop (#30). Set stop to true to use a stop instead.
+	boolean pushRawData(uint8_t *dataBytes, size_t numDataBytes, boolean stop = false);
 
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
