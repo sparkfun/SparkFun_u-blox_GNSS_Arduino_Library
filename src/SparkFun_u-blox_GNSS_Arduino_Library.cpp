@@ -3394,7 +3394,9 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
 // Push (e.g.) RTCM data directly to the module
 // Returns true if all numDataBytes were pushed successfully
 // Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
-boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes)
+// Default to using a restart between transmissions. Set stop to true to use a stop instead.
+// On processors like the ESP32, you can use setI2CTransactionSize to increase the size of each transmission - to e.g. 128 bytes
+boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boolean stop)
 {
   if (commType == COMM_TYPE_SERIAL)
   {
@@ -3425,12 +3427,12 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes)
 
       if (bytesLeftToWrite > 0)
       {
-        if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
-          return (false);                          //Sensor did not ACK
+        if (_i2cPort->endTransmission(stop) != 0) //Send a restart or stop command
+          return (false);                         //Sensor did not ACK
       }
       else
       {
-        if (_i2cPort->endTransmission() != 0) //We're done. Release bus.
+        if (_i2cPort->endTransmission() != 0) //We're done. Release bus. Always use a stop here
           return (false);                     //Sensor did not ACK
       }
     }
