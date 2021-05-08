@@ -1435,7 +1435,7 @@ void SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming)
 //This function is called for each byte of an RTCM frame
 //Ths user can overwrite this function and process the RTCM frame as they please
 //Bytes can be piped to Serial or other interface. The consumer could be a radio or the internet (Ntrip broadcaster)
-void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming) // IGNORE COMPILER WARNING unused parameter 'incoming'
 {
   //Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
@@ -2404,7 +2404,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXESFMEAS->data.timeTag = extractLong(msg, 0);
         packetUBXESFMEAS->data.flags.all = extractInt(msg, 4);
         packetUBXESFMEAS->data.id = extractInt(msg, 6);
-        for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas)
+        for (uint16_t i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas)
           && ((i * 4) < (msg->len - 8)); i++)
         {
           packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
@@ -2435,7 +2435,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXESFRAW != NULL)
       {
-        for (int i = 0; (i < DEF_NUM_SENS) && ((i * 8) < (msg->len - 4)); i++)
+        for (uint16_t i = 0; (i < DEF_NUM_SENS) && ((i * 8) < (msg->len - 4)); i++)
         {
           packetUBXESFRAW->data.data[i].data.all = extractLong(msg, 4 + (i * 8));
           packetUBXESFRAW->data.data[i].sTag = extractLong(msg, 8 + (i * 8));
@@ -2468,7 +2468,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXESFSTATUS->data.version = extractByte(msg, 4);
         packetUBXESFSTATUS->data.fusionMode = extractByte(msg, 12);
         packetUBXESFSTATUS->data.numSens = extractByte(msg, 15);
-        for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFSTATUS->data.numSens)
+        for (uint16_t i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFSTATUS->data.numSens)
           && ((i * 4) < (msg->len - 16)); i++)
         {
           packetUBXESFSTATUS->data.status[i].sensStatus1.all = extractByte(msg, 16 + (i * 4) + 0);
@@ -2771,7 +2771,7 @@ void SFE_UBLOX_GNSS::sendSerialCommand(ubxPacket *outgoingUBX)
   _serialPort->write(outgoingUBX->len >> 8);   //MSB
 
   //Write payload.
-  for (int i = 0; i < outgoingUBX->len; i++)
+  for (uint16_t i = 0; i < outgoingUBX->len; i++)
   {
     _serialPort->write(outgoingUBX->payload[i]);
   }
@@ -2823,7 +2823,7 @@ void SFE_UBLOX_GNSS::printPacket(ubxPacket *packet, boolean alwaysPrintPayload)
     {
       _debugSerial->print(F(" Payload:"));
 
-      for (int x = 0; x < packet->len; x++)
+      for (uint16_t x = 0; x < packet->len; x++)
       {
         _debugSerial->print(F(" "));
         _debugSerial->print(packet->payload[x], HEX);
@@ -10143,7 +10143,7 @@ uint16_t SFE_UBLOX_GNSS::getMagAcc(uint16_t maxWait)
 }
 
 // getGeoidSeparation is currently redundant. The geoid separation seems to only be provided in NMEA GGA and GNS messages.
-int32_t SFE_UBLOX_GNSS::getGeoidSeparation(uint16_t maxWait)
+int32_t SFE_UBLOX_GNSS::getGeoidSeparation(uint16_t maxWait) // IGNORE COMPILER WARNING unused parameter 'maxWait'
 {
   return (0);
 }
