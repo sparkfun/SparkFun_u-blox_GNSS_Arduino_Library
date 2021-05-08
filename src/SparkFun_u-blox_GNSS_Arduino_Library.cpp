@@ -1458,7 +1458,7 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_
     //If incomingUBX is a user-defined custom packet, then the payload size could be different to packetCfgPayloadSize.
     //TO DO: update this to prevent an overrun when receiving an automatic message
     //       and the incomingUBX payload size is smaller than packetCfgPayloadSize.
-  size_t maximum_payload_size;
+  uint16_t maximum_payload_size;
   if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG)
     maximum_payload_size = packetCfgPayloadSize;
   else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
