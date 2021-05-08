@@ -156,7 +156,17 @@ void loop()
       //Serial.print("Pushing ");
       //Serial.print(numBytes);
       //Serial.println(" bytes via I2C");
-      myGNSS.pushRawData(((uint8_t *)&store), numBytes); // Push the RTCM data via I2C
+
+      //On processors which have large I2C buffers, like the ESP32, we can make the push more efficient by
+      //calling setI2CTransactionSize first to increase the maximum I2C transmission size
+      //(setI2CTransactionSize only needs to be called once, so it should be in setup, not loop)
+      //myGNSS.setI2CTransactionSize(128); // Send up to 128 bytes in one I2C transmission
+
+      //The ESP32 seems to have an issue when using a restarts to break up long RTCM pushes
+      //You may need to call pushRawData and set the optional 'stop' argument to true:
+      //myGNSS.pushRawData(((uint8_t *)&store), numBytes, true); // Push the RTCM data via I2C - always use stops on long RTCM pushes
+      
+      myGNSS.pushRawData(((uint8_t *)&store), numBytes); // Push the RTCM data via I2C - using restarts to break up long I2C pushes
       numBytes = 0; // Reset numBytes
     }
 #endif
