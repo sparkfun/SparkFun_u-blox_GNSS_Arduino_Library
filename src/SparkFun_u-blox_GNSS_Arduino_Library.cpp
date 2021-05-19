@@ -4818,7 +4818,7 @@ uint32_t SFE_UBLOX_GNSS::createKey(uint16_t group, uint16_t id, uint8_t size)
 //This function takes a full 32-bit key
 //Default layer is RAM
 //Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-sfe_ublox_status_e SFE_UBLOX_GNSS::getVal(uint32_t key, uint8_t layer, uint16_t maxWait)
+sfe_ublox_status_e SFE_UBLOX_GNSS::getVal(uint32_t key, uint8_t layer, uint16_t skipAmt, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_VALGET;
@@ -4841,6 +4841,9 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::getVal(uint32_t key, uint8_t layer, uint16_t 
 
   payloadCfg[0] = 0;        //Message Version - set to 0
   payloadCfg[1] = getLayer; //Layer
+
+  payloadCfg[2] = skipAmt >> 8 * 0; //Position - skip this many key values
+  payloadCfg[3] = skipAmt >> 8 * 1;
 
   //Load key into outgoing payload
   payloadCfg[4] = key >> 8 * 0; //Key LSB
@@ -4878,21 +4881,21 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::getVal(uint32_t key, uint8_t layer, uint16_t 
 //Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GNSS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
-  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (getVal(key, layer, 0, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (0);
 
   return (extractByte(&packetCfg, 8));
 }
 uint16_t SFE_UBLOX_GNSS::getVal16(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
-  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (getVal(key, layer, 0, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (0);
 
   return (extractInt(&packetCfg, 8));
 }
 uint32_t SFE_UBLOX_GNSS::getVal32(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
-  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (getVal(key, layer, 0, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (0);
 
   return (extractLong(&packetCfg, 8));
@@ -5210,6 +5213,38 @@ uint8_t SFE_UBLOX_GNSS::sendCfgValset8(uint32_t key, uint8_t value, uint16_t max
   //Send VALSET command with this key and value
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
+
+//Read 18 sets of key values, for a total of 1088 keys
+//Format the output to match the config files that u-center can understand
+//Layer number can be 0 (RAM) or layer 7 (Default)
+void SFE_UBLOX_GNSS::downloadDeviceConfig(Stream &downloadPort, uint8_t layerNumber, uint16_t maxWait)
+{
+  for (int x = 0 ; x < 18 ; x++)
+  {
+    getVal(0x0FFF0000, layerNumber, x * 64, maxWait); //Advance by 64 keys each time
+
+    //All lines start with a VALGET
+    downloadPort.print(F("CFG-VALGET - 06 8B "));
+
+    //Pretty print the response length
+    uint16_t responseLength = packetCfg.len;
+    if ((responseLength & 0xFF) < 0x10) downloadPort.print(F("0"));
+    downloadPort.print(responseLength & 0xFF, HEX);
+    downloadPort.print(F(" "));
+    if ((responseLength >> 8) < 0x10) downloadPort.print(F("0"));
+    downloadPort.print(responseLength >> 8, HEX);
+
+    //Pretty print the payload
+    for (int x = 0 ; x < 32 ; x++)
+    {
+      downloadPort.print(F(" "));
+      if (payloadCfg[x] < 0x10) downloadPort.print(F("0"));
+      downloadPort.print(payloadCfg[x], HEX);
+    }
+    downloadPort.println();
+  }
+}
+
 
 //=-=-=-=-=-=-=-= "Automatic" Messages =-=-=-=-=-=-=-==-=-=-=-=-=-=-=
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
