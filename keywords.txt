@@ -164,6 +164,7 @@ addCfgValset32	KEYWORD2
 sendCfgValset8	KEYWORD2
 sendCfgValset16	KEYWORD2
 sendCfgValset32	KEYWORD2
+downloadDeviceConfig	KEYWORD2
 
 getNAVPOSECEF	KEYWORD2
 setAutoNAVPOSECEF	KEYWORD2
