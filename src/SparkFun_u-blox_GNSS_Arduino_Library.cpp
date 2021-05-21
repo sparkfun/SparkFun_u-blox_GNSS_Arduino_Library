@@ -2728,7 +2728,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
   uint16_t startSpot = 0;
   while (bytesToSend > 1)
   {
-    uint8_t len = bytesToSend;
+    uint16_t len = bytesToSend;
     if (len > i2cTransactionSize)
       len = i2cTransactionSize;
 
