@@ -464,11 +464,11 @@ void SFE_UBLOX_GNSS::setI2CpollingWait(uint8_t newPollingWait_ms)
 //Most platforms use 32 bytes (the default) but this allows users to increase the transaction
 //size if the platform supports it
 //Note: If the transaction size is set larger than the platforms buffer size, bad things will happen.
-void SFE_UBLOX_GNSS::setI2CTransactionSize(uint8_t transactionSize)
+void SFE_UBLOX_GNSS::setI2CTransactionSize(uint16_t transactionSize)
 {
   i2cTransactionSize = transactionSize;
 }
-uint8_t SFE_UBLOX_GNSS::getI2CTransactionSize(void)
+uint16_t SFE_UBLOX_GNSS::getI2CTransactionSize(void)
 {
   return (i2cTransactionSize);
 }
