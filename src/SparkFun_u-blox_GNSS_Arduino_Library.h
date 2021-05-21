@@ -488,7 +488,6 @@ enum sfe_ublox_ls_src_e
 
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
-#define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
 //#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
 #endif
 
@@ -566,8 +565,8 @@ public:
 	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
 
 	//Control the size of the internal I2C transaction amount
-	void setI2CTransactionSize(uint8_t bufferSize);
-	uint8_t getI2CTransactionSize(void);
+	void setI2CTransactionSize(uint16_t bufferSize);
+	uint16_t getI2CTransactionSize(void);
 
 	//Set the max number of bytes set in a given I2C transaction
 	uint16_t i2cTransactionSize = 32; //Default to ATmega328 limit
