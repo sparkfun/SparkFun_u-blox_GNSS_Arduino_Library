@@ -570,7 +570,7 @@ public:
 	uint8_t getI2CTransactionSize(void);
 
 	//Set the max number of bytes set in a given I2C transaction
-	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
+	uint16_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
 	//Returns true if device answers on _gpsI2Caddress address or via Serial
 	boolean isConnected(uint16_t maxWait = 1100);
