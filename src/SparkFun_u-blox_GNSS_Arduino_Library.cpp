@@ -4929,6 +4929,31 @@ uint8_t SFE_UBLOX_GNSS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint
   return setVal16(key, value, layer, maxWait);
 }
 
+//Given an array of data (most likely from a config file) push using valSet
+uint8_t SFE_UBLOX_GNSS::setVal(uint8_t* value, uint16_t len, uint8_t layer, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_VALSET;
+  packetCfg.len = 4 + len; //4 byte header, *no* key ID, len bytes of raw data
+  packetCfg.startingSpot = 0;
+  
+  //Clear packet payload
+  memset(payloadCfg, 0, packetCfg.len);
+
+  payloadCfg[0] = 1;     //Message Version - set to 1
+  payloadCfg[1] = layer; //By default we ask for the RAM layer
+
+  // payloadCfg[2] = skipAmt >> 8 * 0; //Position - skip this many key values
+  // payloadCfg[3] = skipAmt >> 8 * 1;
+
+  //Copy data into payload
+  for(uint16_t x = 0 ; x < len ; x++)
+    payloadCfg[4 + x] = value[x];
+
+  //Send VALSET command with this key and value
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 //Given a key, set a 16-bit value
 //This function takes a full 32-bit key
 //Default layer is all: RAM+BBR+Flash
