@@ -5214,19 +5214,25 @@ uint8_t SFE_UBLOX_GNSS::sendCfgValset8(uint32_t key, uint8_t value, uint16_t max
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
-//Read 18 sets of key values, for a total of 1088 keys
+//u-center reads 19 queries, 64 keys obtained in each query for 1216 keys
 //Format the output to match the config files that u-center can understand
 //Layer number can be 0 (RAM) or layer 7 (Default)
 void SFE_UBLOX_GNSS::downloadDeviceConfig(Stream &downloadPort, uint8_t layerNumber, uint16_t maxWait)
 {
-  for (int x = 0; x < 18; x++)
+  const uint16_t keysToObtain = 1216;
+  const uint16_t keysPerQuery = 64;
+  const uint16_t loops = keysToObtain / keysPerQuery;
+
+  const uint32_t keyIDRequestAll = 0x0FFF0000; //KeyID of 0x0FFF0000 is request for all items known to the receiver in all groups.
+
+  for (uint16_t x = 0; x < loops; x++)
   {
-    //KeyID of 0x0FFF0000 is magic config read key. Found using u-center and downloading Receiver Configuration from Tools menu.
-    //Advance by 64 keys each time
-    if (getVal(0x0FFF0000, layerNumber, x * 64, maxWait) != SFE_UBLOX_STATUS_SUCCESS)
+    
+    //Advance by keysPerQuery keys each time
+    if (getVal(keyIDRequestAll, layerNumber, x * keysPerQuery, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     {
       //Try again
-      if (getVal(0x0FFF0000, layerNumber, x * 64, maxWait) != SFE_UBLOX_STATUS_SUCCESS)
+      if (getVal(keyIDRequestAll, layerNumber, x * keysPerQuery, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
       {
         if (_printDebug == true)
         {
@@ -5249,7 +5255,7 @@ void SFE_UBLOX_GNSS::downloadDeviceConfig(Stream &downloadPort, uint8_t layerNum
     downloadPort.print(responseLength >> 8, HEX);
 
     //Pretty print the payload
-    for (int x = 0; x < 32; x++)
+    for (int x = 0; x < packetCfg.len; x++)
     {
       downloadPort.print(F(" "));
       if (payloadCfg[x] < 0x10)
