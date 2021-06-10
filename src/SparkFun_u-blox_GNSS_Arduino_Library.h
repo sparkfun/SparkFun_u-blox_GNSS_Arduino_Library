@@ -618,7 +618,7 @@ public:
 	void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);	//Processes NMEA and UBX binary sentences one byte at a time
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
 	void processRTCMframe(uint8_t incoming); //Monitor the incoming bytes for start and length bytes
-	void processRTCM(uint8_t incoming) __attribute__((weak)); //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
+	//void processRTCM(uint8_t incoming) __attribute__((weak)); //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Given a character, file it away into the uxb packet structure
 	void processUBXpacket(ubxPacket *msg); //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 
@@ -626,7 +626,7 @@ public:
 
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	sfe_ublox_status_e sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait, boolean expectACKonly = false); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
-	sfe_ublox_status_e sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait);
+	sfe_ublox_status_e sendI2cCommand(ubxPacket *outgoingUBX);
 	void sendSerialCommand(ubxPacket *outgoingUBX);
 
 	void printPacket(ubxPacket *packet, boolean alwaysPrintPayload = false); //Useful for debugging
@@ -1092,8 +1092,6 @@ public:
 	int32_t getHeadVeh(uint16_t maxWait = defaultMaxWait);
 	int16_t getMagDec(uint16_t maxWait = defaultMaxWait);
 	uint16_t getMagAcc(uint16_t maxWait = defaultMaxWait);
-
-	int32_t getGeoidSeparation(uint16_t maxWait = defaultMaxWait);
 
 	// Helper functions for HPPOSECEF
 
