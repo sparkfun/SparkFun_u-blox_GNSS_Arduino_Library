@@ -1061,6 +1061,7 @@ public:
 
 	bool getDateValid(uint16_t maxWait = defaultMaxWait);
 	bool getTimeValid(uint16_t maxWait = defaultMaxWait);
+	bool getTimeFullyResolved(uint16_t maxWait = defaultMaxWait);
 	bool getConfirmedDate(uint16_t maxWait = defaultMaxWait);
 	bool getConfirmedTime(uint16_t maxWait = defaultMaxWait);
 
