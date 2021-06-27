@@ -55,6 +55,8 @@ end	KEYWORD2
 setI2CpollingWait	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
+setSpiTransactionSize   KEYWORD2
+getSpiTransactionSize   KEYWORD2
 isConnected	KEYWORD2
 enableDebugging	KEYWORD2
 disableDebugging	KEYWORD2
