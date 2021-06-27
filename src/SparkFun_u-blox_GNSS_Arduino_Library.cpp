@@ -505,6 +505,19 @@ uint8_t SFE_UBLOX_GNSS::getI2CTransactionSize(void)
   return (i2cTransactionSize);
 }
 
+//Sets the global size for the SPI buffer/transactions.
+//Call this before begin()!
+//Note: if the buffer size is too small, incoming characters may be lost if the message sent
+//is larger than this buffer. If too big, you may run out of SRAM on constrained architectures!
+void SFE_UBLOX_GNSS::setSpiTransactionSize(uint8_t transactionSize)
+{
+  spiTransactionSize = transactionSize;
+}
+uint8_t SFE_UBLOX_GNSS::getSpiTransactionSize(void)
+{
+  return (spiTransactionSize);
+}
+
 //Returns true if I2C device ack's
 boolean SFE_UBLOX_GNSS::isConnected(uint16_t maxWait)
 {
@@ -2851,7 +2864,7 @@ void SFE_UBLOX_GNSS::sendSerialCommand(ubxPacket *outgoingUBX)
 void SFE_UBLOX_GNSS::spiTransfer(uint8_t byteToTransfer) 
 {
   uint8_t returnedByte = _spiPort->transfer(byteToTransfer);
-  if (returnedByte != 0xFF || currentSentence != NONE)
+  if ((spiBufferIndex < getSpiTransactionSize()) && (returnedByte != 0xFF || currentSentence != NONE))
   {
     spiBuffer[spiBufferIndex] = returnedByte;
     spiBufferIndex++;
@@ -2863,13 +2876,13 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
 {
   if (spiBuffer == NULL) //Memory has not yet been allocated - so use new
   {
-    spiBuffer = new uint8_t[SPI_BUFFER_SIZE];
+    spiBuffer = new uint8_t[getSpiTransactionSize()];
   }
   
   if (spiBuffer == NULL) { 
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
-      _debugSerial->print(F("process: memory allocation failed for SPI Buffer!"));      
+      _debugSerial->print(F("sendSpiCommand: memory allocation failed for SPI Buffer!"));      
     }
   }
   

@@ -576,6 +576,11 @@ public:
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
 
+	//Control the size of the spi buffer. If the buffer isn't big enough, we'll start to lose bytes
+	//That we receive if the buffer is full!
+	void setSpiTransactionSize(uint8_t bufferSize);
+	uint8_t getSpiTransactionSize(void);
+
 	//Set the max number of bytes set in a given I2C transaction
 	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
@@ -1310,6 +1315,7 @@ private:
 
 	uint8_t *spiBuffer = NULL; 				// A buffer to store any bytes being recieved back from the device while we are sending via SPI
 	uint8_t spiBufferIndex = 0;				// Index into the SPI buffer
+	uint8_t spiTransactionSize = SPI_BUFFER_SIZE;	//Default size of the SPI buffer
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg, payloadBuf and payloadAuto arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
