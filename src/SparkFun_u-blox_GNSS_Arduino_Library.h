@@ -51,6 +51,8 @@
 
 #include <Wire.h>
 
+#include <SPI.h>
+
 #include "u-blox_config_keys.h"
 #include "u-blox_structs.h"
 
@@ -492,6 +494,9 @@ enum sfe_ublox_ls_src_e
 //#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
 #endif
 
+// For storing SPI bytes received during sendSpiCommand
+#define SPI_BUFFER_SIZE 128
+
 //-=-=-=-=- UBX binary specific variables
 struct ubxPacket
 {
@@ -560,6 +565,8 @@ public:
 	boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
+	//SPI - supply instance of SPIClass, chip select pin and SPI speed (in Hz)
+	boolean begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed);
 
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
@@ -568,6 +575,11 @@ public:
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
+
+	//Control the size of the spi buffer. If the buffer isn't big enough, we'll start to lose bytes
+	//That we receive if the buffer is full!
+	void setSpiTransactionSize(uint8_t bufferSize);
+	uint8_t getSpiTransactionSize(void);
 
 	//Set the max number of bytes set in a given I2C transaction
 	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
@@ -612,6 +624,7 @@ public:
 
 	boolean checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);	   //Method for I2C polling of data, passing any new bytes to process()
 	boolean checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Method for serial polling of data, passing any new bytes to process()
+	boolean checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Method for spi polling of data, passing any new bytes to process()
 
 	// Process the incoming data
 
@@ -622,12 +635,13 @@ public:
 	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Given a character, file it away into the uxb packet structure
 	void processUBXpacket(ubxPacket *msg); //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 
-	// Send I2C/Serial commands to the module
+	// Send I2C/Serial/SPI commands to the module
 
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	sfe_ublox_status_e sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait, boolean expectACKonly = false); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
 	sfe_ublox_status_e sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait);
 	void sendSerialCommand(ubxPacket *outgoingUBX);
+	void sendSpiCommand(ubxPacket *outgoingUBX);
 
 	void printPacket(ubxPacket *packet, boolean alwaysPrintPayload = false); //Useful for debugging
 
@@ -1235,6 +1249,9 @@ private:
 	//Calculate how much RAM is needed to store the payload for a given automatic message
 	uint16_t getMaxPayloadSize(uint8_t Class, uint8_t ID);
 
+	//Do the actual transfer to SPI
+	void spiTransfer(uint8_t byteToTransfer);
+
 	boolean initGeofenceParams(); // Allocate RAM for currentGeofenceParams and initialize it
 	boolean initModuleSWVersion(); // Allocate RAM for moduleSWVersion and initialize it
 
@@ -1273,6 +1290,10 @@ private:
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
 	Stream *_debugSerial;			//The stream to send debug messages to if enabled
 
+	SPIClass *_spiPort;				//The instance of SPIClass
+	uint8_t _csPin;					//The chip select pin
+	int _spiSpeed;					//The speed to use for SPI (Hz)
+
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
 
@@ -1291,6 +1312,10 @@ private:
 	size_t packetCfgPayloadSize = 0; // Size for the packetCfg payload. .begin will set this to MAX_PAYLOAD_SIZE if necessary. User can change with setPacketCfgPayloadSize
 	uint8_t *payloadCfg = NULL;
 	uint8_t *payloadAuto = NULL;
+
+	uint8_t *spiBuffer = NULL; 				// A buffer to store any bytes being recieved back from the device while we are sending via SPI
+	uint8_t spiBufferIndex = 0;				// Index into the SPI buffer
+	uint8_t spiTransactionSize = SPI_BUFFER_SIZE;	//Default size of the SPI buffer
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg, payloadBuf and payloadAuto arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
