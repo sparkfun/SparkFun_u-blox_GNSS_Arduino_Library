@@ -494,6 +494,9 @@ enum sfe_ublox_ls_src_e
 //#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
 #endif
 
+// For storing SPI bytes received during sendSpiCommand
+#define SPI_BUFFER_SIZE 128
+
 //-=-=-=-=- UBX binary specific variables
 struct ubxPacket
 {
@@ -570,8 +573,8 @@ public:
 	boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
-	//SPI - supply instance of SPIClass, slave select pin and SPI speed (in Hz)
-	boolean begin(SPIClass &spiPort, uint8_t ssPin, int spiSpeed);
+	//SPI - supply instance of SPIClass, chip select pin and SPI speed (in Hz)
+	boolean begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed);
 
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
@@ -1291,7 +1294,7 @@ private:
 	Stream *_debugSerial;			//The stream to send debug messages to if enabled
 
 	SPIClass *_spiPort;				//The instance of SPIClass
-	uint8_t _ssPin;					//The slave select pin
+	uint8_t _csPin;					//The chip select pin
 	int _spiSpeed;					//The speed to use for SPI (Hz)
 
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
@@ -1313,8 +1316,8 @@ private:
 	uint8_t *payloadCfg = NULL;
 	uint8_t *payloadAuto = NULL;
 
-	uint8_t spiBuffer[20]; 				// A small buffer to store any bytes being recieved back from the device while we are sending via SPI
-	uint8_t spiBufferIndex = 0;			// The index into the SPI buffer
+	uint8_t *spiBuffer = NULL; 				// A buffer to store any bytes being recieved back from the device while we are sending via SPI
+	uint8_t spiBufferIndex = 0;				// Index into the SPI buffer
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg, payloadBuf and payloadAuto arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};

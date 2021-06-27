@@ -66,6 +66,7 @@ disableUBX7Fcheck	KEYWORD2
 checkUblox	KEYWORD2
 checkUbloxI2C	KEYWORD2
 checkUbloxSerial	KEYWORD2
+checkUbloxSPI	KEYWORD2
 
 process	KEYWORD2
 processNMEA	KEYWORD2

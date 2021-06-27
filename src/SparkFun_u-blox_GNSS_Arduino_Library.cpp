@@ -452,12 +452,15 @@ boolean SFE_UBLOX_GNSS::begin(Stream &serialPort)
 }
 
 // Initialize for SPI
-boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t ssPin, int spiSpeed)
+boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed)
 {
   commType = COMM_TYPE_SPI;
   _spiPort = &spiPort;
-  _ssPin = ssPin;
+  _csPin = csPin;
   _spiSpeed = spiSpeed;
+  // Initialize the chip select pin
+  pinMode(_csPin, OUTPUT);
+  digitalWrite(_csPin, HIGH);
   //New in v2.0: allocate memory for the packetCfg payload here - if required. (The user may have called setPacketCfgPayloadSize already)
   if (packetCfgPayloadSize == 0)
     setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
@@ -790,32 +793,22 @@ boolean SFE_UBLOX_GNSS::checkUbloxSerial(ubxPacket *incomingUBX, uint8_t request
 //Checks SPI for data, passing any new bytes to process()
 boolean SFE_UBLOX_GNSS::checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
-  // process the contents of the SPI buffer if not empty!
-  uint8_t bufferByte = spiBuffer[0];
-  uint8_t bufferIndex = 0;
-  
-  while (bufferByte != 0xFF) {
-    process(bufferByte, incomingUBX, requestedClass, requestedID);
-    bufferIndex++;
-    bufferByte = spiBuffer[bufferIndex];
+  // Process the contents of the SPI buffer if not empty!  
+  for (uint8_t i = 0; i < spiBufferIndex; i++) {
+    process(spiBuffer[i], incomingUBX, requestedClass, requestedID);        
   }
-
-  // reset the contents of the SPI buffer
-  for(uint8_t i = 0; i < bufferIndex; i++) 
-  {
-    spiBuffer[i] = 0xFF;
-  }
- 
+  spiBufferIndex = 0;
+   
   SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);  
   _spiPort->beginTransaction(settingsA);
-  digitalWrite(_ssPin, LOW);
+  digitalWrite(_csPin, LOW);
   uint8_t byteReturned = _spiPort->transfer(0x0A);
   while (byteReturned != 0xFF || currentSentence != NONE)
   {       
     process(byteReturned, incomingUBX, requestedClass, requestedID);
     byteReturned = _spiPort->transfer(0x0A);
   }
-  digitalWrite(_ssPin, HIGH);
+  digitalWrite(_csPin, HIGH);
   _spiPort->endTransaction();
   return (true);
 
@@ -2791,7 +2784,7 @@ void SFE_UBLOX_GNSS::sendSerialCommand(ubxPacket *outgoingUBX)
 void SFE_UBLOX_GNSS::spiTransfer(uint8_t byteToTransfer) 
 {
   uint8_t returnedByte = _spiPort->transfer(byteToTransfer);
-  if (returnedByte != 0xFF)
+  if (returnedByte != 0xFF || currentSentence != NONE)
   {
     spiBuffer[spiBufferIndex] = returnedByte;
     spiBufferIndex++;
@@ -2801,9 +2794,24 @@ void SFE_UBLOX_GNSS::spiTransfer(uint8_t byteToTransfer)
 // Send a command via SPI
 void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
 {
+  if (spiBuffer == NULL) //Memory has not yet been allocated - so use new
+  {
+    spiBuffer = new uint8_t[SPI_BUFFER_SIZE];
+  }
+  
+  if (spiBuffer == NULL) { 
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->print(F("process: memory allocation failed for SPI Buffer!"));      
+    }
+  }
+  
+  // Start at the beginning of the SPI buffer
+  spiBufferIndex = 0;
+
   SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);
   _spiPort->beginTransaction(settingsA);
-  digitalWrite(_ssPin, LOW);
+  digitalWrite(_csPin, LOW);
   //Write header bytes
   spiTransfer(UBX_SYNCH_1); //μ - oh ublox, you're funny. I will call you micro-blox from now on.
   if (_printDebug) _debugSerial->printf("%x ", UBX_SYNCH_1);
@@ -2831,7 +2839,7 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
   if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->checksumA);
   spiTransfer(outgoingUBX->checksumB);
   if (_printDebug) _debugSerial->printf("%x \n", outgoingUBX->checksumB);
-  digitalWrite(_ssPin, HIGH);
+  digitalWrite(_csPin, HIGH);
   _spiPort->endTransaction();
 }
 
