@@ -1,5 +1,5 @@
 /*
-  Reading lat and long via UBX binary commands over SPI
+  Reading lat and long via UBX binary commands over SPI (ESP32 specific example)
   By: Andrew Berridge
   Date: 27th June 2021
   License: MIT. See license file for more information but you can
