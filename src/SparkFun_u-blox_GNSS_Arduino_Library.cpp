@@ -1306,13 +1306,13 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
     {
       //Divert incoming into the correct buffer
       if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETACK)
-        processUBX(incoming, &packetAck, requestedClass, requestedID);
+        processUBX(incoming, &packetAck);
       else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG)      
-        processUBX(incoming, &packetCfg, requestedClass, requestedID);
+        processUBX(incoming, &packetCfg);
       else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETBUF)
-        processUBX(incoming, &packetBuf, requestedClass, requestedID);
+        processUBX(incoming, &packetBuf);
       else // if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
-        processUBX(incoming, &packetAuto, requestedClass, requestedID);
+        processUBX(incoming, &packetAuto);
     }
     //Finally, increment the frame counter
     ubxFrameCounter++;
@@ -1513,7 +1513,7 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming) // IGNORE COMPILER WARNING un
 //Set valid to VALID or NOT_VALID once sentence is completely received and passes or fails CRC
 //The payload portion of the packet can be 100s of bytes but the max array size is packetCfgPayloadSize bytes.
 //startingSpot can be set so we only record a subset of bytes within a larger packet.
-void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
+void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 {
     //If incomingUBX is a user-defined custom packet, then the payload size could be different to packetCfgPayloadSize.
     //TO DO: update this to prevent an overrun when receiving an automatic message
@@ -1587,54 +1587,6 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_
       incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_VALID; // Flag the packet as valid
       if (_printDebug) _debugSerial->println("processUBX packet is valid");
 
-      // ACK or NACK???
-      if (incomingUBX->isAckForClassAndId(requestedClass, requestedID)) {
-        if (_printDebug)
-        {
-          _debugSerial->print(F("processUBX: ACK received: Requested Class: 0x"));
-          _debugSerial->print(incomingUBX->payload[0], HEX);
-          _debugSerial->print(F(" Requested ID: 0x"));
-          _debugSerial->println(incomingUBX->payload[1], HEX);
-        }
-      }
-
-      else if (incomingUBX->isAckForClassAndId(requestedClass, requestedID))
-      {        
-        if (_printDebug == true)
-        {
-          _debugSerial->print(F("processUBX: NACK received: Requested Class: 0x"));
-          _debugSerial->print(incomingUBX->payload[0], HEX);
-          _debugSerial->print(F(" Requested ID: 0x"));
-          _debugSerial->println(incomingUBX->payload[1], HEX);
-        }
-      }
-
-      else if (incomingUBX->isClassAndIdMatch(requestedClass, requestedID)) 
-      {
-        if (_printDebug == true)
-        {
-          _debugSerial->print(F("processUBX: Message received for requested Class: 0x"));
-          _debugSerial->print(incomingUBX->payload[0], HEX);
-          _debugSerial->print(F(" Requested ID: 0x"));
-          _debugSerial->println(incomingUBX->payload[1], HEX);
-        }
-      }
-
-      //This is not an ACK and we do not have a complete class and ID match
-      //So let's check for an "automatic" message arriving
-      else if (checkAutomatic(incomingUBX->cls, incomingUBX->id))
-      {
-        // This isn't the message we are looking for...
-        // Let's say so...
-        if (_printDebug == true)
-        {
-          _debugSerial->print(F("processUBX: incoming \"automatic\" message: Class: 0x"));
-          _debugSerial->print(incomingUBX->cls, HEX);
-          _debugSerial->print(F(" ID: 0x"));
-          _debugSerial->println(incomingUBX->id, HEX);
-        }
-      }
-
       if (_printDebug == true)
       {
         _debugSerial->print(F("Incoming: Size: "));
@@ -1643,7 +1595,6 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_
         printPacket(incomingUBX);
 
       }
-
       //We've got a valid packet, now do something with it but only if ignoreThisPayload is false
       if (ignoreThisPayload == false)
       {
@@ -1691,9 +1642,13 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_
   {
     //If an automatic packet comes in asynchronously, we need to fudge the startingSpot
     uint16_t startingSpot = incomingUBX->startingSpot;
-    if (!incomingUBX->isClassAndIdMatch(requestedClass, requestedID) && checkAutomatic(incomingUBX->cls, incomingUBX->id))
+    if (checkAutomatic(incomingUBX->cls, incomingUBX->id))
     {
-      //_debugSerial->println("processUBX: incoming is automatic");
+      if(_printDebug == true) 
+      {
+        //_debugSerial->println("processUBX: incoming is automatic");
+      }
+      
       startingSpot = 0;
     }
 
@@ -2979,7 +2934,6 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
   {
     if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
-
       // If we are expecting an ACK only, return as soon as we have it!
       if (expectACKonly && packetAck.isAckForClassAndId(requestedClass, requestedID) && packetAck.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
       {
@@ -3064,19 +3018,6 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
         }
         return (SFE_UBLOX_STATUS_FAIL); //We received invalid data and an invalid ACK!
       }
-
-      // If the config packet is VALID and packetAck does not match the requested class/ID 
-      // then the ACK has not yet been received and we should keep waiting for it
-      else if ((packetCfg.isClassAndIdMatch(requestedClass, requestedID) == true) && (packetAck.isClassAndIdMatch(requestedClass, requestedID) == false))
-      {
-        // if (_printDebug == true)
-        // {
-        //   _debugSerial->print(F("waitForACKResponse: valid data after "));
-        //   _debugSerial->print(millis() - startTime);
-        //   _debugSerial->println(F(" msec. Waiting for ACK."));
-        // }
-      }
-
     } //checkUbloxInternal == true
 
     delayMicroseconds(500);
