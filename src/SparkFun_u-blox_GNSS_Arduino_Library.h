@@ -507,6 +507,15 @@ struct ubxPacket
 	uint8_t checksumB;
 	sfe_ublox_packet_validity_e valid;			 //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
 	sfe_ublox_packet_validity_e classAndIDmatch; // Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
+	bool isClassAndIdMatch(uint8_t theClass, uint8_t theId) {
+		return cls == theClass && theId == id;
+	}
+	bool isAckForClassAndId(uint8_t theClass, uint8_t theId) {
+		return isClassAndIdMatch(UBX_CLASS_ACK, UBX_ACK_ACK) && payload[0] == theClass && payload[1] == theId;
+	}
+	bool isNackForClassAndId(uint8_t theClass, uint8_t theId) {
+		return isClassAndIdMatch(UBX_CLASS_ACK, UBX_ACK_NACK) && payload[0] == theClass && payload[1] == theId;
+	}
 };
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
@@ -639,7 +648,7 @@ public:
 
 	// After sending a message to the module, wait for the expected response (data+ACK or just data)
 
-	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);	 //Poll the module until a config packet and an ACK is received, or just an ACK
+	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait, bool expectACKonly = false);	 //Poll the module until a config packet and an ACK is received, or just an ACK
 	sfe_ublox_status_e waitForNoACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
 
 	// Check if any callbacks need to be called
@@ -1300,7 +1309,7 @@ private:
 	//The packet buffers
 	//These are pointed at from within the ubxPacket
 	uint8_t payloadAck[2];				  // Holds the requested ACK/NACK
-	uint8_t payloadBuf[2];				  // Temporary buffer used to screen incoming packets or dump unrequested packets
+	uint8_t payloadBuf[MAX_PAYLOAD_SIZE];				  // Temporary buffer used to screen incoming packets or dump unrequested packets aberridg TODO: figure out if we can reduce memory usage by not using the whole buffer - needs some clean-up
 	size_t packetCfgPayloadSize = 0; // Size for the packetCfg payload. .begin will set this to MAX_PAYLOAD_SIZE if necessary. User can change with setPacketCfgPayloadSize
 	uint8_t *payloadCfg = NULL;
 	uint8_t *payloadAuto = NULL;
