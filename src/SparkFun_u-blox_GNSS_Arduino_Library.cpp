@@ -451,6 +451,35 @@ boolean SFE_UBLOX_GNSS::begin(Stream &serialPort)
   return (connected);
 }
 
+// Initialize for SPI
+boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t ssPin, int spiSpeed)
+{
+  commType = COMM_TYPE_SPI;
+  _spiPort = &spiPort;
+  _ssPin = ssPin;
+  _spiSpeed = spiSpeed;
+  //New in v2.0: allocate memory for the packetCfg payload here - if required. (The user may have called setPacketCfgPayloadSize already)
+  if (packetCfgPayloadSize == 0)
+    setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
+  Serial.println("Creating buffer");
+  createFileBuffer();
+  boolean connected = isConnected();
+  if (!connected)
+    connected = isConnected();
+
+  if (!connected)
+    connected = isConnected();
+
+  // Initialize/clear the SPI buffer - fill it with 0xFF as this is what is received from the UBLOX module if there's no data to be processed
+  for (uint8_t i = 0; i < 20; i++) 
+  {
+    spiBuffer[i] = 0xFF;
+  }
+
+  return (connected);
+}
+
+
 // Allow the user to change I2C polling wait (the minimum interval between I2C data requests - to avoid pounding the bus)
 // i2cPollingWait defaults to 100ms and is adjusted automatically when setNavigationFrequency()
 // or setHNRNavigationRate() are called. But if the user is using callbacks, it might be advantageous
@@ -598,6 +627,8 @@ boolean SFE_UBLOX_GNSS::checkUbloxInternal(ubxPacket *incomingUBX, uint8_t reque
     return (checkUbloxI2C(incomingUBX, requestedClass, requestedID));
   else if (commType == COMM_TYPE_SERIAL)
     return (checkUbloxSerial(incomingUBX, requestedClass, requestedID));
+  else if (commType == COMM_TYPE_SPI)
+    return (checkUbloxSpi(incomingUBX, requestedClass, requestedID));
   return false;
 }
 
@@ -754,6 +785,42 @@ boolean SFE_UBLOX_GNSS::checkUbloxSerial(ubxPacket *incomingUBX, uint8_t request
   return (true);
 
 } //end checkUbloxSerial()
+
+
+//Checks SPI for data, passing any new bytes to process()
+boolean SFE_UBLOX_GNSS::checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
+{
+  // process the contents of the SPI buffer if not empty!
+  uint8_t bufferByte = spiBuffer[0];
+  uint8_t bufferIndex = 0;
+  
+  while (bufferByte != 0xFF) {
+    process(bufferByte, incomingUBX, requestedClass, requestedID);
+    bufferIndex++;
+    bufferByte = spiBuffer[bufferIndex];
+  }
+
+  // reset the contents of the SPI buffer
+  for(uint8_t i = 0; i < bufferIndex; i++) 
+  {
+    spiBuffer[i] = 0xFF;
+  }
+ 
+  SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);  
+  _spiPort->beginTransaction(settingsA);
+  digitalWrite(_ssPin, LOW);
+  uint8_t byteReturned = _spiPort->transfer(0x0A);
+  while (byteReturned != 0xFF || currentSentence != NONE)
+  {       
+    process(byteReturned, incomingUBX, requestedClass, requestedID);
+    byteReturned = _spiPort->transfer(0x0A);
+  }
+  digitalWrite(_ssPin, HIGH);
+  _spiPort->endTransaction();
+  return (true);
+
+} //end checkUbloxSpi()
+
 
 //PRIVATE: Check if we have storage allocated for an incoming "automatic" message
 boolean SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
@@ -2675,6 +2742,10 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
   {
     sendSerialCommand(outgoingUBX);
   }
+  else if (commType == COMM_TYPE_SPI)
+  {
+    sendSpiCommand(outgoingUBX);
+  }
 
   if (maxWait > 0)
   {
@@ -2779,6 +2850,56 @@ void SFE_UBLOX_GNSS::sendSerialCommand(ubxPacket *outgoingUBX)
   //Write checksum
   _serialPort->write(outgoingUBX->checksumA);
   _serialPort->write(outgoingUBX->checksumB);
+}
+
+
+// Transfer a byte to SPI. Also capture any bytes received from the UBLOX device during sending and capture them in a small buffer so that
+// they can be processed later with process
+void SFE_UBLOX_GNSS::spiTransfer(uint8_t byteToTransfer) 
+{
+  uint8_t returnedByte = _spiPort->transfer(byteToTransfer);
+  if (returnedByte != 0xFF)
+  {
+    spiBuffer[spiBufferIndex] = returnedByte;
+    spiBufferIndex++;
+  }
+}
+
+// Send a command via SPI
+void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
+{
+  SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);
+  _spiPort->beginTransaction(settingsA);
+  digitalWrite(_ssPin, LOW);
+  //Write header bytes
+  spiTransfer(UBX_SYNCH_1); //μ - oh ublox, you're funny. I will call you micro-blox from now on.
+  if (_printDebug) _debugSerial->printf("%x ", UBX_SYNCH_1);
+  spiTransfer(UBX_SYNCH_2); //b
+  if (_printDebug) _debugSerial->printf("%x ", UBX_SYNCH_2);
+
+  spiTransfer(outgoingUBX->cls);
+  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->cls);
+  spiTransfer(outgoingUBX->id);
+  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->id);
+  spiTransfer(outgoingUBX->len & 0xFF); //LSB
+  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->len & 0xFF);
+  spiTransfer(outgoingUBX->len >> 8);
+  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->len >> 8);
+
+  //Write payload.
+  for (uint16_t i = 0; i < outgoingUBX->len; i++)
+  {
+    spiTransfer(outgoingUBX->payload[i]);
+    if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->payload[i]);
+  }
+
+  //Write checksum
+  spiTransfer(outgoingUBX->checksumA);
+  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->checksumA);
+  spiTransfer(outgoingUBX->checksumB);
+  if (_printDebug) _debugSerial->printf("%x \n", outgoingUBX->checksumB);
+  digitalWrite(_ssPin, HIGH);
+  _spiPort->endTransaction();
 }
 
 //Pretty prints the current ubxPacket
