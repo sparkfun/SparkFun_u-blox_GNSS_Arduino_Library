@@ -843,6 +843,9 @@ boolean SFE_UBLOX_GNSS::checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedC
     process(spiBuffer[i], incomingUBX, requestedClass, requestedID);        
   }
   spiBufferIndex = 0;
+
+  //Note to future self: maybe we need the equivalent of "if (millis() - lastCheck >= i2cPollingWait)" here?
+  //At the moment the code will pound the SPI bus while waiting for data...
    
   SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);  
   _spiPort->beginTransaction(settingsA);
