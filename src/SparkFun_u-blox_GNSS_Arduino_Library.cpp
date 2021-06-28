@@ -469,15 +469,6 @@ boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpee
   
   createFileBuffer();
   
-  // Call isConnected up to three times
-  boolean connected = isConnected();
-
-  if (!connected)
-    connected = isConnected();
-
-  if (!connected)
-    connected = isConnected();
-
   //Create the SPI buffer
   if (spiBuffer == NULL) //Memory has not yet been allocated - so use new
   {
@@ -488,7 +479,8 @@ boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpee
   { 
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
-      _debugSerial->print(F("begin (SPI): memory allocation failed for SPI Buffer!"));      
+      _debugSerial->print(F("begin (SPI): memory allocation failed for SPI Buffer!"));
+      return (false);
     }
   }
   else
@@ -499,6 +491,15 @@ boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpee
       spiBuffer[i] = 0xFF;
     }
   }
+
+  // Call isConnected up to three times
+  boolean connected = isConnected();
+
+  if (!connected)
+    connected = isConnected();
+
+  if (!connected)
+    connected = isConnected();
 
   return (connected);
 }
