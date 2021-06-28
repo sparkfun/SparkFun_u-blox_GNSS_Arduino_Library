@@ -2900,7 +2900,7 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
   { 
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
-      _debugSerial->print(F("sendSpiCommand: memory allocation failed for SPI Buffer!"));      
+      _debugSerial->print(F("sendSpiCommand: no memory allocation for SPI Buffer!"));      
     }
     return;
   }
@@ -2922,19 +2922,18 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
 
   if (_printDebug)
   {
-    _debugSerial->print(F("sendSpiCommand: 0x"));
+    _debugSerial->print(F("sendSpiCommand: "));
     _debugSerial->print(UBX_SYNCH_1, HEX);
     _debugSerial->print(F(" "));
     _debugSerial->print(UBX_SYNCH_2, HEX);
-    _debugSerial->print(F("  "));
+    _debugSerial->print(F(" "));
     _debugSerial->print(outgoingUBX->cls, HEX);
     _debugSerial->print(F(" "));
     _debugSerial->print(outgoingUBX->id, HEX);
-    _debugSerial->print(F("  "));
+    _debugSerial->print(F(" "));
     _debugSerial->print(outgoingUBX->len & 0xFF, HEX);
     _debugSerial->print(F(" "));
     _debugSerial->print(outgoingUBX->len >> 8, HEX);
-    _debugSerial->print(F(" "));
   }
 
   //Write payload.
@@ -2956,7 +2955,7 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
 
   if (_printDebug)
   {
-    _debugSerial->print(F("  "));
+    _debugSerial->print(F(" "));
     _debugSerial->print(outgoingUBX->checksumA, HEX);
     _debugSerial->print(F(" "));
     _debugSerial->println(outgoingUBX->checksumB, HEX);
