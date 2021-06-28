@@ -3585,7 +3585,7 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
     size_t bytesWritten = _serialPort->write(dataBytes, numDataBytes);
     return (bytesWritten == numDataBytes);
   }
-  else
+  else if (commType == COMM_TYPE_I2C)
   {
     // I2C: split the data up into packets of i2cTransactionSize
     size_t bytesLeftToWrite = numDataBytes;
@@ -3619,6 +3619,13 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
     }
 
     return (bytesWrittenTotal == numDataBytes);
+  }
+  else // SPI
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("pushRawData: SPI not currently supported"));
+    }
   }
 }
 
