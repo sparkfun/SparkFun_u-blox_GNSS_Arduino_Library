@@ -2482,7 +2482,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         {
           packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
         }
-        if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4)))
+        if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4))) // IGNORE COMPILER WARNING comparison between signed and unsigned integer expressions
           packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
 
         //Mark all datums as fresh (not read before)
@@ -2894,33 +2894,54 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
   digitalWrite(_csPin, LOW);
   //Write header bytes
   spiTransfer(UBX_SYNCH_1); //μ - oh ublox, you're funny. I will call you micro-blox from now on.
-  if (_printDebug) _debugSerial->printf("%x ", UBX_SYNCH_1);
   spiTransfer(UBX_SYNCH_2); //b
-  if (_printDebug) _debugSerial->printf("%x ", UBX_SYNCH_2);
 
   spiTransfer(outgoingUBX->cls);
-  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->cls);
   spiTransfer(outgoingUBX->id);
-  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->id);
   spiTransfer(outgoingUBX->len & 0xFF); //LSB
-  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->len & 0xFF);
   spiTransfer(outgoingUBX->len >> 8);
-  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->len >> 8);
+
+  if (_printDebug)
+  {
+    _debugSerial->print(F("sendSpiCommand: 0x"));
+    _debugSerial->print(UBX_SYNCH_1, HEX);
+    _debugSerial->print(F(" "));
+    _debugSerial->print(UBX_SYNCH_2, HEX);
+    _debugSerial->print(F("  "));
+    _debugSerial->print(outgoingUBX->cls, HEX);
+    _debugSerial->print(F(" "));
+    _debugSerial->print(outgoingUBX->id, HEX);
+    _debugSerial->print(F("  "));
+    _debugSerial->print(outgoingUBX->len & 0xFF, HEX);
+    _debugSerial->print(F(" "));
+    _debugSerial->print(outgoingUBX->len >> 8, HEX);
+    _debugSerial->print(F(" "));
+  }
 
   //Write payload.
   for (uint16_t i = 0; i < outgoingUBX->len; i++)
   {
     spiTransfer(outgoingUBX->payload[i]);
-    if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->payload[i]);
+    if (_printDebug)
+    {
+      _debugSerial->print(F(" "));
+      _debugSerial->print(outgoingUBX->payload[i], HEX);
+    }
   }
 
   //Write checksum
   spiTransfer(outgoingUBX->checksumA);
-  if (_printDebug) _debugSerial->printf("%x ", outgoingUBX->checksumA);
   spiTransfer(outgoingUBX->checksumB);
-  if (_printDebug) _debugSerial->printf("%x \n", outgoingUBX->checksumB);
   digitalWrite(_csPin, HIGH);
   _spiPort->endTransaction();
+
+  if (_printDebug)
+  {
+    _debugSerial->print(F("  "));
+    _debugSerial->print(outgoingUBX->checksumA, HEX);
+    _debugSerial->print(F(" "));
+    _debugSerial->println(outgoingUBX->checksumB, HEX);
+  }
 }
 
 //Pretty prints the current ubxPacket
