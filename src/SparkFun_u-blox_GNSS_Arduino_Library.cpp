@@ -478,10 +478,26 @@ boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpee
   if (!connected)
     connected = isConnected();
 
-  // Initialize/clear the SPI buffer - fill it with 0xFF as this is what is received from the UBLOX module if there's no data to be processed
-  for (uint8_t i = 0; i < 20; i++) 
+  //Create the SPI buffer
+  if (spiBuffer == NULL) //Memory has not yet been allocated - so use new
   {
-    spiBuffer[i] = 0xFF;
+    spiBuffer = new uint8_t[getSpiTransactionSize()];
+  }
+  
+  if (spiBuffer == NULL)
+  { 
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->print(F("begin (SPI): memory allocation failed for SPI Buffer!"));      
+    }
+  }
+  else
+  {
+    // Initialize/clear the SPI buffer - fill it with 0xFF as this is what is received from the UBLOX module if there's no data to be processed
+    for (uint8_t i = 0; i < getSpiTransactionSize(); i++) 
+    {
+      spiBuffer[i] = 0xFF;
+    }
   }
 
   return (connected);
@@ -2879,16 +2895,13 @@ void SFE_UBLOX_GNSS::spiTransfer(uint8_t byteToTransfer)
 // Send a command via SPI
 void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
 {
-  if (spiBuffer == NULL) //Memory has not yet been allocated - so use new
-  {
-    spiBuffer = new uint8_t[getSpiTransactionSize()];
-  }
-  
-  if (spiBuffer == NULL) { 
+  if (spiBuffer == NULL)
+  { 
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
       _debugSerial->print(F("sendSpiCommand: memory allocation failed for SPI Buffer!"));      
     }
+    return;
   }
   
   // Start at the beginning of the SPI buffer

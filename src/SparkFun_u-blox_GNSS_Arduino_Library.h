@@ -495,7 +495,7 @@ enum sfe_ublox_ls_src_e
 #endif
 
 // For storing SPI bytes received during sendSpiCommand
-#define SPI_BUFFER_SIZE 128
+#define SFE_UBLOX_SPI_BUFFER_SIZE 128
 
 //-=-=-=-=- UBX binary specific variables
 struct ubxPacket
@@ -1316,7 +1316,7 @@ private:
 
 	uint8_t *spiBuffer = NULL; 				// A buffer to store any bytes being recieved back from the device while we are sending via SPI
 	uint8_t spiBufferIndex = 0;				// Index into the SPI buffer
-	uint8_t spiTransactionSize = SPI_BUFFER_SIZE;	//Default size of the SPI buffer
+	uint8_t spiTransactionSize = SFE_UBLOX_SPI_BUFFER_SIZE;	//Default size of the SPI buffer
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg, payloadBuf and payloadAuto arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
