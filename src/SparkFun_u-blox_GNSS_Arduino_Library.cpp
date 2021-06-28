@@ -528,12 +528,22 @@ uint8_t SFE_UBLOX_GNSS::getI2CTransactionSize(void)
 }
 
 //Sets the global size for the SPI buffer/transactions.
-//Call this before begin()!
+//Call this **before** begin()!
 //Note: if the buffer size is too small, incoming characters may be lost if the message sent
 //is larger than this buffer. If too big, you may run out of SRAM on constrained architectures!
 void SFE_UBLOX_GNSS::setSpiTransactionSize(uint8_t transactionSize)
 {
-  spiTransactionSize = transactionSize;
+  if (spiBuffer == NULL)
+  {
+    spiTransactionSize = transactionSize;
+  }
+  else
+  { 
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("setSpiTransactionSize: you need to call setSpiTransactionSize _before_ begin!"));
+    }
+  }
 }
 uint8_t SFE_UBLOX_GNSS::getSpiTransactionSize(void)
 {
