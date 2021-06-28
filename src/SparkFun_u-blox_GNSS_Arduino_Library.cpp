@@ -458,15 +458,20 @@ boolean SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpee
   _spiPort = &spiPort;
   _csPin = csPin;
   _spiSpeed = spiSpeed;
+
   // Initialize the chip select pin
   pinMode(_csPin, OUTPUT);
   digitalWrite(_csPin, HIGH);
+
   //New in v2.0: allocate memory for the packetCfg payload here - if required. (The user may have called setPacketCfgPayloadSize already)
   if (packetCfgPayloadSize == 0)
     setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
-  Serial.println("Creating buffer");
+  
   createFileBuffer();
+  
+  // Call isConnected up to three times
   boolean connected = isConnected();
+
   if (!connected)
     connected = isConnected();
 
