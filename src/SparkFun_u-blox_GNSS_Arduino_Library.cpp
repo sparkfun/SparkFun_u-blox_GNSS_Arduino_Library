@@ -850,13 +850,13 @@ boolean SFE_UBLOX_GNSS::checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedC
   SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);  
   _spiPort->beginTransaction(settingsA);
   digitalWrite(_csPin, LOW);
-  uint8_t byteReturned = _spiPort->transfer(0x0A);
+  uint8_t byteReturned = _spiPort->transfer(0xFF);
   // Note to future self: I think the 0xFF check will cause problems when attempting to process (e.g.) RAWX data
   // which could legitimately contain 0xFF within the data stream
   while (byteReturned != 0xFF || currentSentence != NONE)
   {       
     process(byteReturned, incomingUBX, requestedClass, requestedID);
-    byteReturned = _spiPort->transfer(0x0A);
+    byteReturned = _spiPort->transfer(0xFF);
   }
   digitalWrite(_csPin, HIGH);
   _spiPort->endTransaction();
