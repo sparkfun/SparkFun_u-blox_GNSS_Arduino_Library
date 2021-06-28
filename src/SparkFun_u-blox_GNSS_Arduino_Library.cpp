@@ -3638,6 +3638,7 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
     {
       _debugSerial->println(F("pushRawData: SPI not currently supported"));
     }
+    return (false);
   }
 }
 
