@@ -497,6 +497,12 @@ enum sfe_ublox_ls_src_e
 // For storing SPI bytes received during sendSpiCommand
 #define SFE_UBLOX_SPI_BUFFER_SIZE 128
 
+// Default maximum NMEA byte count
+// maxNMEAByteCount was set to 82: https://en.wikipedia.org/wiki/NMEA_0183#Message_structure
+// but the u-blox HP (RTK) GGA messages are 88 bytes long
+// The user can adjust maxNMEAByteCount by calling setMaxNMEAByteCount
+#define SFE_UBLOX_MAX_NMEA_BYTE_COUNT 88
+
 //-=-=-=-=- UBX binary specific variables
 struct ubxPacket
 {
@@ -572,6 +578,9 @@ public:
 
 	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
 
+	//Set the max number of bytes set in a given I2C transaction
+	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
+
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
@@ -581,8 +590,9 @@ public:
 	void setSpiTransactionSize(uint8_t bufferSize);
 	uint8_t getSpiTransactionSize(void);
 
-	//Set the max number of bytes set in a given I2C transaction
-	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
+	//Control the size of maxNMEAByteCount
+	void setMaxNMEAByteCount(int8_t newMax);
+	int8_t getMaxNMEAByteCount(void);
 
 	//Returns true if device answers on _gpsI2Caddress address or via Serial
 	boolean isConnected(uint16_t maxWait = 1100);
@@ -1345,7 +1355,9 @@ private:
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 
 	int8_t nmeaByteCounter;				//Count all NMEA message bytes.
-	const int8_t maxNMEAByteCount = 82;	// Abort NMEA message reception if nmeaByteCounter exceeds this (https://en.wikipedia.org/wiki/NMEA_0183#Message_structure)
+	// Abort NMEA message reception if nmeaByteCounter exceeds maxNMEAByteCount.
+	// The user can adjust maxNMEAByteCount by calling setMaxNMEAByteCount
+	int8_t maxNMEAByteCount = SFE_UBLOX_MAX_NMEA_BYTE_COUNT;
 	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
 	boolean logThisNMEA();				// Return true if we should log this NMEA message
 	boolean processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA

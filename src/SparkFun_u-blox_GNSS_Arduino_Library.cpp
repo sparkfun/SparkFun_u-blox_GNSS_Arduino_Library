@@ -550,6 +550,16 @@ uint8_t SFE_UBLOX_GNSS::getSpiTransactionSize(void)
   return (spiTransactionSize);
 }
 
+//Sets the size of maxNMEAByteCount
+void SFE_UBLOX_GNSS::setMaxNMEAByteCount(int8_t newMax)
+{
+  maxNMEAByteCount = newMax;
+}
+int8_t SFE_UBLOX_GNSS::getMaxNMEAByteCount(void)
+{
+  return (maxNMEAByteCount);
+}
+
 //Returns true if I2C device ack's
 boolean SFE_UBLOX_GNSS::isConnected(uint16_t maxWait)
 {
