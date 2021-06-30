@@ -1303,7 +1303,7 @@ private:
 
 	SPIClass *_spiPort;				//The instance of SPIClass
 	uint8_t _csPin;					//The chip select pin
-	int _spiSpeed;					//The speed to use for SPI (Hz)
+	uint32_t _spiSpeed;				//The speed to use for SPI (Hz)
 
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software

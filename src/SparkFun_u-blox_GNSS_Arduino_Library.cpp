@@ -857,8 +857,7 @@ boolean SFE_UBLOX_GNSS::checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedC
   //Note to future self: maybe we need the equivalent of "if (millis() - lastCheck >= i2cPollingWait)" here?
   //At the moment the code will pound the SPI bus while waiting for data...
    
-  SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);  
-  _spiPort->beginTransaction(settingsA);
+  _spiPort->beginTransaction(SPISettings(_spiSpeed, MSBFIRST, SPI_MODE0));
   digitalWrite(_csPin, LOW);
   uint8_t byteReturned = _spiPort->transfer(0xFF);
   // Note to future self: I think the 0xFF check will cause problems when attempting to process (e.g.) RAWX data
@@ -2933,8 +2932,7 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
   // Start at the beginning of the SPI buffer
   spiBufferIndex = 0;
 
-  SPISettings settingsA(_spiSpeed, MSBFIRST, SPI_MODE0);
-  _spiPort->beginTransaction(settingsA);
+  _spiPort->beginTransaction(SPISettings(_spiSpeed, MSBFIRST, SPI_MODE0));
   digitalWrite(_csPin, LOW);
   //Write header bytes
   spiTransfer(UBX_SYNCH_1); //μ - oh ublox, you're funny. I will call you micro-blox from now on.
