@@ -514,6 +514,13 @@ void SFE_UBLOX_GNSS::setI2CpollingWait(uint8_t newPollingWait_ms)
   i2cPollingWait = newPollingWait_ms;
 }
 
+// Allow the user to change SPI polling wait
+// (the minimum interval between SPI data requests when no data is available - to avoid pounding the bus)
+void SFE_UBLOX_GNSS::setSPIpollingWait(uint8_t newPollingWait_ms)
+{
+  spiPollingWait = newPollingWait_ms;
+}
+
 //Sets the global size for I2C transactions
 //Most platforms use 32 bytes (the default) but this allows users to increase the transaction
 //size if the platform supports it
@@ -664,7 +671,7 @@ const char *SFE_UBLOX_GNSS::statusString(sfe_ublox_status_e stat)
   return "None";
 }
 
-// Check for the arrival of new I2C/Serial data
+// Check for the arrival of new I2C/Serial/SPI data
 
 //Allow the user to disable the "7F" check (e.g.) when logging RAWX data
 void SFE_UBLOX_GNSS::disableUBX7Fcheck(boolean disabled)
@@ -860,8 +867,20 @@ boolean SFE_UBLOX_GNSS::checkUbloxSpi(ubxPacket *incomingUBX, uint8_t requestedC
   _spiPort->beginTransaction(SPISettings(_spiSpeed, MSBFIRST, SPI_MODE0));
   digitalWrite(_csPin, LOW);
   uint8_t byteReturned = _spiPort->transfer(0xFF);
-  // Note to future self: I think the 0xFF check will cause problems when attempting to process (e.g.) RAWX data
-  // which could legitimately contain 0xFF within the data stream
+
+  // Note to future self: I think the 0xFF check might cause problems when attempting to process (e.g.) RAWX data
+  // which could legitimately contain 0xFF within the data stream. But the currentSentence check will certainly help!
+
+  // If we are not receiving a sentence (currentSentence == NONE) and the byteReturned is 0xFF,
+  // i.e. the module has no data for us, then delay for 
+  if ((byteReturned == 0xFF) && (currentSentence == NONE))
+  {
+    digitalWrite(_csPin, HIGH);
+    _spiPort->endTransaction();
+    delay(spiPollingWait);
+    return (true);
+  }
+
   while (byteReturned != 0xFF || currentSentence != NONE)
   {       
     process(byteReturned, incomingUBX, requestedClass, requestedID);
@@ -3208,7 +3227,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
 
     } //checkUbloxInternal == true
 
-    delayMicroseconds(500);
+    delay(1); // Allow an RTOS to get an elbow in (#11)
   } //while (millis() - startTime < maxTime)
 
   // We have timed out...
@@ -3318,7 +3337,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForNoACKResponse(ubxPacket *outgoingUBX, 
       }
     }
 
-    delayMicroseconds(500);
+    delay(1); // Allow an RTOS to get an elbow in (#11)
   }
 
   if (_printDebug == true)

@@ -86,6 +86,8 @@ void setup()
     while (1);
   }
   
+  //myGNSS.factoryDefault(); delay(5000); // Uncomment this line to reset the module back to its factory defaults
+
   myGNSS.setPortOutput(COM_PORT_SPI, COM_TYPE_UBX); //Set the SPI port to output UBX only (turn off NMEA noise)
   myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 }

@@ -577,6 +577,7 @@ public:
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
 	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
+	void setSPIpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the SPI polling wait if required
 
 	//Set the max number of bytes set in a given I2C transaction
 	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
@@ -1344,9 +1345,13 @@ private:
 	sfe_ublox_packet_buffer_e activePacketBuffer = SFE_UBLOX_PACKET_PACKETBUF;
 
 	//Limit checking of new data to every X ms
-	//If we are expecting an update every X Hz then we should check every half that amount of time
+	//If we are expecting an update every X Hz then we should check every quarter that amount of time
 	//Otherwise we may block ourselves from seeing new data
 	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency() or setHNRNavigationRate() or setMeasurementRate()
+
+	//The SPI polling wait is a little different. checkUbloxSpi will delay for this amount before returning if
+	//there is no data waiting to be read. This prevents waitForACKResponse from pounding the SPI bus too hard.
+	uint8_t spiPollingWait = 9; //Default to 9ms; waitForACKResponse delays for 1ms on top of this. User can adjust with setSPIPollingWait.
 
 	unsigned long lastCheck = 0;
 

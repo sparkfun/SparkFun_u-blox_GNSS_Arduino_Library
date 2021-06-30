@@ -53,6 +53,7 @@ setPacketCfgPayloadSize	KEYWORD2
 begin	KEYWORD2
 end	KEYWORD2
 setI2CpollingWait	KEYWORD2
+setSPIpollingWait	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
 setSpiTransactionSize   KEYWORD2

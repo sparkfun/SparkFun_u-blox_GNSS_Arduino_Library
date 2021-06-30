@@ -79,12 +79,14 @@ void setup()
     while (1);
   }
   
+  //myGNSS.factoryDefault(); delay(5000); // Uncomment this line to reset the module back to its factory defaults
+
   myGNSS.setPortOutput(COM_PORT_SPI, COM_TYPE_UBX); //Set the SPI port to output UBX only (turn off NMEA noise)
   myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
 
   myGNSS.setNavigationFrequency(2); //Produce two solutions per second
   myGNSS.setAutoPVT(true); //Tell the GNSS to "send" each solution
-  //myGNSS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
+  //myGNSS.saveConfiguration(); //Optional: Save _all_ the current settings to flash and BBR
 }
 
 void loop()
