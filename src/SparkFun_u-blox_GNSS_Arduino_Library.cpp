@@ -2756,6 +2756,11 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
       if (_printDebug == true)
       {
         _debugSerial->println(F("sendCommand: Waiting for ACK response"));
+        _debugSerial->print(F("expecting cls and id: 0x"));
+        _debugSerial->print(outgoingUBX->cls, HEX);
+        _debugSerial->print(F(" 0x"));
+        _debugSerial->println(outgoingUBX->id, HEX);
+
       }
       retVal = waitForACKResponse(outgoingUBX, outgoingUBX->cls, outgoingUBX->id, maxWait, expectACKonly); //Wait for Ack response
     }
@@ -3029,6 +3034,13 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
   packetAuto.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
 
   unsigned long startTime = millis();
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("waitForACKResponse: requested class and id: "));    
+    _debugSerial->print(requestedClass, HEX);
+    _debugSerial->print(F(" "));
+    _debugSerial->println(requestedID, HEX);
+  }
   while (millis() - startTime < maxTime)
   {
     if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
@@ -3793,7 +3805,7 @@ boolean SFE_UBLOX_GNSS::setPortOutput(uint8_t portID, uint8_t outStreamSettings,
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[14] = outStreamSettings; //OutProtocolMask LSB - Set outStream bits
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
@@ -3814,7 +3826,7 @@ boolean SFE_UBLOX_GNSS::setPortInput(uint8_t portID, uint8_t inStreamSettings, u
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[12] = inStreamSettings; //InProtocolMask LSB - Set inStream bits
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Changes the I2C address that the u-blox module responds to
@@ -4028,7 +4040,7 @@ boolean SFE_UBLOX_GNSS::configureMessage(uint8_t msgClass, uint8_t msgID, uint8_
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[2 + portID] = sendRate; //Send rate is relative to the event a message is registered on. For example, if the rate of a navigation message is set to 2, the message is sent every 2nd navigation solution.
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Enable a given message type, default of 1 per update rate (usually 1 per second)
@@ -4117,7 +4129,7 @@ boolean SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint16_t observationTime, fl
   payloadCfg[30] = svinAccLimit >> 16;
   payloadCfg[31] = svinAccLimit >> 24;
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Begin Survey-In for NEO-M8P
@@ -4179,7 +4191,7 @@ bool SFE_UBLOX_GNSS::setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, 
   payloadCfg[17] = ecefYOrLonHP;
   payloadCfg[18] = ecefZOrAltHP;
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 bool SFE_UBLOX_GNSS::setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latlong, uint16_t maxWait)
@@ -4382,7 +4394,7 @@ boolean SFE_UBLOX_GNSS::addGeofence(int32_t latitude, int32_t longitude, uint32_
     payloadCfg[54] = currentGeofenceParams->rads[3] >> 16;
     payloadCfg[55] = currentGeofenceParams->rads[3] >> 24;
   }
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Clear all geofences using UBX-CFG-GEOFENCE
@@ -4408,7 +4420,7 @@ boolean SFE_UBLOX_GNSS::clearGeofences(uint16_t maxWait)
 
   currentGeofenceParams->numFences = 0; // Zero the number of geofences currently in use
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Clear the antenna control settings using UBX-CFG-ANT
@@ -4426,7 +4438,7 @@ boolean SFE_UBLOX_GNSS::clearAntPIO(uint16_t maxWait)
   payloadCfg[2] = 0xFF; // Antenna pin configuration: set pinSwitch and pinSCD to 31
   payloadCfg[3] = 0xFF; // Antenna pin configuration: set pinOCD to 31, set reconfig bit
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Returns the combined geofence state using UBX-NAV-GEOFENCE
@@ -4702,7 +4714,7 @@ boolean SFE_UBLOX_GNSS::setDynamicModel(dynModel newDynamicModel, uint16_t maxWa
   packetCfg.len = 36;
   packetCfg.startingSpot = 0;
 
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return (sendCommand(&packetCfg, maxWait, true) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Get the dynamic platform model using UBX-CFG-NAV5
