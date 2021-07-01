@@ -53,8 +53,13 @@ setPacketCfgPayloadSize	KEYWORD2
 begin	KEYWORD2
 end	KEYWORD2
 setI2CpollingWait	KEYWORD2
+setSPIpollingWait	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
+setSpiTransactionSize   KEYWORD2
+getSpiTransactionSize   KEYWORD2
+setMaxNMEAByteCount   KEYWORD2
+getMaxNMEAByteCount   KEYWORD2
 isConnected	KEYWORD2
 enableDebugging	KEYWORD2
 disableDebugging	KEYWORD2
@@ -66,6 +71,7 @@ disableUBX7Fcheck	KEYWORD2
 checkUblox	KEYWORD2
 checkUbloxI2C	KEYWORD2
 checkUbloxSerial	KEYWORD2
+checkUbloxSPI	KEYWORD2
 
 process	KEYWORD2
 processNMEA	KEYWORD2
@@ -425,6 +431,7 @@ getNanosecond	KEYWORD2
 getUnixEpoch	KEYWORD2
 getDateValid	KEYWORD2
 getTimeValid	KEYWORD2
+getTimeFullyResolved	KEYWORD2
 getConfirmedDate	KEYWORD2
 getConfirmedTime	KEYWORD2
 getFixType	KEYWORD2

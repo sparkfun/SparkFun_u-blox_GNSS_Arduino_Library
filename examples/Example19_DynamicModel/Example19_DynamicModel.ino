@@ -68,7 +68,7 @@ void setup()
 
   if (myGNSS.setDynamicModel(DYN_MODEL_PORTABLE) == false) // Set the dynamic model to PORTABLE
   {
-    Serial.println(F("***!!! Warning: setDynamicModel failed !!!***"));
+    Serial.println(F("*** Warning: setDynamicModel failed ***"));
   }
   else
   {
@@ -79,7 +79,7 @@ void setup()
   uint8_t newDynamicModel = myGNSS.getDynamicModel();
   if (newDynamicModel == DYN_MODEL_UNKNOWN)
   {
-    Serial.println(F("***!!! Warning: getDynamicModel failed !!!***"));
+    Serial.println(F("*** Warning: getDynamicModel failed ***"));
   }
   else
   {
