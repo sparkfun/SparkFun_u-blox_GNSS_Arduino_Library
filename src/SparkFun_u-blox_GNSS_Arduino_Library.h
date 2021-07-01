@@ -495,7 +495,13 @@ enum sfe_ublox_ls_src_e
 #endif
 
 // For storing SPI bytes received during sendSpiCommand
-#define SPI_BUFFER_SIZE 128
+#define SFE_UBLOX_SPI_BUFFER_SIZE 128
+
+// Default maximum NMEA byte count
+// maxNMEAByteCount was set to 82: https://en.wikipedia.org/wiki/NMEA_0183#Message_structure
+// but the u-blox HP (RTK) GGA messages are 88 bytes long
+// The user can adjust maxNMEAByteCount by calling setMaxNMEAByteCount
+#define SFE_UBLOX_MAX_NMEA_BYTE_COUNT 88
 
 //-=-=-=-=- UBX binary specific variables
 struct ubxPacket
@@ -579,6 +585,10 @@ public:
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
 	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
+	void setSPIpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the SPI polling wait if required
+
+	//Set the max number of bytes set in a given I2C transaction
+	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
@@ -589,8 +599,9 @@ public:
 	void setSpiTransactionSize(uint8_t bufferSize);
 	uint8_t getSpiTransactionSize(void);
 
-	//Set the max number of bytes set in a given I2C transaction
-	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
+	//Control the size of maxNMEAByteCount
+	void setMaxNMEAByteCount(int8_t newMax);
+	int8_t getMaxNMEAByteCount(void);
 
 	//Returns true if device answers on _gpsI2Caddress address or via Serial
 	boolean isConnected(uint16_t maxWait = 1100);
@@ -1083,6 +1094,7 @@ public:
 
 	bool getDateValid(uint16_t maxWait = defaultMaxWait);
 	bool getTimeValid(uint16_t maxWait = defaultMaxWait);
+	bool getTimeFullyResolved(uint16_t maxWait = defaultMaxWait);
 	bool getConfirmedDate(uint16_t maxWait = defaultMaxWait);
 	bool getConfirmedTime(uint16_t maxWait = defaultMaxWait);
 
@@ -1300,7 +1312,7 @@ private:
 
 	SPIClass *_spiPort;				//The instance of SPIClass
 	uint8_t _csPin;					//The chip select pin
-	int _spiSpeed;					//The speed to use for SPI (Hz)
+	uint32_t _spiSpeed;				//The speed to use for SPI (Hz)
 
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
@@ -1323,7 +1335,7 @@ private:
 
 	uint8_t *spiBuffer = NULL; 				// A buffer to store any bytes being recieved back from the device while we are sending via SPI
 	uint8_t spiBufferIndex = 0;				// Index into the SPI buffer
-	uint8_t spiTransactionSize = SPI_BUFFER_SIZE;	//Default size of the SPI buffer
+	uint8_t spiTransactionSize = SFE_UBLOX_SPI_BUFFER_SIZE;	//Default size of the SPI buffer
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg, payloadBuf and payloadAuto arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
@@ -1341,9 +1353,13 @@ private:
 	sfe_ublox_packet_buffer_e activePacketBuffer = SFE_UBLOX_PACKET_PACKETBUF;
 
 	//Limit checking of new data to every X ms
-	//If we are expecting an update every X Hz then we should check every half that amount of time
+	//If we are expecting an update every X Hz then we should check every quarter that amount of time
 	//Otherwise we may block ourselves from seeing new data
 	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency() or setHNRNavigationRate() or setMeasurementRate()
+
+	//The SPI polling wait is a little different. checkUbloxSpi will delay for this amount before returning if
+	//there is no data waiting to be read. This prevents waitForACKResponse from pounding the SPI bus too hard.
+	uint8_t spiPollingWait = 9; //Default to 9ms; waitForACKResponse delays for 1ms on top of this. User can adjust with setSPIPollingWait.
 
 	unsigned long lastCheck = 0;
 
@@ -1352,7 +1368,9 @@ private:
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 
 	int8_t nmeaByteCounter;				//Count all NMEA message bytes.
-	const int8_t maxNMEAByteCount = 82;	// Abort NMEA message reception if nmeaByteCounter exceeds this (https://en.wikipedia.org/wiki/NMEA_0183#Message_structure)
+	// Abort NMEA message reception if nmeaByteCounter exceeds maxNMEAByteCount.
+	// The user can adjust maxNMEAByteCount by calling setMaxNMEAByteCount
+	int8_t maxNMEAByteCount = SFE_UBLOX_MAX_NMEA_BYTE_COUNT;
 	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
 	boolean logThisNMEA();				// Return true if we should log this NMEA message
 	boolean processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA

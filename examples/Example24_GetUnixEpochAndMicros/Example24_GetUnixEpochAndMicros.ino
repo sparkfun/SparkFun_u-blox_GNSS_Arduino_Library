@@ -91,6 +91,12 @@ void loop()
     Serial.print(myGNSS.getSecond());
     
     Serial.print("  Time is ");
+    if (myGNSS.getTimeFullyResolved() == false)
+    {
+      Serial.print("not fully resolved but ");
+    } else {
+      Serial.print("fully resolved and ");
+    }
     if (myGNSS.getTimeValid() == false)
     {
       Serial.print("not ");

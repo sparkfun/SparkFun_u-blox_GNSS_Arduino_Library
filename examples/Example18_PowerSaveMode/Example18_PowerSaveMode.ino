@@ -85,7 +85,7 @@ void loop()
       if (myGNSS.powerSaveMode()) // Defaults to true
         Serial.println(F("Power Save Mode enabled."));
       else
-        Serial.println(F("***!!! Power Save Mode FAILED !!!***"));
+        Serial.println(F("*** Power Save Mode FAILED ***"));
     }
     else if (incoming == '2')
     {
@@ -93,14 +93,14 @@ void loop()
       if (myGNSS.powerSaveMode(false))
         Serial.println(F("Power Save Mode disabled."));
       else
-        Serial.println(F("***!!! Power Save Disable FAILED !!!***"));
+        Serial.println(F("*** Power Save Disable FAILED ***"));
     }
 
     // Read and print the new low power mode
     uint8_t lowPowerMode = myGNSS.getPowerSaveMode();
     if (lowPowerMode == 255)
     {
-      Serial.println(F("***!!! getPowerSaveMode FAILED !!!***"));
+      Serial.println(F("*** getPowerSaveMode FAILED ***"));
     }
     else
     {
