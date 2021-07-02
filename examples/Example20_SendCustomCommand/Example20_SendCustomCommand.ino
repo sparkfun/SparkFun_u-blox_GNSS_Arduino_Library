@@ -64,7 +64,7 @@ void setup()
   // Let's create our custom packet
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
   // The next line creates and initialises the packet information which wraps around the payload
-  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
   // The structure of ubxPacket is:
   // uint8_t cls           : The message Class
@@ -126,7 +126,7 @@ void setup()
   // when sendCommand read the data
 
   // Now we write the custom packet back again to change the setting
-  if (myGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
+  if (myGNSS.sendCommand(&customCfg, maxWait, true) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
     Serial.println(F("sendCommand (set) failed! Freezing."));
     while (1)
