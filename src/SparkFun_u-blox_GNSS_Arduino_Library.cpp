@@ -2756,6 +2756,11 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
       if (_printDebug == true)
       {
         _debugSerial->println(F("sendCommand: Waiting for ACK response"));
+        _debugSerial->print(F("expecting cls and id: 0x"));
+        _debugSerial->print(outgoingUBX->cls, HEX);
+        _debugSerial->print(F(" 0x"));
+        _debugSerial->println(outgoingUBX->id, HEX);
+
       }
       retVal = waitForACKResponse(outgoingUBX, outgoingUBX->cls, outgoingUBX->id, maxWait, expectACKonly); //Wait for Ack response
     }
@@ -3029,6 +3034,13 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
   packetAuto.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
 
   unsigned long startTime = millis();
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("waitForACKResponse: requested class and id: "));    
+    _debugSerial->print(requestedClass, HEX);
+    _debugSerial->print(F(" "));
+    _debugSerial->println(requestedID, HEX);
+  }
   while (millis() - startTime < maxTime)
   {
     if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
@@ -3814,7 +3826,7 @@ boolean SFE_UBLOX_GNSS::setPortInput(uint8_t portID, uint8_t inStreamSettings, u
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[12] = inStreamSettings; //InProtocolMask LSB - Set inStream bits
 
-  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return ((sendCommand(&packetCfg, maxWait, true)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Changes the I2C address that the u-blox module responds to
