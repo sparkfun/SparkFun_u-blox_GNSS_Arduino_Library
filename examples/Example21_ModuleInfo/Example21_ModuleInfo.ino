@@ -67,7 +67,7 @@ void setup()
 
     Wire.begin();
 
-    //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
+    myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
     if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
     {
@@ -120,7 +120,7 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
     uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
 
     // The next line creates and initialises the packet information which wraps around the payload
-    ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+    ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
     // The structure of ubxPacket is:
     // uint8_t cls           : The message Class
@@ -132,7 +132,6 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
     // uint8_t checksumA     : Given to us by the module. Checked against the rolling calculated A/B checksums.
     // uint8_t checksumB
     // sfe_ublox_packet_validity_e valid            : Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
-    // sfe_ublox_packet_validity_e classAndIDmatch  : Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
 
     // sendCommand will return:
     // SFE_UBLOX_STATUS_DATA_RECEIVED if the data we requested was read / polled successfully

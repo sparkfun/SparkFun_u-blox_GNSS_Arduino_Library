@@ -76,7 +76,6 @@ void setup()
   // uint8_t checksumA     : Given to us by the module. Checked against the rolling calculated A/B checksums.
   // uint8_t checksumB
   // sfe_ublox_packet_validity_e valid            : Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
-  // sfe_ublox_packet_validity_e classAndIDmatch  : Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
 
   // sendCommand will return:
   // SFE_UBLOX_STATUS_DATA_RECEIVED if the data we requested was read / polled successfully
@@ -124,6 +123,7 @@ void setup()
 
   // We don't need to update customCfg.len as it will have been set to 6
   // when sendCommand read the data
+  customCfg.len = 6;
 
   // Now we write the custom packet back again to change the setting
   if (myGNSS.sendCommand(&customCfg, maxWait, true) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK

@@ -1308,7 +1308,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         {
           //This is not an ACK, nor auto and we do not have a class and ID match
           //so we should keep diverting data into packetBuf and ignore the payload
-          if (_printDebug) _debugSerial->println("IGNORING!!!");
+          if (_printDebug) _debugSerial->println("process: ignoring!");
           ignoreThisPayload = true;
         }
       }
