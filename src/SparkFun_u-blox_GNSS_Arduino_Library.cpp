@@ -1154,6 +1154,8 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
 //Take a given byte and file it into the proper array
 // Note - AJB - we will ALWAYS use packetBuf to receive incoming, and then process them into the
 // appropriate packet structures
+// Note - PC - we need to make sure that users can still use custom packets (passed via incomingUBX).
+// We can't hardwire this code to packetCfg...
 void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
   if ((currentSentence == NONE) || (currentSentence == NMEA))
@@ -1227,9 +1229,9 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
           {
             if (_printDebug) _debugSerial->println("process: activeBuffer PACKETCFG");
             activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
-            packetCfg.cls = packetBuf.cls;
-            packetCfg.id = packetBuf.id;
-            packetCfg.counter = packetBuf.counter;
+            incomingUBX->cls = packetBuf.cls;
+            incomingUBX->id = packetBuf.id;
+            incomingUBX->counter = packetBuf.counter;
           }
           else
           {
@@ -1376,7 +1378,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
       if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETACK)
         processUBX(incoming, &packetAck);
       else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG)
-        processUBX(incoming, &packetCfg);
+        processUBX(incoming, incomingUBX);
       else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETBUF)
         processUBX(incoming, &packetBuf);
       else // if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
@@ -3059,7 +3061,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
 
       // If both the packetCfg->isClassAndIdMatch and packetAck.isClassAndIdMatch
       // then we can be confident that the data in packetCfg is valid
-      if (packetAck.isAckForClassAndId(requestedClass, requestedID) && packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID && packetAck.valid == SFE_UBLOX_PACKET_VALIDITY_VALID && packetCfg.isClassAndIdMatch(requestedClass, requestedID))
+      if (packetAck.isAckForClassAndId(requestedClass, requestedID) && outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID && packetAck.valid == SFE_UBLOX_PACKET_VALIDITY_VALID && outgoingUBX->isClassAndIdMatch(requestedClass, requestedID))
       {
         if (_printDebug == true)
         {
@@ -3069,7 +3071,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
         }
         return (SFE_UBLOX_STATUS_DATA_RECEIVED); //We received valid data and a correct ACK!
       }
-      else if (!packetCfg.isClassAndIdMatch(requestedClass, requestedID) && packetAck.isClassAndIdMatch(requestedClass, requestedID))
+      else if (!outgoingUBX->isClassAndIdMatch(requestedClass, requestedID) && packetAck.isClassAndIdMatch(requestedClass, requestedID))
       {
         if (_printDebug == true)
         {
@@ -3082,7 +3084,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
 
       // If packetAck is for requested class/ID but both outgoingUBX->valid and packetCfg isClassAndIDmatch
       // are NOT_VALID then we can be confident we have had a checksum failure on the data packet
-      else if ((packetAck.isAckForClassAndId(requestedClass, requestedID) && (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_NOT_VALID)))
+      else if ((packetAck.isAckForClassAndId(requestedClass, requestedID) && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_NOT_VALID)))
       {
         if (_printDebug == true)
         {
@@ -3106,7 +3108,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
       // If the packetCfg.isClassAndIdMatch but the packetAck is not for this class/ID
       // then the ack probably had a checksum error. We will take a gamble and return DATA_RECEIVED.
       // If we were playing safe, we should return FAIL instead
-      else if ((packetCfg.isClassAndIdMatch(requestedClass, requestedID)  && (packetAck.isClassAndIdMatch(requestedClass, requestedID) == false) && (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)))
+      else if ((outgoingUBX->isClassAndIdMatch(requestedClass, requestedID)  && (packetAck.isClassAndIdMatch(requestedClass, requestedID) == false) && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID)))
       {
         if (_printDebug == true)
         {
@@ -3119,7 +3121,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
 
       // If classes of ack and data do not match
       // then we return a FAIL. This must be a double checksum failure?
-      else if ((packetCfg.isClassAndIdMatch(requestedClass, requestedID) == false) && (packetAck.isClassAndIdMatch(requestedClass, requestedID) == false))
+      else if ((outgoingUBX->isClassAndIdMatch(requestedClass, requestedID) == false) && (packetAck.isClassAndIdMatch(requestedClass, requestedID) == false))
       {
         if (_printDebug == true)
         {
@@ -3137,7 +3139,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
   // We have timed out...
   // If the packetCfg matches the requested class/ID then we can take a gamble and return DATA_RECEIVED
   // even though we did not get an ACK
-  if ((packetCfg.isClassAndIdMatch(requestedClass, requestedID) && !packetAck.isClassAndIdMatch(requestedClass, requestedID)) && (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID))
+  if ((outgoingUBX->isClassAndIdMatch(requestedClass, requestedID) && !packetAck.isClassAndIdMatch(requestedClass, requestedID)) && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID))
   {
     if (_printDebug == true)
     {
@@ -3174,13 +3176,13 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForNoACKResponse(ubxPacket *outgoingUBX, 
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    if (checkUbloxInternal(&packetBuf, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
+    if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
 
       // If packetBuf matches
       // and outgoingUBX->valid is _still_ VALID and the class and ID _still_ match
       // then we can be confident that the data in packetBuf is valid
-      if (packetBuf.isClassAndIdMatch(requestedClass, requestedID) && packetBuf.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
+      if (outgoingUBX->isClassAndIdMatch(requestedClass, requestedID) && packetBuf.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
       {
         if (_printDebug == true)
         {

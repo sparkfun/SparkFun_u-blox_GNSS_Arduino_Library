@@ -1328,7 +1328,7 @@ private:
 	//The packet buffers
 	//These are pointed at from within the ubxPacket
 	uint8_t payloadAck[2];				  // Holds the requested ACK/NACK
-	uint8_t payloadBuf[MAX_PAYLOAD_SIZE];				  // Temporary buffer used to screen incoming packets or dump unrequested packets aberridg TODO: figure out if we can reduce memory usage by not using the whole buffer - needs some clean-up
+	uint8_t payloadBuf[MAX_PAYLOAD_SIZE]; // Temporary buffer used to screen incoming packets or dump unrequested packets aberridg TODO: figure out if we can reduce memory usage by not using the whole buffer - needs some clean-up
 	size_t packetCfgPayloadSize = 0; // Size for the packetCfg payload. .begin will set this to MAX_PAYLOAD_SIZE if necessary. User can change with setPacketCfgPayloadSize
 	uint8_t *payloadCfg = NULL;
 	uint8_t *payloadAuto = NULL;
