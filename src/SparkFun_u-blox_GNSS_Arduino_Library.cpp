@@ -1605,10 +1605,9 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       {
         _debugSerial->print(F("processUBX: getMaxPayloadSize returned ZERO!! Class: 0x"));
-        _debugSerial->printf("%x", incomingUBX->cls);
+        _debugSerial->print(incomingUBX->cls, HEX);
         _debugSerial->print(F(" ID: 0x"));
-        _debugSerial->printf("%x\n", incomingUBX->id);
-
+        _debugSerial->println(incomingUBX->id, HEX);
       }
     }
     //}
