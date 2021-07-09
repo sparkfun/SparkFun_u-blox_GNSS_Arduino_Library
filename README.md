@@ -53,6 +53,20 @@ Migrating to v2.0 is easy. There are two small changes all users will need to ma
 
 If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages, you will need to make more small changes to your code. Please see the [dead reckoning examples](./examples/Dead_Reckoning) for more details. There is more detail available in [Theory.md](./Theory.md#migrating-your-code-to-v20) if you need it.
 
+## Memory Usage
+
+The u-blox GNSS library has grown considerably over the years and v2.0.8 came very close to completely filling the program memory on platforms like the ATmega328 (Arduino Uno).
+If you want to reduce the amount of memory used by the library, you can edit the header file (_SparkFun_u-blox_GNSS_Arduino_Library.h_) and uncomment line 60:
+
+```
+#define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages to save memory
+```
+
+Doing this will save approximately 15% of program memory on the ATmega328.
+
+On Windows platforms, you will normally find _SparkFun_u-blox_GNSS_Arduino_Library.h_ in:
+- Documents\Arduino\libraries\SparkFun_u-blox_GNSS_Arduino_Library\src
+
 ## SPI Support
 
 In v2.0.8 we added support for SPI, based on a contribution by @aberridg. Thank you Andrew!
