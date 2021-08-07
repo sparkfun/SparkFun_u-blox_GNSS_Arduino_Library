@@ -69,6 +69,13 @@ void setup()
 
     //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
+    // setPacketCfgPayloadSize tells the library how many bytes our customPayload can hold.
+    // If we call it after the .begin, the library will attempt to resize the existing 256 byte payload buffer
+    // by creating a new buffer, copying across the contents of the old buffer, and then delete the old buffer.
+    // This uses a lot of RAM and causes the code to fail on the ATmega328P. (We are also allocating another 341 bytes for minfo.)
+    // To keep the code ATmega328P compliant - don't call setPacketCfgPayloadSize after .begin. Call it here instead.    
+    myGNSS.setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
+
     if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
     {
         Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
@@ -118,6 +125,13 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
 
     // Let's create our custom packet
     uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+
+    // setPacketCfgPayloadSize tells the library how many bytes our customPayload can hold.
+    // If we call it here, after the .begin, the library will attempt to resize the existing 256 byte payload buffer
+    // by creating a new buffer, copying across the contents of the old buffer, and then delete the old buffer.
+    // This uses a lot of RAM and causes the code to fail on the ATmega328P. (We are also allocating another 341 bytes for minfo.)
+    // To keep the code ATmega328P compliant - don't call setPacketCfgPayloadSize here. Call it before .begin instead.
+    //myGNSS.setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
 
     // The next line creates and initialises the packet information which wraps around the payload
     ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
