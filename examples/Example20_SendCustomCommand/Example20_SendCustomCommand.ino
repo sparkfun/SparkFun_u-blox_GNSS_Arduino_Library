@@ -62,7 +62,13 @@ void setup()
   // Let's configure the module's navigation rate as if we were using setNavigationFrequency
 
   // Let's create our custom packet
-  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes. MAX_PAYLOAD_SIZE defaults to 256. The CFG_RATE payload is only 6 bytes!
+
+  // setPacketCfgPayloadSize tells the library how many bytes our customPayload can hold.
+  // It is more memory-efficient to call setPacketCfgPayloadSize before .begin (to avoid creating a new buffer, copying across
+  // the contents of the old buffer and then deleting the old buffer). But let's call it here just to prove that we can.
+  myGNSS.setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
+
   // The next line creates and initialises the packet information which wraps around the payload
   ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
