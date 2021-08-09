@@ -70,7 +70,7 @@ void SFE_UBLOX_GNSS::end(void)
       _debugSerial->println(F("end: the file buffer has been deleted. You will need to call setFileBufferSize before .begin to create a new one."));
     }
 #endif
-    delete[] ubxFileBuffer;
+    delete[] ubxFileBuffer; // Created with new[]
     ubxFileBuffer = NULL; // Redundant?
     fileBufferSize = 0; // Reset file buffer size. User will have to call setFileBufferSize again
     fileBufferMaxAvail = 0;
@@ -78,19 +78,19 @@ void SFE_UBLOX_GNSS::end(void)
 
   if (moduleSWVersion != NULL)
   {
-    delete[] moduleSWVersion;
+    delete moduleSWVersion; // Created with new moduleSWVersion_t
     moduleSWVersion = NULL; // Redundant?
   }
 
   if (currentGeofenceParams != NULL)
   {
-    delete[] currentGeofenceParams;
+    delete currentGeofenceParams; // Created with new geofenceParams_t
     currentGeofenceParams = NULL; // Redundant?
   }
 
   if (packetUBXNAVTIMELS != NULL)
   {
-    delete[] packetUBXNAVTIMELS;
+    delete packetUBXNAVTIMELS; // Created with new UBX_NAV_TIMELS_t
     packetUBXNAVTIMELS = NULL; // Redundant?
   }
 
@@ -98,9 +98,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVPOSECEF->callbackData != NULL)
     {
-      delete[] packetUBXNAVPOSECEF->callbackData;
+      delete packetUBXNAVPOSECEF->callbackData; // Created with new UBX_NAV_POSECEF_data_t
     }
-    delete[] packetUBXNAVPOSECEF;
+    delete packetUBXNAVPOSECEF; // Created with new UBX_NAV_POSECEF_t
     packetUBXNAVPOSECEF = NULL; // Redundant?
   }
 
@@ -108,9 +108,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVSTATUS->callbackData != NULL)
     {
-      delete[] packetUBXNAVSTATUS->callbackData;
+      delete packetUBXNAVSTATUS->callbackData;
     }
-    delete[] packetUBXNAVSTATUS;
+    delete packetUBXNAVSTATUS;
     packetUBXNAVSTATUS = NULL; // Redundant?
   }
 
@@ -118,9 +118,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVDOP->callbackData != NULL)
     {
-      delete[] packetUBXNAVDOP->callbackData;
+      delete packetUBXNAVDOP->callbackData;
     }
-    delete[] packetUBXNAVDOP;
+    delete packetUBXNAVDOP;
     packetUBXNAVDOP = NULL; // Redundant?
   }
 
@@ -128,9 +128,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVATT->callbackData != NULL)
     {
-      delete[] packetUBXNAVATT->callbackData;
+      delete packetUBXNAVATT->callbackData;
     }
-    delete[] packetUBXNAVATT;
+    delete packetUBXNAVATT;
     packetUBXNAVATT = NULL; // Redundant?
   }
 
@@ -138,7 +138,7 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVPVT->callbackData != NULL)
     {
-      delete[] packetUBXNAVPVT->callbackData;
+      delete packetUBXNAVPVT->callbackData;
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
       if (_printDebug == true)
       {
@@ -146,7 +146,7 @@ void SFE_UBLOX_GNSS::end(void)
       }
 #endif
     }
-    delete[] packetUBXNAVPVT;
+    delete packetUBXNAVPVT;
     packetUBXNAVPVT = NULL; // Redundant?
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if (_printDebug == true)
@@ -160,9 +160,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVODO->callbackData != NULL)
     {
-      delete[] packetUBXNAVODO->callbackData;
+      delete packetUBXNAVODO->callbackData;
     }
-    delete[] packetUBXNAVODO;
+    delete packetUBXNAVODO;
     packetUBXNAVODO = NULL; // Redundant?
   }
 
@@ -170,9 +170,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVVELECEF->callbackData != NULL)
     {
-      delete[] packetUBXNAVVELECEF->callbackData;
+      delete packetUBXNAVVELECEF->callbackData;
     }
-    delete[] packetUBXNAVVELECEF;
+    delete packetUBXNAVVELECEF;
     packetUBXNAVVELECEF = NULL; // Redundant?
   }
 
@@ -180,9 +180,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVVELNED->callbackData != NULL)
     {
-      delete[] packetUBXNAVVELNED->callbackData;
+      delete packetUBXNAVVELNED->callbackData;
     }
-    delete[] packetUBXNAVVELNED;
+    delete packetUBXNAVVELNED;
     packetUBXNAVVELNED = NULL; // Redundant?
   }
 
@@ -190,9 +190,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVHPPOSECEF->callbackData != NULL)
     {
-      delete[] packetUBXNAVHPPOSECEF->callbackData;
+      delete packetUBXNAVHPPOSECEF->callbackData;
     }
-    delete[] packetUBXNAVHPPOSECEF;
+    delete packetUBXNAVHPPOSECEF;
     packetUBXNAVHPPOSECEF = NULL; // Redundant?
   }
 
@@ -200,9 +200,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVHPPOSLLH->callbackData != NULL)
     {
-      delete[] packetUBXNAVHPPOSLLH->callbackData;
+      delete packetUBXNAVHPPOSLLH->callbackData;
     }
-    delete[] packetUBXNAVHPPOSLLH;
+    delete packetUBXNAVHPPOSLLH;
     packetUBXNAVHPPOSLLH = NULL; // Redundant?
   }
 
@@ -210,9 +210,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVCLOCK->callbackData != NULL)
     {
-      delete[] packetUBXNAVCLOCK->callbackData;
+      delete packetUBXNAVCLOCK->callbackData;
     }
-    delete[] packetUBXNAVCLOCK;
+    delete packetUBXNAVCLOCK;
     packetUBXNAVCLOCK = NULL; // Redundant?
   }
 
@@ -220,9 +220,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVSVIN->callbackData != NULL)
     {
-      delete[] packetUBXNAVSVIN->callbackData;
+      delete packetUBXNAVSVIN->callbackData;
     }
-    delete[] packetUBXNAVSVIN;
+    delete packetUBXNAVSVIN;
     packetUBXNAVSVIN = NULL; // Redundant?
   }
 
@@ -230,9 +230,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXNAVRELPOSNED->callbackData != NULL)
     {
-      delete[] packetUBXNAVRELPOSNED->callbackData;
+      delete packetUBXNAVRELPOSNED->callbackData;
     }
-    delete[] packetUBXNAVRELPOSNED;
+    delete packetUBXNAVRELPOSNED;
     packetUBXNAVRELPOSNED = NULL; // Redundant?
   }
 
@@ -240,9 +240,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXRXMSFRBX->callbackData != NULL)
     {
-      delete[] packetUBXRXMSFRBX->callbackData;
+      delete packetUBXRXMSFRBX->callbackData;
     }
-    delete[] packetUBXRXMSFRBX;
+    delete packetUBXRXMSFRBX;
     packetUBXRXMSFRBX = NULL; // Redundant?
   }
 
@@ -250,9 +250,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXRXMRAWX->callbackData != NULL)
     {
-      delete[] packetUBXRXMRAWX->callbackData;
+      delete packetUBXRXMRAWX->callbackData;
     }
-    delete[] packetUBXRXMRAWX;
+    delete packetUBXRXMRAWX;
     packetUBXRXMRAWX = NULL; // Redundant?
   }
 
@@ -260,9 +260,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXCFGRATE->callbackData != NULL)
     {
-      delete[] packetUBXCFGRATE->callbackData;
+      delete packetUBXCFGRATE->callbackData;
     }
-    delete[] packetUBXCFGRATE;
+    delete packetUBXCFGRATE;
     packetUBXCFGRATE = NULL; // Redundant?
   }
 
@@ -270,9 +270,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXTIMTM2->callbackData != NULL)
     {
-      delete[] packetUBXTIMTM2->callbackData;
+      delete packetUBXTIMTM2->callbackData;
     }
-    delete[] packetUBXTIMTM2;
+    delete packetUBXTIMTM2;
     packetUBXTIMTM2 = NULL; // Redundant?
   }
 
@@ -280,9 +280,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXESFALG->callbackData != NULL)
     {
-      delete[] packetUBXESFALG->callbackData;
+      delete packetUBXESFALG->callbackData;
     }
-    delete[] packetUBXESFALG;
+    delete packetUBXESFALG;
     packetUBXESFALG = NULL; // Redundant?
   }
 
@@ -290,9 +290,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXESFSTATUS->callbackData != NULL)
     {
-      delete[] packetUBXESFSTATUS->callbackData;
+      delete packetUBXESFSTATUS->callbackData;
     }
-    delete[] packetUBXESFSTATUS;
+    delete packetUBXESFSTATUS;
     packetUBXESFSTATUS = NULL; // Redundant?
   }
 
@@ -300,9 +300,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXESFINS->callbackData != NULL)
     {
-      delete[] packetUBXESFINS->callbackData;
+      delete packetUBXESFINS->callbackData;
     }
-    delete[] packetUBXESFINS;
+    delete packetUBXESFINS;
     packetUBXESFINS = NULL; // Redundant?
   }
 
@@ -310,9 +310,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXESFMEAS->callbackData != NULL)
     {
-      delete[] packetUBXESFMEAS->callbackData;
+      delete packetUBXESFMEAS->callbackData;
     }
-    delete[] packetUBXESFMEAS;
+    delete packetUBXESFMEAS;
     packetUBXESFMEAS = NULL; // Redundant?
   }
 
@@ -320,9 +320,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXESFRAW->callbackData != NULL)
     {
-      delete[] packetUBXESFRAW->callbackData;
+      delete packetUBXESFRAW->callbackData;
     }
-    delete[] packetUBXESFRAW;
+    delete packetUBXESFRAW;
     packetUBXESFRAW = NULL; // Redundant?
   }
 
@@ -330,9 +330,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXHNRATT->callbackData != NULL)
     {
-      delete[] packetUBXHNRATT->callbackData;
+      delete packetUBXHNRATT->callbackData;
     }
-    delete[] packetUBXHNRATT;
+    delete packetUBXHNRATT;
     packetUBXHNRATT = NULL; // Redundant?
   }
 
@@ -340,9 +340,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXHNRINS->callbackData != NULL)
     {
-      delete[] packetUBXHNRINS->callbackData;
+      delete packetUBXHNRINS->callbackData;
     }
-    delete[] packetUBXHNRINS;
+    delete packetUBXHNRINS;
     packetUBXHNRINS = NULL; // Redundant?
   }
 
@@ -350,9 +350,9 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXHNRPVT->callbackData != NULL)
     {
-      delete[] packetUBXHNRPVT->callbackData;
+      delete packetUBXHNRPVT->callbackData;
     }
-    delete[] packetUBXHNRPVT;
+    delete packetUBXHNRPVT;
     packetUBXHNRPVT = NULL; // Redundant?
   }
 
@@ -365,7 +365,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
   if ((payloadSize == 0) && (payloadCfg != NULL))
   {
     // Zero payloadSize? Dangerous! But we'll free the memory anyway...
-    delete[] payloadCfg;
+    delete[] payloadCfg; // Created with new[]
     payloadCfg = NULL; // Redundant?
     packetCfg.payload = payloadCfg;
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -386,7 +386,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
     uint8_t *newPayload = new uint8_t[payloadSize];
     for (size_t i = 0; (i < payloadSize) && (i < packetCfgPayloadSize); i++) // Copy as much existing data as we can
       newPayload[i] = payloadCfg[i];
-    delete[] payloadCfg;
+    delete[] payloadCfg; // Created with new[]
     payloadCfg = newPayload;
     packetCfg.payload = payloadCfg;
     if (payloadCfg == NULL)
@@ -1260,7 +1260,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
             {
               _debugSerial->println(F("process: memory is already allocated for payloadAuto! Deleting..."));
             }
-            delete[] payloadAuto;
+            delete[] payloadAuto; // Created with new[]
             payloadAuto = NULL; // Redundant?
             packetAuto.payload = payloadAuto;
           }
@@ -1797,7 +1797,7 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_
     // allocated for packetAuto
     if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
     {
-      delete[] payloadAuto;
+      delete[] payloadAuto; // Created with new[]
       payloadAuto = NULL; // Redundant?
       packetAuto.payload = payloadAuto;
     }
