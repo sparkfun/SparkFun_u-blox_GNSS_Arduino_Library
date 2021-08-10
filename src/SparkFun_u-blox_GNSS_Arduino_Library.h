@@ -1351,6 +1351,8 @@ private:
 	//If we are expecting an update every X Hz then we should check every quarter that amount of time
 	//Otherwise we may block ourselves from seeing new data
 	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency() or setHNRNavigationRate() or setMeasurementRate()
+	uint8_t i2cPollingWaitNAV = 100; //We need to record the desired polling rate for standard nav messages
+	uint8_t i2cPollingWaitHNR = 100; //and for HNR too so we can set i2cPollingWait to the lower of the two
 
 	//The SPI polling wait is a little different. checkUbloxSpi will delay for this amount before returning if
 	//there is no data waiting to be read. This prevents waitForACKResponse from pounding the SPI bus too hard.

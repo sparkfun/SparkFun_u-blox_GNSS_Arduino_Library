@@ -715,11 +715,28 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
     uint16_t bytesAvailable = 0;
     _i2cPort->beginTransmission(_gpsI2Caddress);
     _i2cPort->write(0xFD);                     //0xFD (MSB) and 0xFE (LSB) are the registers that contain number of bytes available
-    if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
+    uint8_t i2cError = _i2cPort->endTransmission(false); //Send a restart command. Do not release bus.
+    if (i2cError != 0)
+    {
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      {
+        _debugSerial->print(F("checkUbloxI2C: I2C error: endTransmission returned "));
+        _debugSerial->println(i2cError);
+      }
       return (false);                          //Sensor did not ACK
+    }
 
-    _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2);
-    if (_i2cPort->available())
+    uint8_t bytesReturned = _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2);
+    if (bytesReturned != 2)
+    {
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      {
+        _debugSerial->print(F("checkUbloxI2C: I2C error: requestFrom 0xFD returned "));
+        _debugSerial->println(bytesReturned);
+      }
+      return (false);                          //Sensor did not return 2 bytes
+    }
+    //if (_i2cPort->available())
     {
       uint8_t msb = _i2cPort->read();
       uint8_t lsb = _i2cPort->read();
@@ -728,7 +745,8 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
         //I believe this is a u-blox bug. Device should never present an 0xFF.
         if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         {
-          _debugSerial->println(F("checkUbloxI2C: u-blox bug, length lsb is 0xFF"));
+          _debugSerial->print(F("checkUbloxI2C: u-blox bug? Length lsb is 0xFF. i2cPollingWait is "));
+          _debugSerial->println(i2cPollingWait);
         }
         if (debugPin >= 0)
         {
@@ -739,6 +757,23 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
         lastCheck = millis(); //Put off checking to avoid I2C bus traffic
         return (false);
       }
+      // if (msb == 0xFF)
+      // {
+      //   //I believe this is a u-blox bug. Device should never present an 0xFF.
+      //   if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      //   {
+      //     _debugSerial->print(F("checkUbloxI2C: u-blox bug? Length msb is 0xFF. i2cPollingWait is "));
+      //     _debugSerial->println(i2cPollingWait);
+      //   }
+      //   if (debugPin >= 0)
+      //   {
+      //     digitalWrite((uint8_t)debugPin, LOW);
+      //     delay(10);
+      //     digitalWrite((uint8_t)debugPin, HIGH);
+      //   }
+      //   lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+      //   return (false);
+      // }
       bytesAvailable = (uint16_t)msb << 8 | lsb;
     }
 
@@ -762,17 +797,17 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
       //Clear the MSbit
       bytesAvailable &= ~((uint16_t)1 << 15);
 
-      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      {
-        _debugSerial->print(F("checkUbloxI2C: Bytes available error: "));
-        _debugSerial->println(bytesAvailable);
-        if (debugPin >= 0)
-        {
-          digitalWrite((uint8_t)debugPin, LOW);
-          delay(10);
-          digitalWrite((uint8_t)debugPin, HIGH);
-        }
-      }
+      // if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      // {
+      //   _debugSerial->print(F("checkUbloxI2C: Bytes available error: "));
+      //   _debugSerial->println(bytesAvailable);
+      //   if (debugPin >= 0)
+      //   {
+      //     digitalWrite((uint8_t)debugPin, LOW);
+      //     delay(10);
+      //     digitalWrite((uint8_t)debugPin, HIGH);
+      //   }
+      // }
     }
 
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
@@ -9615,10 +9650,13 @@ uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
 //Max is 40Hz(?!)
 boolean SFE_UBLOX_GNSS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 {
-  //if(updateRate > 40) updateRate = 40; //Not needed: module will correct out of bounds values
+  if (navFreq > 40)
+    navFreq = 40; // Limit navFreq to 40Hz so i2cPollingWait is set correctly
 
   //Adjust the I2C polling timeout based on update rate
-  i2cPollingWait = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data
+  //Do this even if the sendCommand fails
+  i2cPollingWaitNAV = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   //Query the module
   packetCfg.cls = UBX_CLASS_CFG;
@@ -9664,8 +9702,12 @@ uint8_t SFE_UBLOX_GNSS::getNavigationFrequency(uint16_t maxWait)
 //Set the elapsed time between GNSS measurements in milliseconds, which defines the rate
 boolean SFE_UBLOX_GNSS::setMeasurementRate(uint16_t rate, uint16_t maxWait)
 {
+  if (rate < 25) // "Measurement rate should be greater than or equal to 25 ms."
+    rate = 25;
+
   //Adjust the I2C polling timeout based on update rate
-  i2cPollingWait = rate / 4; //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWaitNAV = rate / 4; //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   //Query the module
   packetCfg.cls = UBX_CLASS_CFG;
@@ -10950,6 +10992,14 @@ boolean SFE_UBLOX_GNSS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sen
 // Returns true if the setHNRNavigationRate is successful
 boolean SFE_UBLOX_GNSS::setHNRNavigationRate(uint8_t rate, uint16_t maxWait)
 {
+  if (rate > 40)
+    rate = 40; // Limit rate to 40Hz so i2cPollingWait is set correctly
+
+  //Adjust the I2C polling timeout based on update rate
+  //Do this even if the sendCommand is not ACK'd
+  i2cPollingWaitHNR = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
+
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_HNR;
   packetCfg.len = 0;
@@ -10964,10 +11014,6 @@ boolean SFE_UBLOX_GNSS::setHNRNavigationRate(uint8_t rate, uint16_t maxWait)
 
   //Update the navigation rate
   sfe_ublox_status_e result = sendCommand(&packetCfg, maxWait); // We are only expecting an ACK
-
-  //Adjust the I2C polling timeout based on update rate
-  if (result == SFE_UBLOX_STATUS_DATA_SENT)
-    i2cPollingWait = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data
 
   return (result == SFE_UBLOX_STATUS_DATA_SENT);
 }
