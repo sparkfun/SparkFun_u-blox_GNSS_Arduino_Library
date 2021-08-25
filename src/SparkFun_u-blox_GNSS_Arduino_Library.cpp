@@ -5074,6 +5074,72 @@ boolean SFE_UBLOX_GNSS::resetIMUalignment(uint16_t maxWait)
   return (sendCommand(&packetCfg, maxWait, true) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+//UBX-CFG-ESFALG is not documented. This was found using u-center.
+//Returns the state of the UBX-CFG-ESFALG 'Automatic IMU-mount Alignment' flag
+bool SFE_UBLOX_GNSS::getESFAutoAlignment(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_ESFALG;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  {
+  #ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getESFAutoAlignment failed"));
+    }
+  #endif
+
+    return (false); //If command send fails then bail
+  }
+
+  return (payloadCfg[1] & 0b1); //Return Bit 0
+}
+
+//Set the state of the UBX-CFG-ESFALG 'Automatic IMU-mount Alignment' flag
+bool SFE_UBLOX_GNSS::setESFAutoAlignment(bool enable, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_ESFALG;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  {
+    #ifndef SFE_UBLOX_REDUCED_PROG_MEM
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getESFAutoAlignment failed"));
+      }
+    #endif
+
+    return (false); //If command send fails then bail
+  }
+
+  //payloadCfg is now filled
+
+  if (enable)
+    payloadCfg[1] |= 0b1;
+  else
+    payloadCfg[1] &= ~(0b1);
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
+  {
+    #ifndef SFE_UBLOX_REDUCED_PROG_MEM
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("setESFAutoAlignment failed"));
+      }
+    #endif
+    return (false);
+  }
+
+  return (true);
+}
+
+
 //Get the time pulse parameters using UBX_CFG_TP5
 boolean SFE_UBLOX_GNSS::getTimePulseParameters(UBX_CFG_TP5_data_t *data, uint16_t maxWait)
 {
