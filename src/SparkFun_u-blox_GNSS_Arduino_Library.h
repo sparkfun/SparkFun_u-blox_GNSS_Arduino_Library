@@ -766,6 +766,10 @@ public:
 	//Reset ESF automatic IMU-mount alignment
 	boolean resetIMUalignment(uint16_t maxWait = defaultMaxWait);
 
+	//Enable/disable esfAutoAlignment
+	bool getESFAutoAlignment(uint16_t maxWait = defaultMaxWait);
+	bool setESFAutoAlignment(bool enable, uint16_t maxWait = defaultMaxWait);
+
 	//Configure Time Pulse Parameters
 	boolean getTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the time pulse parameters using UBX_CFG_TP5
 	boolean setTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Set the time pulse parameters using UBX_CFG_TP5
