@@ -2933,7 +2933,6 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
       len = i2cTransactionSize;
 
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-    //_i2cPort->write(outgoingUBX->payload, len); //Write a portion of the payload to the bus
 
     for (uint16_t x = 0; x < len; x++)
       _i2cPort->write(outgoingUBX->payload[startSpot + x]); //Write a portion of the payload to the bus
@@ -2941,21 +2940,23 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
     if (_i2cPort->endTransmission(false) != 0)    //Don't release bus
       return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
 
-    //*outgoingUBX->payload += len; //Move the pointer forward
     startSpot += len; //Move the pointer forward
     bytesToSend -= len;
   }
 
-  //Write checksum
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-  if (bytesToSend == 1)
-    _i2cPort->write(outgoingUBX->payload, 1);
+
+  if (bytesToSend == 1) //Send the single remaining byte if there is one
+    _i2cPort->write(outgoingUBX->payload[startSpot], 1); // Thank you @Valrakk #61
+
+  //Write checksum
   _i2cPort->write(outgoingUBX->checksumA);
   _i2cPort->write(outgoingUBX->checksumB);
 
   //All done transmitting bytes. Release bus.
   if (_i2cPort->endTransmission() != 0)
     return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
+
   return (SFE_UBLOX_STATUS_SUCCESS);
 }
 
