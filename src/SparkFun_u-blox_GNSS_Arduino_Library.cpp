@@ -2947,7 +2947,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
 
   if (bytesToSend == 1) //Send the single remaining byte if there is one
-    _i2cPort->write(outgoingUBX->payload[startSpot], 1); // Thank you @Valrakk #61
+    _i2cPort->write(outgoingUBX->payload[startSpot]); // Thank you @Valrakk #61
 
   //Write checksum
   _i2cPort->write(outgoingUBX->checksumA);
