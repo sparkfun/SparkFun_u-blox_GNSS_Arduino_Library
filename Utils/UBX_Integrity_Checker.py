@@ -1,10 +1,11 @@
 # Checks the integrity of u-blox binary files
 
 # Written by: Paul Clark
-# Last update: August 26th 2020
+# Last update: October 17th 2021
 
 # Reads a UBX file and checks the integrity of both UBX and NMEA data
 # Will rewind and re-sync if an error is found
+# Will create a repaired file if desired
 
 # SparkFun code, firmware, and software is released under the MIT License (http://opensource.org/licenses/MIT)
 #
@@ -70,6 +71,17 @@ if (response == '') or (response == 'Y') or (response == 'y'):
 else:
     containsNMEA = False
 
+# Ask user if the file should be repaired
+response = input('Do you want to repair the file? (y/N): ') # Get the response
+if (response == '') or (response == 'N') or (response == 'n'):
+    repairFile = False
+else:
+    repairFile = True
+    if (filename[-4] == '.'):
+        repairFilename = filename[:-4] + '.repair' + filename[-4:]
+    else:
+        repairFilename = filename + '.repair'
+
 print()
 print('Processing',filename)
 print()
@@ -81,7 +93,14 @@ try:
 except:
     raise Exception('Invalid file!')
 
-processed = -1 # The nunber of bytes processed
+# Try to open repair file for writing
+if (repairFile):
+    try:
+        fo = open(repairFilename,"wb")
+    except:
+        raise Exception('Could not open repair file!')
+
+processed = -1 # The number of bytes processed
 messages = {} # The collected message types
 longest = 0 # The length of the longest UBX message
 keepGoing = True
@@ -137,6 +156,9 @@ resyncs = 0 # Record the number of successful resyncs
 resync_in_progress = False # Flag to indicate if a resync is in progress
 message_start_byte = 0 # Record where the latest message started (for resync reporting)
 
+rewind_repair_file_to = 0 # Keep a note of where to rewind the repair file to if sync is lost
+repaired_file_bytes = 0 # Keep a note of how many bytes have been written to the repair file
+
 try:
     while keepGoing:
 
@@ -148,6 +170,11 @@ try:
         c = fileBytes[0]
 
         processed = processed + 1 # Keep a record of how many bytes have been read and processed
+
+        # Write the byte to the repair file if desired
+        if (repairFile):
+            fo.write(fileBytes)
+            repaired_file_bytes = repaired_file_bytes + 1
 
         # Process data bytes according to ubx_nmea_state
         # For UBX messages:
@@ -267,6 +294,18 @@ try:
                     resyncs += 1 # Increment the number of successful resyncs
                     print("Sync successfully re-established at byte "+str(processed)+". The UBX message started at byte "+str(message_start_byte))
                     print()
+                    if (repairFile):
+                        fo.seek(rewind_repair_file_to) # Rewind the repaired file
+                        repaired_file_bytes = rewind_repair_file_to
+                        fi.seek(message_start_byte) # Copy the valid message into the repair file
+                        repaired_bytes_to_write = processed - message_start_byte
+                        fileBytes = fi.read(repaired_bytes_to_write)
+                        fo.write(fileBytes)
+                        repaired_file_bytes = repaired_file_bytes + repaired_bytes_to_write
+                else:
+                    if (repairFile):
+                        rewind_repair_file_to = repaired_file_bytes # Rewind repair file to here if sync is lost
+
         # NMEA messages
         elif (ubx_nmea_state == looking_for_asterix):
             nmea_length = nmea_length + 1 # Increase the message length count
@@ -359,6 +398,17 @@ try:
                     resyncs += 1 # Increment the number of successful resyncs
                     print("Sync successfully re-established at byte "+str(processed)+". The NMEA message started at byte "+str(message_start_byte))
                     print()
+                    if (repairFile):
+                        fo.seek(rewind_repair_file_to) # Rewind the repaired file
+                        repaired_file_bytes = rewind_repair_file_to
+                        fi.seek(message_start_byte) # Copy the valid message into the repair file
+                        repaired_bytes_to_write = processed - message_start_byte
+                        fileBytes = fi.read(repaired_bytes_to_write)
+                        fo.write(fileBytes)
+                        repaired_file_bytes = repaired_file_bytes + repaired_bytes_to_write
+                else:
+                    if (repairFile):
+                        rewind_repair_file_to = repaired_file_bytes # Rewind repair file to here if sync is lost
 
         # Check if the end of the file has been reached
         if (processed >= filesize - 1): keepGoing = False
@@ -381,6 +431,9 @@ try:
 finally:
     fi.close() # Close the file
 
+    if (repairFile):
+        fo.close()
+        
     # Print the file statistics
     print()
     processed += 1
@@ -395,5 +448,8 @@ finally:
             print('Message type:',key,'  Total:',messages[key])
     if (resyncs > 0):
         print('Number of successful resyncs:',resyncs)
+    print()
+    if (repairFile):
+        print('Repaired data written to:', repairFilename)
     print()
     print('Bye!')
