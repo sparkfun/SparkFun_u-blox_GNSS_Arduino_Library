@@ -38,7 +38,7 @@
   This code has been tested using version 2.1.0 of the Apollo3 boards on Arduino IDE 1.8.13.
    - Version 2.1.1 of Apollo3 contains a feature which makes I2C communication with u-blox modules problematic
    - We recommend using v2.1.0 of Apollo3 until v2.2.0 is released
-  Select "SparkFun Artemis MicroMod" as the board type.
+  Select "Artemis MicroMod Processor" as the board type.
   Press upload to upload the code onto the Artemis.
   Open the Serial Monitor at 115200 baud to see the output.
 

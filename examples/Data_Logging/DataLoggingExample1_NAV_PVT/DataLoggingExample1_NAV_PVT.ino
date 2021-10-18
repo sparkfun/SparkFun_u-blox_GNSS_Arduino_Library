@@ -2,7 +2,7 @@
   Configuring the GNSS to automatically send NAV PVT reports over I2C and log them to file on SD card
   By: Paul Clark
   SparkFun Electronics
-  Date: December 30th, 2020
+  Date: October 18th, 2021
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
@@ -22,8 +22,10 @@
   Insert a formatted micro-SD card into the socket on the Carrier Board.
   Connect the Carrier Board to your computer using a USB-C cable.
   Ensure you have the SparkFun Apollo3 boards installed: http://boardsmanager/All#SparkFun_Apollo3
-  This code has been tested using version 1.2.1 of the Apollo3 boards on Arduino IDE 1.8.13.
-  Select "SparkFun Artemis MicroMod" as the board type.
+  This code has been tested using version 2.1.0 of the Apollo3 boards on Arduino IDE 1.8.13.
+   - Version 2.1.1 of Apollo3 contains a feature which makes I2C communication with u-blox modules problematic
+   - We recommend using v2.1.0 of Apollo3 until v2.2.0 is released
+  Select "Artemis MicroMod Processor" as the board type.
   Press upload to upload the code onto the Artemis.
   Open the Serial Monitor at 115200 baud to see the output.
 
@@ -51,7 +53,20 @@ SFE_UBLOX_GNSS myGNSS;
 
 File myFile; //File that all GNSS data is written to
 
-#define sdChipSelect CS //Primary SPI Chip Select is CS for the MicroMod Artemis Processor. Adjust for your processor if necessary.
+//Define the microSD (SPI) Chip Select pin. Adjust for your processor if necessary.
+#if defined(ARDUINO_ARCH_APOLLO3) // Check for SparkFun Apollo3 (Artemis) v1 or v2
+  #if defined(ARDUINO_APOLLO3_SFE_ARTEMIS_MM_PB)      // Check for the Artemis MicroMod Processor Board on Apollo3 v2
+    #define sdChipSelect SPI_CS   // SPI (microSD) Chip Select for the Artemis MicroMod Processor Board on Apollo3 v2
+  #elif defined(ARDUINO_AM_AP3_SFE_ARTEMIS_MICROMOD)  // Check for the Artemis MicroMod Processor Board on Apollo3 v1
+    #define sdChipSelect CS       // SPI (microSD) Chip Select for the Artemis MicroMod Processor Board on Apollo3 v1
+  #else
+    #define sdChipSelect CS       // Catch-all for the other Artemis Boards - change this if required to match your hardware
+  #endif
+#else
+
+  #define sdChipSelect CS         // Catch-all for all non-Artemis boards - change this if required to match your hardware
+  
+#endif
 
 #define packetLength 100 // NAV PVT is 92 + 8 bytes in length (including the sync chars, class, id, length and checksum bytes)
 
@@ -107,8 +122,20 @@ void setup()
 
   Wire.begin(); // Start I2C communication with the GNSS
 
-#if defined(AM_PART_APOLLO3)
-  Wire.setPullups(0); // On the Artemis, we can disable the internal I2C pull-ups too to help reduce bus errors
+// On the Artemis, we can disable the internal I2C pull-ups too to help reduce bus errors
+#if defined(AM_PART_APOLLO3)                      // Check for SparkFun Apollo3 (Artemis) v1
+  Wire.setPullups(0);                             // Disable the internal I2C pull-ups on Apollo3 v1
+#elif defined(ARDUINO_ARCH_APOLLO3)               // Else check for SparkFun Apollo3 (Artemis) (v2)
+  #if defined(ARDUINO_APOLLO3_SFE_ARTEMIS_MM_PB)  // Check for the Artemis MicroMod Processor Board on Apollo3 v2
+    // On Apollo3 v2 we can still disable the pull-ups but we need to do it manually
+    // The IOM and pin numbers here are specific to the Artemis MicroMod Processor Board
+    am_hal_gpio_pincfg_t sclPinCfg = g_AM_BSP_GPIO_IOM4_SCL;  // Artemis MicroMod Processor Board uses IOM4 for I2C communication
+    am_hal_gpio_pincfg_t sdaPinCfg = g_AM_BSP_GPIO_IOM4_SDA;
+    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;          // Disable the pull-ups
+    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+    pin_config(PinName(39), sclPinCfg);                       // Artemis MicroMod Processor Board uses Pin/Pad 39 for SCL
+    pin_config(PinName(40), sdaPinCfg);                       // Artemis MicroMod Processor Board uses Pin/Pad 40 for SDA
+  #endif
 #endif
 
   while (Serial.available()) // Make sure the Serial buffer is empty
@@ -199,7 +226,7 @@ void loop()
   if (Serial.available()) // Check if the user wants to stop logging
   {
     myFile.close(); // Close the data file
-    Serial.println(F("Logging stopped. Freezing..."));
+    Serial.println(F("\r\nLogging stopped. Freezing..."));
     while(1); // Do nothing more
   }
 
