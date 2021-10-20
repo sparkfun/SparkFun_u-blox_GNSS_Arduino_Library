@@ -1104,7 +1104,7 @@ typedef struct
 
 // UBX-RXM-RAWX (0x02 0x15): Multi-GNSS raw measurement data
 // Note: length is variable
-const uint8_t UBX_RXM_RAWX_MAX_BLOCKS = 64; // GUESS! TO DO: find the correct value for this
+const uint8_t UBX_RXM_RAWX_MAX_BLOCKS = 92; // See issue #70 and PR #74 for more info
 const uint16_t UBX_RXM_RAWX_MAX_LEN = 16 + (32 * UBX_RXM_RAWX_MAX_BLOCKS);
 
 typedef struct
