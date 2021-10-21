@@ -744,9 +744,10 @@ public:
 	// Storage for the geofence parameters. RAM is allocated for this if/when required.
 	geofenceParams_t *currentGeofenceParams = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
-	//Power save / off
+	//Power save / power management configuration / power off
 	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = defaultMaxWait);
 	uint8_t getPowerSaveMode(uint16_t maxWait = defaultMaxWait); // Returns 255 if the sendCommand fails
+	boolean configurePowerManagement(UBX_CFG_PM2_data_t* data = NULL, uint16_t maxWait = defaultMaxWait);
 	boolean powerOff(uint32_t durationInMs, uint16_t maxWait = defaultMaxWait);
 	boolean powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources = VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0, boolean forceWhileUsb = true, uint16_t maxWait = 1100);
 

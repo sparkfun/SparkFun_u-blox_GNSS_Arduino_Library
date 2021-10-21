@@ -4823,6 +4823,62 @@ uint8_t SFE_UBLOX_GNSS::getPowerSaveMode(uint16_t maxWait)
   return (payloadCfg[1]); // Return the low power mode
 }
 
+// Extended power management configuration
+// Sends the UBX-CFG-PM2 message to configure extended power management
+// Note: Section 32.10.23 of the u-blox 8 / u-blox M8 Receiver description document gives three different versions
+// of this message. Version 0x00 is implemented here since it is the most widely supported
+boolean SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint16_t maxWait)
+{
+  if (data == NULL) // If the user forgot to include the data pointer, bail
+    return (false);
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id  = UBX_CFG_PM2;
+  packetCfg.len = UBX_CFG_PM2_LEN;
+  packetCfg.startingSpot = 0;
+
+  // Insert the data, converting multi-byte values to little endian
+  payloadCfg[ 0] = 0x00;  // Message version
+  
+  payloadCfg[ 1] = data->version;
+  payloadCfg[ 4] = data->antCableDelay & 0xFF; // Little Endian
+  payloadCfg[ 5] = data->antCableDelay >> 8;
+  payloadCfg[ 6] = data->rfGroupDelay & 0xFF; // Little Endian
+  payloadCfg[ 7] = data->rfGroupDelay >> 8;
+  payloadCfg[ 8] = data->freqPeriod & 0xFF; // Little Endian
+  payloadCfg[ 9] = (data->freqPeriod >> 8) & 0xFF;
+  payloadCfg[10] = (data->freqPeriod >> 16) & 0xFF;
+  payloadCfg[11] = (data->freqPeriod >> 24) & 0xFF;
+  payloadCfg[12] = data->freqPeriodLock & 0xFF; // Little Endian
+  payloadCfg[13] = (data->freqPeriodLock >> 8) & 0xFF;
+  payloadCfg[14] = (data->freqPeriodLock >> 16) & 0xFF;
+  payloadCfg[15] = (data->freqPeriodLock >> 24) & 0xFF;
+  payloadCfg[16] = data->pulseLenRatio & 0xFF; // Little Endian
+  payloadCfg[17] = (data->pulseLenRatio >> 8) & 0xFF;
+  payloadCfg[18] = (data->pulseLenRatio >> 16) & 0xFF;
+  payloadCfg[19] = (data->pulseLenRatio >> 24) & 0xFF;
+  payloadCfg[20] = data->pulseLenRatioLock & 0xFF; // Little Endian
+  payloadCfg[21] = (data->pulseLenRatioLock >> 8) & 0xFF;
+  payloadCfg[22] = (data->pulseLenRatioLock >> 16) & 0xFF;
+  payloadCfg[23] = (data->pulseLenRatioLock >> 24) & 0xFF;
+  payloadCfg[24] = data->userConfigDelay & 0xFF; // Little Endian
+  payloadCfg[25] = (data->userConfigDelay >> 8) & 0xFF;
+  payloadCfg[26] = (data->userConfigDelay >> 16) & 0xFF;
+  payloadCfg[27] = (data->userConfigDelay >> 24) & 0xFF;
+  payloadCfg[28] = data->flags.all & 0xFF; // Little Endian
+  payloadCfg[29] = (data->flags.all >> 8) & 0xFF;
+  payloadCfg[30] = (data->flags.all >> 16) & 0xFF;
+  payloadCfg[31] = (data->flags.all >> 24) & 0xFF;
+
+
+  payloadCfg[4] = (durationInMs >> (8 * 0)) & 0xff;
+  payloadCfg[5] = (durationInMs >> (8 * 1)) & 0xff;
+  payloadCfg[6] = (durationInMs >> (8 * 2)) & 0xff;
+  payloadCfg[7] = (durationInMs >> (8 * 3)) & 0xff;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 // Powers off the GPS device for a given duration to reduce power consumption.
 // NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
 // Returns true if command has not been not acknowledged.
