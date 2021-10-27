@@ -1172,7 +1172,7 @@ typedef struct
 // CFG-specific structs
 
 // UBX-CFG-PM2 (0x06 0x3B): Extended power management configuration
-const uint16_t UBX_CFG_RATE_LEN = 43;
+const uint16_t UBX_CFG_PM2_LEN = 44;
 
 typedef struct
 {

@@ -2933,9 +2933,12 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
       len = i2cTransactionSize;
 
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-
-    for (uint16_t x = 0; x < len; x++)
+    char printBuffer[200] = {0};
+    for (uint16_t x = 0; x < len; x++) {
+      sprintf(printBuffer, "Sending: 0x%02X", outgoingUBX->payload[startSpot + x]);
+      Serial.println(printBuffer);
       _i2cPort->write(outgoingUBX->payload[startSpot + x]); //Write a portion of the payload to the bus
+    }
 
     if (_i2cPort->endTransmission(false) != 0)    //Don't release bus
       return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
@@ -4826,57 +4829,90 @@ uint8_t SFE_UBLOX_GNSS::getPowerSaveMode(uint16_t maxWait)
 // Extended power management configuration
 // Sends the UBX-CFG-PM2 message to configure extended power management
 // Note: Section 32.10.23 of the u-blox 8 / u-blox M8 Receiver description document gives three different versions
-// of this message. Version 0x00 is implemented here since it is the most widely supported
+// of this message. Version 0x01 is implemented here since it is the most widely supported version
 boolean SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint16_t maxWait)
 {
   if (data == NULL) // If the user forgot to include the data pointer, bail
     return (false);
 
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id  = UBX_CFG_PM2;
-  packetCfg.len = UBX_CFG_PM2_LEN;
+  packetCfg.cls          = UBX_CLASS_CFG;
+  packetCfg.id           = UBX_CFG_PM2;
+  packetCfg.len          = UBX_CFG_PM2_LEN;
   packetCfg.startingSpot = 0;
 
   // Insert the data, converting multi-byte values to little endian
-  payloadCfg[ 0] = 0x00;  // Message version
-  
-  payloadCfg[ 1] = data->version;
-  payloadCfg[ 4] = data->antCableDelay & 0xFF; // Little Endian
-  payloadCfg[ 5] = data->antCableDelay >> 8;
-  payloadCfg[ 6] = data->rfGroupDelay & 0xFF; // Little Endian
-  payloadCfg[ 7] = data->rfGroupDelay >> 8;
-  payloadCfg[ 8] = data->freqPeriod & 0xFF; // Little Endian
-  payloadCfg[ 9] = (data->freqPeriod >> 8) & 0xFF;
-  payloadCfg[10] = (data->freqPeriod >> 16) & 0xFF;
-  payloadCfg[11] = (data->freqPeriod >> 24) & 0xFF;
-  payloadCfg[12] = data->freqPeriodLock & 0xFF; // Little Endian
-  payloadCfg[13] = (data->freqPeriodLock >> 8) & 0xFF;
-  payloadCfg[14] = (data->freqPeriodLock >> 16) & 0xFF;
-  payloadCfg[15] = (data->freqPeriodLock >> 24) & 0xFF;
-  payloadCfg[16] = data->pulseLenRatio & 0xFF; // Little Endian
-  payloadCfg[17] = (data->pulseLenRatio >> 8) & 0xFF;
-  payloadCfg[18] = (data->pulseLenRatio >> 16) & 0xFF;
-  payloadCfg[19] = (data->pulseLenRatio >> 24) & 0xFF;
-  payloadCfg[20] = data->pulseLenRatioLock & 0xFF; // Little Endian
-  payloadCfg[21] = (data->pulseLenRatioLock >> 8) & 0xFF;
-  payloadCfg[22] = (data->pulseLenRatioLock >> 16) & 0xFF;
-  payloadCfg[23] = (data->pulseLenRatioLock >> 24) & 0xFF;
-  payloadCfg[24] = data->userConfigDelay & 0xFF; // Little Endian
-  payloadCfg[25] = (data->userConfigDelay >> 8) & 0xFF;
-  payloadCfg[26] = (data->userConfigDelay >> 16) & 0xFF;
-  payloadCfg[27] = (data->userConfigDelay >> 24) & 0xFF;
-  payloadCfg[28] = data->flags.all & 0xFF; // Little Endian
-  payloadCfg[29] = (data->flags.all >> 8) & 0xFF;
-  payloadCfg[30] = (data->flags.all >> 16) & 0xFF;
-  payloadCfg[31] = (data->flags.all >> 24) & 0xFF;
 
+  memset(payloadCfg, 0, UBX_CFG_PM2_LEN);
 
-  payloadCfg[4] = (durationInMs >> (8 * 0)) & 0xff;
-  payloadCfg[5] = (durationInMs >> (8 * 1)) & 0xff;
-  payloadCfg[6] = (durationInMs >> (8 * 2)) & 0xff;
-  payloadCfg[7] = (durationInMs >> (8 * 3)) & 0xff;
+  payloadCfg[ 0] = 0x01;  // Message version
+  payloadCfg[ 1] = 0;     // Reserved
+  payloadCfg[ 2] = data->maxStartupStateDur;
+  payloadCfg[ 3] = 0;     // Reserved
 
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  uint32_t flags = 0;
+  flags = flags | (data->flagExtintSel     <<  4);
+  flags = flags | (data->flagExtintWake    <<  5);
+  flags = flags | (data->flagExtintBackup  <<  6);
+  flags = flags | (data->flagLimitPeakCurr <<  8);  // Uses bits 8 and 9
+  flags = flags | (data->flagWaitTimeFix   << 10);
+  flags = flags | (data->flagUpdateRTC     << 11);
+  flags = flags | (data->flagUpdateEPH     << 12);
+  flags = flags | (data->flagDoNotEnterOff << 16);
+  flags = flags | (data->flagMode          << 17);  // Uses bits 17 and 18
+  payloadCfg[ 4] = (flags >> (8 * 0)) & 0xFF;
+  payloadCfg[ 5] = (flags >> (8 * 1)) & 0xFF;
+  payloadCfg[ 6] = (flags >> (8 * 2)) & 0xFF;
+  payloadCfg[ 7] = (flags >> (8 * 3)) & 0xFF;
+
+  payloadCfg[ 8] = (data->updatePeriod >> (8 * 0)) & 0xFF;
+  payloadCfg[ 9] = (data->updatePeriod >> (8 * 1)) & 0xFF;
+  payloadCfg[10] = (data->updatePeriod >> (8 * 2)) & 0xFF;
+  payloadCfg[11] = (data->updatePeriod >> (8 * 3)) & 0xFF;
+
+  payloadCfg[12] = (data->searchPeriod >> (8 * 0)) & 0xFF;
+  payloadCfg[13] = (data->searchPeriod >> (8 * 1)) & 0xFF;
+  payloadCfg[14] = (data->searchPeriod >> (8 * 2)) & 0xFF;
+  payloadCfg[15] = (data->searchPeriod >> (8 * 3)) & 0xFF;
+
+  payloadCfg[16] = (data->gridOffset   >> (8 * 0)) & 0xFF;
+  payloadCfg[17] = (data->gridOffset   >> (8 * 1)) & 0xFF;
+  payloadCfg[18] = (data->gridOffset   >> (8 * 2)) & 0xFF;
+  payloadCfg[19] = (data->gridOffset   >> (8 * 3)) & 0xFF;
+
+  payloadCfg[20] = (data->onTime       >> (8 * 0)) & 0xFF;
+  payloadCfg[21] = (data->onTime       >> (8 * 1)) & 0xFF;
+
+  payloadCfg[22] = (data->minAcqTime   >> (8 * 0)) & 0xFF;
+  payloadCfg[23] = (data->minAcqTime   >> (8 * 1)) & 0xFF;
+
+  // Bytes 24 through (UBX_CFG_PM2_LEN-1) are reserved
+
+  boolean cfg_result = sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
+
+  return (cfg_result); // We are only expecting an ACK
+}
+
+boolean SFE_UBLOX_GNSS::getPowerManagementConfiguration(uint16_t maxWait)
+{
+  packetCfg.cls          = UBX_CLASS_CFG;
+  packetCfg.id           = UBX_CFG_PM2;
+  packetCfg.len          = 0;
+  packetCfg.startingSpot = 0;
+
+  // Don't setup any payload items; we're just reading the current configuration
+  // Instead clear the structure since it will be read into
+  memset(payloadCfg, 0, UBX_CFG_PM2_LEN);
+
+  boolean cfg_result = sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
+
+  Serial.println("Data:");
+  Serial.println(payloadCfg[0]);
+  Serial.println(payloadCfg[1]);
+  Serial.println(payloadCfg[2]);
+  Serial.println(payloadCfg[3]);
+  Serial.println(payloadCfg[4]);
+
+  return (cfg_result); // We are only expecting an ACK
 }
 
 // Powers off the GPS device for a given duration to reduce power consumption.
