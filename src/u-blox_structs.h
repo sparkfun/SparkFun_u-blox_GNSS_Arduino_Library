@@ -340,6 +340,7 @@ typedef struct
 
 // UBX-NAV-PVT (0x01 0x07): Navigation position velocity time solution
 const uint16_t UBX_NAV_PVT_LEN = 92;
+const uint16_t UBX_7_NAV_PVT_LEN = 84;
 
 typedef struct
 {

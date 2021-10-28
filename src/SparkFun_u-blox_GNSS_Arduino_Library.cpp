@@ -2014,7 +2014,8 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         }
       }
     }
-    else if (msg->id == UBX_NAV_PVT && msg->len == UBX_NAV_PVT_LEN)
+    else if (msg->id == UBX_NAV_PVT 
+      && (msg->len == UBX_NAV_PVT_LEN || msg->len == UBX_7_NAV_PVT_LEN))
     {
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVPVT != NULL)
@@ -2048,9 +2049,11 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVPVT->data.headAcc = extractLong(msg, 72);
         packetUBXNAVPVT->data.pDOP = extractInt(msg, 76);
         packetUBXNAVPVT->data.flags3.all = extractByte(msg, 78);
-        packetUBXNAVPVT->data.headVeh = extractSignedLong(msg, 84);
-        packetUBXNAVPVT->data.magDec = extractSignedInt(msg, 88);
-        packetUBXNAVPVT->data.magAcc = extractInt(msg, 90);
+        if(msg->len == UBX_NAV_PVT_LEN) {
+          packetUBXNAVPVT->data.headVeh = extractSignedLong(msg, 84);
+          packetUBXNAVPVT->data.magDec = extractSignedInt(msg, 88);
+          packetUBXNAVPVT->data.magAcc = extractInt(msg, 90);
+        }
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0xFFFFFFFF;
