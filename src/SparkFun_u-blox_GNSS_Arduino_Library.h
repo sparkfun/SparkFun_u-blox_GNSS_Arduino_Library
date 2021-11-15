@@ -589,6 +589,10 @@ public:
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
 
+	// Support for platforms like ESP32 which do not support multiple I2C restarts
+	void i2cStopRestart(boolean stop) { _i2cStopRestart = stop; }; // If stop is true, endTransmission will always use a stop. If false, a restart will be used where needed.
+	boolean getI2cStopRestart(void) { return (_i2cStopRestart); };
+
 	//Control the size of the spi buffer. If the buffer isn't big enough, we'll start to lose bytes
 	//That we receive if the buffer is full!
 	void setSpiTransactionSize(uint8_t bufferSize);
@@ -1394,6 +1398,10 @@ private:
 	boolean storePacket(ubxPacket *msg); // Add a UBX packet to the file buffer
 	boolean storeFileBytes(uint8_t *theBytes, uint16_t numBytes); // Add theBytes to the file buffer
 	void writeToFileBuffer(uint8_t *theBytes, uint16_t numBytes); // Write theBytes to the file buffer
+
+	// Support for platforms like ESP32 which do not support multiple I2C restarts
+	boolean _i2cStopRestart;
+
 };
 
 #endif
