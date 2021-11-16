@@ -55,6 +55,7 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
   _processNMEA.all = SFE_UBLOX_FILTER_NMEA_ALL; // Default to passing all NMEA messages to processNMEA
 
 	// Support for platforms like ESP32 which do not support multiple I2C restarts
+	// If _i2cStopRestart is true, endTransmission will always use a stop. If false, a restart will be used where needed.
 #if defined(ARDUINO_ARCH_ESP32)
 	_i2cStopRestart = true; // Always use a stop
 #else
@@ -725,7 +726,7 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
     uint16_t bytesAvailable = 0;
     _i2cPort->beginTransmission(_gpsI2Caddress);
     _i2cPort->write(0xFD);                     //0xFD (MSB) and 0xFE (LSB) are the registers that contain number of bytes available
-    uint8_t i2cError = _i2cPort->endTransmission(false); //Always send a restart command. Do not release bus. ESP32 supports this.
+    uint8_t i2cError = _i2cPort->endTransmission(false); //Always send a restart command. Do not release the bus. ESP32 supports this.
     if (i2cError != 0)
     {
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -736,7 +737,8 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
       return (false);                          //Sensor did not ACK
     }
 
-    uint8_t bytesReturned = _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2); // TO DO: add _i2cStopRestart here
+    //Forcing requestFrom to use a restart would be unwise. If bytesAvailable is zero, we want to surrender the bus.
+    uint8_t bytesReturned = _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, static_cast<uint8_t>(2));
     if (bytesReturned != 2)
     {
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -746,7 +748,7 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
       }
       return (false);                          //Sensor did not return 2 bytes
     }
-    //if (_i2cPort->available())
+    else //if (_i2cPort->available())
     {
       uint8_t msb = _i2cPort->read();
       uint8_t lsb = _i2cPort->read();
@@ -859,21 +861,28 @@ boolean SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedC
       //  return (false);                          //Sensor did not ACK
 
       //Limit to 32 bytes or whatever the buffer limit is for given platform
-      uint16_t bytesToRead = bytesAvailable;
-      if (bytesToRead > i2cTransactionSize)
+      uint16_t bytesToRead = bytesAvailable; // 16-bit
+      if (bytesToRead > i2cTransactionSize) // Limit for i2cTransactionSize is 8-bit
         bytesToRead = i2cTransactionSize;
 
-    TRY_AGAIN:
+    //TRY_AGAIN:
 
-      _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead); // TO DO: add _i2cStopRestart here
-      if (_i2cPort->available())
+      //Here it would be desireable to use a restart where possible / supported, but only if there will be multiple reads.
+      //However, if an individual requestFrom fails, we could end up leaving the bus hanging.
+      //On balance, it is probably safest to not use restarts.
+      uint8_t bytesReturned = _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead);
+      if ((uint16_t)bytesReturned == bytesToRead)
       {
         for (uint16_t x = 0; x < bytesToRead; x++)
         {
           uint8_t incoming = _i2cPort->read(); //Grab the actual character
 
-          //Check to see if the first read is 0x7F. If it is, the module is not ready
-          //to respond. Stop, wait, and try again
+          //Check to see if the first read is 0x7F. If it is, the module is not ready to respond. Stop, wait, and try again
+          //Note: the integration manual says:
+          //"If there is no data awaiting transmission from the receiver, then this register will deliver the value 0xFF,
+          // which cannot be the first byte of a valid message."
+          //But it can be the first byte waiting to be read from the buffer if we have already read part of the message.
+          //Therefore I think this check needs to be commented.
           // if (x == 0)
           // {
           //   if ((incoming == 0x7F) && (ubx7FcheckDisabled == false))
@@ -2619,7 +2628,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         {
           packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
         }
-        if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4))) // IGNORE COMPILER WARNING comparison between signed and unsigned integer expressions
+        if ((uint16_t)msg->len > (uint16_t)(8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4)))
           packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
 
         //Mark all datums as fresh (not read before)
@@ -2863,11 +2872,13 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 
   calcChecksum(outgoingUBX); //Sets checksum A and B bytes of the packet
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   if (_printDebug == true)
   {
     _debugSerial->print(F("\nSending: "));
     printPacket(outgoingUBX, true); // Always print payload
   }
+#endif
 
   if (commType == COMM_TYPE_I2C)
   {
@@ -2968,7 +2979,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
   uint16_t startSpot = 0;
   while (bytesLeftToSend > 0)
   {
-    uint8_t len = bytesLeftToSend; // How many bytes should we actually write?
+    uint16_t len = bytesLeftToSend; // How many bytes should we actually write?
     if (len > i2cTransactionSize) // Limit len to i2cTransactionSize
       len = i2cTransactionSize;
 
@@ -3799,6 +3810,10 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
 // On processors like the ESP32, you can use setI2CTransactionSize to increase the size of each transmission - to e.g. 128 bytes
 boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boolean stop)
 {
+  // Return now if numDataBytes is zero
+  if (numDataBytes == 0)
+    return (false); // Indicate to the user that there was no data to push
+
   if (commType == COMM_TYPE_SERIAL)
   {
     // Serial: write all the bytes in one go
@@ -3807,6 +3822,16 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
   }
   else if (commType == COMM_TYPE_I2C)
   {
+    // We can not write a single data byte to I2C as it would look like the address of a random read.
+    // If numDataBytes is 1, we should probably just reject the data and return false.
+    // But we'll be nice and store the byte until the next time pushRawData is called.
+    if ((numDataBytes == 1) && (_pushSingleByte == false))
+    {
+      _pushThisSingleByte = *dataBytes;
+      _pushSingleByte = true;
+      return (false); // Indicate to the user that their data has not been pushed yet
+    }
+
     // If stop is true then always use a stop
     // Else if _i2cStopRestart is true then always use a stop
     // Else use a restart where needed
@@ -3821,6 +3846,9 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
     size_t bytesLeftToWrite = numDataBytes;
     size_t bytesWrittenTotal = 0;
 
+    if (_pushSingleByte == true) // Increment bytesLeftToWrite if we have a single byte waiting to be pushed
+      bytesLeftToWrite++;
+
     while (bytesLeftToWrite > 0)
     {
       size_t bytesToWrite; // Limit bytesToWrite to i2cTransactionSize
@@ -3829,12 +3857,30 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
       else
         bytesToWrite = bytesLeftToWrite;
 
+      //If there would be one byte left to be written next time, send one byte less now
+      if ((bytesLeftToWrite - bytesToWrite) == 1)
+        bytesToWrite--;
+
       _i2cPort->beginTransmission(_gpsI2Caddress);
-      size_t bytesWritten = _i2cPort->write(dataBytes, bytesToWrite); // Write the bytes
+
+      size_t bytesWritten = 0;
+
+      //If _pushSingleByte is true, push it now
+      if (_pushSingleByte == true)
+      {
+        bytesWritten += _i2cPort->write(_pushThisSingleByte); // Write the single byte
+        bytesWritten += _i2cPort->write(dataBytes, bytesToWrite - 1); // Write the bytes - but send one byte less
+        dataBytes += bytesToWrite - 1; // Point to fresh data
+        _pushSingleByte = false; // Clear the flag
+      }
+      else
+      {
+        bytesWritten += _i2cPort->write(dataBytes, bytesToWrite); // Write the bytes
+        dataBytes += bytesToWrite; // Point to fresh data
+      }
 
       bytesWrittenTotal += bytesWritten; // Update the totals
       bytesLeftToWrite -= bytesToWrite;
-      dataBytes += bytesToWrite; // Point to fresh data
 
       if (bytesLeftToWrite > 0)
       {
@@ -3848,7 +3894,7 @@ boolean SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, boo
       }
     }
 
-    return (bytesWrittenTotal == numDataBytes);
+    return (bytesWrittenTotal == numDataBytes); //Return true if the correct number of bytes were written
   }
   else // SPI
   {

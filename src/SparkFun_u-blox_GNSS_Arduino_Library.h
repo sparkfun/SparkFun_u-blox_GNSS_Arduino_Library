@@ -56,8 +56,13 @@
 #include "u-blox_config_keys.h"
 #include "u-blox_structs.h"
 
-//Unomment the next line (or add SFE_UBLOX_REDUCED_PROG_MEM as a compiler directive) to reduce the amount of program memory used by the library
+//Uncomment the next line (or add SFE_UBLOX_REDUCED_PROG_MEM as a compiler directive) to reduce the amount of program memory used by the library
 //#define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages to save memory
+
+//The code just about fills the program memory on the ATmega328P (Arduino Uno), so let's delete the minor debug messages anyway
+#if !defined(SFE_UBLOX_REDUCED_PROG_MEM) && defined(ARDUINO_AVR_UNO)
+#define SFE_UBLOX_REDUCED_PROG_MEM
+#endif
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -590,7 +595,9 @@ public:
 	uint8_t getI2CTransactionSize(void);
 
 	// Support for platforms like ESP32 which do not support multiple I2C restarts
-	void i2cStopRestart(boolean stop) { _i2cStopRestart = stop; }; // If stop is true, endTransmission will always use a stop. If false, a restart will be used where needed.
+	// If _i2cStopRestart is true, endTransmission will always use a stop. If false, a restart will be used where needed.
+	// The default value for _i2cStopRestart is set in the class instantiation code.
+	void setI2cStopRestart(boolean stop) { _i2cStopRestart = stop; };
 	boolean getI2cStopRestart(void) { return (_i2cStopRestart); };
 
 	//Control the size of the spi buffer. If the buffer isn't big enough, we'll start to lose bytes
@@ -1400,7 +1407,13 @@ private:
 	void writeToFileBuffer(uint8_t *theBytes, uint16_t numBytes); // Write theBytes to the file buffer
 
 	// Support for platforms like ESP32 which do not support multiple I2C restarts
+	// If _i2cStopRestart is true, endTransmission will always use a stop. If false, a restart will be used where needed.
+	// The default value for _i2cStopRestart is set in the class instantiation code.
 	boolean _i2cStopRestart;
+
+	// Storage just in case the user tries to push a single byte using pushRawBytes
+	boolean _pushSingleByte = false;
+	uint8_t _pushThisSingleByte;
 
 };
 
