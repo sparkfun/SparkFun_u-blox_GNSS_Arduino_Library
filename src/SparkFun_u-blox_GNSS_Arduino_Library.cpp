@@ -2599,7 +2599,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         {
           packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
         }
-        if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4))) // IGNORE COMPILER WARNING comparison between signed and unsigned integer expressions
+        if ((uint32_t) msg->len > (uint32_t) (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4))) // Casting to uint32_t to prevent compiler warning about comparison between signed and unsigned integer expressions
           packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
 
         //Mark all datums as fresh (not read before)
@@ -2933,10 +2933,8 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
       len = i2cTransactionSize;
 
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-    char printBuffer[200] = {0};
+
     for (uint16_t x = 0; x < len; x++) {
-      sprintf(printBuffer, "Sending: 0x%02X", outgoingUBX->payload[startSpot + x]);
-      Serial.println(printBuffer);
       _i2cPort->write(outgoingUBX->payload[startSpot + x]); //Write a portion of the payload to the bus
     }
 
@@ -4849,20 +4847,25 @@ boolean SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint1
   payloadCfg[ 2] = data->maxStartupStateDur;
   payloadCfg[ 3] = 0;     // Reserved
 
-  uint32_t flags = 0;
-  flags = flags | (data->flagExtintSel     <<  4);
-  flags = flags | (data->flagExtintWake    <<  5);
-  flags = flags | (data->flagExtintBackup  <<  6);
-  flags = flags | (data->flagLimitPeakCurr <<  8);  // Uses bits 8 and 9
-  flags = flags | (data->flagWaitTimeFix   << 10);
-  flags = flags | (data->flagUpdateRTC     << 11);
-  flags = flags | (data->flagUpdateEPH     << 12);
-  flags = flags | (data->flagDoNotEnterOff << 16);
-  flags = flags | (data->flagMode          << 17);  // Uses bits 17 and 18
-  payloadCfg[ 4] = (flags >> (8 * 0)) & 0xFF;
-  payloadCfg[ 5] = (flags >> (8 * 1)) & 0xFF;
-  payloadCfg[ 6] = (flags >> (8 * 2)) & 0xFF;
-  payloadCfg[ 7] = (flags >> (8 * 3)) & 0xFF;
+  // Some MCUs don't support larger uints, so break flags into separate uint8s
+  uint8_t flags_0 = 0;
+  uint8_t flags_1 = 0;
+  uint8_t flags_2 = 0;
+  uint8_t flags_3 = 0;
+  flags_0 = flags_0 | (data->flagExtintSel     <<  4);
+  flags_0 = flags_0 | (data->flagExtintWake    <<  5);
+  flags_0 = flags_0 | (data->flagExtintBackup  <<  6);
+  flags_1 = flags_1 | (data->flagLimitPeakCurr <<  0);  // Uses bits 8 and 9
+  flags_1 = flags_1 | (data->flagWaitTimeFix   <<  2);
+  flags_1 = flags_1 | (data->flagUpdateRTC     <<  3);
+  flags_1 = flags_1 | (data->flagUpdateEPH     <<  4);
+  flags_2 = flags_2 | (data->flagDoNotEnterOff <<  0);
+  flags_2 = flags_2 | (data->flagMode          <<  1);  // Uses bits 17 and 18
+
+  payloadCfg[ 4] = flags_0;
+  payloadCfg[ 5] = flags_1;
+  payloadCfg[ 6] = flags_2;
+  payloadCfg[ 7] = flags_3;
 
   payloadCfg[ 8] = (data->updatePeriod >> (8 * 0)) & 0xFF;
   payloadCfg[ 9] = (data->updatePeriod >> (8 * 1)) & 0xFF;
