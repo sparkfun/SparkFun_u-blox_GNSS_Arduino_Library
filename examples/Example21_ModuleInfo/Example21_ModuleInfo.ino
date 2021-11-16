@@ -45,7 +45,7 @@
 class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GNSS
 {
 public:
-    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
+    bool getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
 
     struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
     {
@@ -115,7 +115,7 @@ void loop()
 {
 }
 
-boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
+bool SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
 {
     myGNSS.minfo.hwVersion[0] = 0;
     myGNSS.minfo.swVersion[0] = 0;

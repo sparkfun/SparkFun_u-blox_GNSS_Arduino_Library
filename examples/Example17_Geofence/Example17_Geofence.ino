@@ -121,7 +121,7 @@ void loop()
 {
   geofenceState currentGeofenceState; // Create storage for the geofence state
 
-  boolean result = myGNSS.getGeofenceState(currentGeofenceState);
+  bool result = myGNSS.getGeofenceState(currentGeofenceState);
 
   Serial.print(F("getGeofenceState returned: ")); // Print the combined state
   Serial.print(result); // Get the geofence state
