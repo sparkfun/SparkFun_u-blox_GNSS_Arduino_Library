@@ -2934,9 +2934,8 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
 
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
 
-    for (uint16_t x = 0; x < len; x++) {
+    for (uint16_t x = 0; x < len; x++)
       _i2cPort->write(outgoingUBX->payload[startSpot + x]); //Write a portion of the payload to the bus
-    }
 
     if (_i2cPort->endTransmission(false) != 0)    //Don't release bus
       return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
