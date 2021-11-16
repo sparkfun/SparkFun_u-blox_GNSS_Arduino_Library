@@ -2933,7 +2933,6 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 //Returns false if sensor fails to respond to I2C traffic
 sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait)
 {
-  // PaulZC : November 15th 2021
   // From the integration guide:
   // "The receiver does not provide any write access except for writing UBX and NMEA messages to the
   //  receiver, such as configuration or aiding data. Therefore, the register set mentioned in section Read
@@ -2949,7 +2948,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
   // Point 2 is important. It means:
   // * In this function:
   //     if we do multiple writes (because we're trying to write more than i2cTransactionSize),
-  //     we may need to write one byte less in the previous write to ensure we always have two bytes left for the final write.
+  //     we may need to write one byte less in the penultimate write to ensure we always have two bytes left for the final write.
   // * In pushRawData:
   //     if there is one byte to write, or one byte left to write, we need to do the same thing and may need to store a single
   //     byte until pushRawData is called again.
@@ -2972,11 +2971,11 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
 
   // i2cTransactionSize will be at least 8. We don't need to check for smaller values than that.
 
-  uint16_t bytesToSend = outgoingUBX->len + 8; // How many bytes need to be sent?
+  uint16_t bytesToSend = outgoingUBX->len + 8; // How many bytes need to be sent
   uint16_t bytesSent = 0; // How many bytes have been sent
-  uint16_t bytesLeftToSend = bytesToSend; // How many bytes remain to be sent?
+  uint16_t bytesLeftToSend = bytesToSend; // How many bytes remain to be sent
+  uint16_t startSpot = 0; // Payload pointer
 
-  uint16_t startSpot = 0;
   while (bytesLeftToSend > 0)
   {
     uint16_t len = bytesLeftToSend; // How many bytes should we actually write?
@@ -3007,15 +3006,21 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
 
       bytesSent += 6;
 
-      uint16_t x;
-      for (x = 0; (x < outgoingUBX->len) && (bytesSent < len); x++) //Write a portion of the payload to the bus
+      uint16_t x = 0;
+      //Write a portion of the payload to the bus.
+      //Keep going until we reach the end of the payload (x == outgoingUBX->len)
+      //or we've sent as many bytes as we can in this transmission (bytesSent == len).
+      for (; (x < outgoingUBX->len) && (bytesSent < len); x++)
       {
         _i2cPort->write(outgoingUBX->payload[startSpot + x]);
         bytesSent++;
       }
       startSpot += x;
 
-      if (bytesSent < len) //Do we need to write both checksum bytes? (Remember that bytesLeftToSend will be zero or >=2 here)
+      //Can we write both checksum bytes?
+      //We can send both bytes now if we have exactly 2 bytes left
+      //to be sent in this transmission (bytesSent == (len - 2)).
+      if (bytesSent == (len - 2))
       {
         //Write checksum
         _i2cPort->write(outgoingUBX->checksumA);
@@ -3023,17 +3028,23 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
         bytesSent += 2;
       }
     }
-    else if (bytesSent < bytesToSend) // Keep writing payload bytes - plus the checksum if required
+    else // Keep writing payload bytes. Write the checksum at the right time.
     {
-      uint16_t x;
-      for (x = 0; (x < len) && ((startSpot + x) < (outgoingUBX->len)); x++) //Write a portion of the payload to the bus
+      uint16_t x = 0;
+      //Write a portion of the payload to the bus.
+      //Keep going until we've sent as many bytes as we can in this transmission (x == len)
+      //or until we reach the end of the payload ((startSpot + x) == (outgoingUBX->len))
+      for (; (x < len) && ((startSpot + x) < (outgoingUBX->len)); x++)
       {
         _i2cPort->write(outgoingUBX->payload[startSpot + x]);
         bytesSent++;
       }
       startSpot += x;
 
-      if (bytesSent == (bytesToSend - 2)) //Do we need to write both checksum bytes? (Remember that bytesLeftToSend will be zero or >=2 here)
+      //Can we write both checksum bytes?
+      //We can send both bytes if we have exactly 2 bytes left to be sent (bytesSent == (bytesToSend - 2))
+      //and if there is room for 2 bytes in this transmission 
+      if ((bytesSent == (bytesToSend - 2)) && (x == (len - 2)))
       {
         //Write checksum
         _i2cPort->write(outgoingUBX->checksumA);
@@ -3042,7 +3053,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16
       }
     }
 
-    if (bytesSent < bytesToSend) // Are we all done?
+    if (bytesSent < bytesToSend) // Do we need to go round the loop again?
     {
       if (_i2cPort->endTransmission(_i2cStopRestart) != 0) //Don't release bus unless we have to
         return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
