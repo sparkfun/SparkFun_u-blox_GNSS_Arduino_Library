@@ -1,7 +1,7 @@
 name: Compile Sketch
 
 on:
-  - push
+  # - push
   - pull_request
 
 
