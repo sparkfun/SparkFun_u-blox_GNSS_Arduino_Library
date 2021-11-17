@@ -72,7 +72,7 @@ void setup()
   // Please see u-blox_structs.h for the full definition of UBX_NAV_SVIN_t
   // You can either read the data from packetUBXNAVSVIN directly
   // or can use the helper functions: getSurveyInActive; getSurveyInValid; getSurveyInObservationTime; and getSurveyInMeanAccuracy
-  boolean response;
+  bool response;
   response = myGNSS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (request can take a long time)
   if (response == false)
   {

@@ -47,7 +47,7 @@ void setup()
 
   myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
-  boolean success = true;
+  bool success = true;
 
   //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
 

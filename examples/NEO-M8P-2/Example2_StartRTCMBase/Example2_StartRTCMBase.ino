@@ -53,7 +53,7 @@ void setup()
   Serial.println(F("Press any key to send commands to begin Survey-In"));
   while (Serial.available() == 0) ; //Wait for user to press a key
 
-  boolean response;
+  bool response;
 
   //Check if Survey is in Progress before initiating one
   // From v2.0, the data from getSurveyStatus (UBX-NAV-SVIN) is returned in UBX_NAV_SVIN_t packetUBXNAVSVIN
