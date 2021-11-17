@@ -106,18 +106,7 @@ jobs:
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
             - source-url: https://github.com/${{github.repository}}.git
-          sketch-paths: |
-            - ./
-            - '!./examples/Example11_ResetModule/Example2_FactoryDefaultsviaSerial/**'
-            - '!./examples/Example12_UseUart/**'
-            - '!./examples/Example13_PVT/Example3_AutoPVTviaUart/**'
-            - '!./examples/Example13_PVT/Example4_AssumeAutoPVTviaUart/**'
-            - '!./examples/Example2_NMEAParsing/**'
-            - '!./examples/Example8_GetProtocolVersion_Serial/**'
-            - '!./examples/NEO-M8P-2/Example3_BaseWithLCD/**'
-            - '!./examples/Data_Logging/**'
-            - '!./examples/ZED-F9P/Example14_NTRIPServer/**'
-            - '!./examples/ZED-F9P/Example4_BaseWithLCD/**'
+          sketch-path: '"Example10_AltitudeMSL" "Example11_ResetModule" "Example12_UseUart" "Example13_PVT" "Example14_DebugOutput" "Example15_GetDateTime" "Example16_Nanosecond_MaxOutput" "Example16_PartialSecond_MaxOutput" "Example17_Geofence" "Example18_PowerSaveMode" "Example19_DynamicModel" "Example20_SendCustomCommand"'
           enable-warnings-report: true
           # verbose: true
 
