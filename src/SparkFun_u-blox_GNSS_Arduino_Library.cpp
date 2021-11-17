@@ -1650,7 +1650,7 @@ void SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming)
 //Bytes can be piped to Serial or other interface. The consumer could be a radio or the internet (Ntrip broadcaster)
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  uint8_t ignoreMe = incoming; // Do something with incoming just to get rid of the pesky compiler warning!
+  uint8_t ignoreMe = incoming; ignoreMe += 0; // Do something with incoming just to get rid of the pesky compiler warning!
 
   //Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
@@ -2934,7 +2934,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 //Returns false if sensor fails to respond to I2C traffic
 sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait)
 {
-  uint16_t ignoreMe = maxWait; // Do something with maxWait just to avoid the pesky compiler warnings!
+  uint16_t ignoreMe = maxWait; ignoreMe += 0; // Do something with maxWait just to avoid the pesky compiler warnings!
   
   // From the integration guide:
   // "The receiver does not provide any write access except for writing UBX and NMEA messages to the
@@ -3182,6 +3182,12 @@ void SFE_UBLOX_GNSS::sendSpiCommand(ubxPacket *outgoingUBX)
 //Pretty prints the current ubxPacket
 void SFE_UBLOX_GNSS::printPacket(ubxPacket *packet, bool alwaysPrintPayload)
 {
+  // Only print the payload is ignoreThisPayload is false otherwise
+  // we could be printing gibberish from beyond the end of packetBuf
+  // (These two lines get rid of a pesky compiler warning)
+  bool printPayload =  (ignoreThisPayload == false);
+  printPayload |= (alwaysPrintPayload == true);
+
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
   if (_printDebug == true)
   {
@@ -3216,9 +3222,7 @@ void SFE_UBLOX_GNSS::printPacket(ubxPacket *packet, bool alwaysPrintPayload)
     _debugSerial->print(F(" Len: 0x"));
     _debugSerial->print(packet->len, HEX);
 
-    // Only print the payload is ignoreThisPayload is false otherwise
-    // we could be printing gibberish from beyond the end of packetBuf
-    if ((alwaysPrintPayload == true) || (ignoreThisPayload == false))
+    if (printPayload)
     {
       _debugSerial->print(F(" Payload:"));
 
@@ -3233,6 +3237,12 @@ void SFE_UBLOX_GNSS::printPacket(ubxPacket *packet, bool alwaysPrintPayload)
       _debugSerial->print(F(" Payload: IGNORED"));
     }
     _debugSerial->println();
+  }
+#else
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("Len: 0x"));
+    _debugSerial->print(packet->len, HEX);
   }
 #endif
 }
@@ -4297,12 +4307,15 @@ void SFE_UBLOX_GNSS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t
 #endif
 
   sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
   if (_printDebug == true)
   {
     _debugSerial->print(F("setSerialRate: sendCommand returned: "));
     _debugSerial->println(statusString(retVal));
   }
+#else
+  (void)retVal; // Get rid of a pesky compiler warning!
 #endif
 }
 
@@ -10740,7 +10753,7 @@ uint16_t SFE_UBLOX_GNSS::getMagAcc(uint16_t maxWait)
 // getGeoidSeparation is currently redundant. The geoid separation seems to only be provided in NMEA GGA and GNS messages.
 int32_t SFE_UBLOX_GNSS::getGeoidSeparation(uint16_t maxWait)
 {
-  uint16_t ignoreMe = maxWait; // Do something with maxWait just to get rid of the pesky compiler warning
+  uint16_t ignoreMe = maxWait; ignoreMe += 0; // Do something with maxWait just to get rid of the pesky compiler warning
 
   return (0);
 }

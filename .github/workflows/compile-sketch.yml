@@ -27,9 +27,6 @@ jobs:
             platforms: |
               - name: esp32:esp32
                 source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-                env: |
-                  - CS: 1
-                  - LED_BUILTIN: 13
 
           # ESP32-S2
           # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
@@ -37,9 +34,6 @@ jobs:
             platforms: |
               - name: esp32:esp32
                 source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-                env: |
-                  - CS: 1
-                  - LED_BUILTIN: 13
 
           # ESP32-C3
           # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
@@ -47,9 +41,6 @@ jobs:
             platforms: |
               - name: esp32:esp32
                 source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-                env: |
-                  - CS: 1
-                  - LED_BUILTIN: 13
 
           # Artemis / Apollo3
           # https://github.com/sparkfun/Arduino_Apollo3/blob/main/boards.txt
@@ -64,8 +55,6 @@ jobs:
             platforms: |
               - name: esp8266:esp8266
                 source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
-                env: |
-                  - CS: 1
 
           # SAMD21
           # https://github.com/arduino/ArduinoCore-samd/blob/master/boards.txt
@@ -115,7 +104,6 @@ jobs:
             - examples/Example15_GetDateTime
             - examples/Example16_Nanosecond_MaxOutput
             - examples/Example16_PartialSecond_MaxOutput
-            - examples/Example17_Geofence
             - examples/Example18_PowerSaveMode
             - examples/Example19_DynamicModel
             - examples/Example20_SendCustomCommand
