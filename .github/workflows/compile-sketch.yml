@@ -107,18 +107,18 @@ jobs:
           libraries: |
             - source-url: https://github.com/${{github.repository}}.git
           sketch-paths: |
-            - '"examples/Example10_AltitudeMSL"'
-            - '"examples/Example11_ResetModule"'
-            - '"examples/Example12_UseUart"'
-            - '"examples/Example13_PVT"'
-            - '"examples/Example14_DebugOutput"'
-            - '"examples/Example15_GetDateTime"'
-            - '"examples/Example16_Nanosecond_MaxOutput"'
-            - '"examples/Example16_PartialSecond_MaxOutput"'
-            - '"examples/Example17_Geofence"'
-            - '"examples/Example18_PowerSaveMode"'
-            - '"examples/Example19_DynamicModel"'
-            - '"examples/Example20_SendCustomCommand"'
+            - '"./examples/Example10_AltitudeMSL/**"'
+            - '"./examples/Example11_ResetModule/**"'
+            - '"./examples/Example12_UseUart/**"'
+            - '"./examples/Example13_PVT/**"'
+            - '"./examples/Example14_DebugOutput/**"'
+            - '"./examples/Example15_GetDateTime/**"'
+            - '"./examples/Example16_Nanosecond_MaxOutput/**"'
+            - '"./examples/Example16_PartialSecond_MaxOutput/**"'
+            - '"./examples/Example17_Geofence/**"'
+            - '"./examples/Example18_PowerSaveMode/**"'
+            - '"./examples/Example19_DynamicModel/**"'
+            - '"./examples/Example20_SendCustomCommand/**"'
           enable-warnings-report: true
           # verbose: true
 
