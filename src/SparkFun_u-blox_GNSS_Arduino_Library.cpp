@@ -1648,15 +1648,16 @@ void SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming)
 //This function is called for each byte of an RTCM frame
 //Ths user can overwrite this function and process the RTCM frame as they please
 //Bytes can be piped to Serial or other interface. The consumer could be a radio or the internet (Ntrip broadcaster)
-void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming) // IGNORE COMPILER WARNING unused parameter 'incoming'
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
+  uint8_t ignoreMe = incoming; // Do something with incoming just to get rid of the pesky compiler warning!
+
   //Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
   //_debugSerial->write(incoming); //An example of passing this byte out the serial port
 
   //Debug printing
   //  _debugSerial->print(F(" "));
-  //  if(incoming < 0x10) _debugSerial->print(F("0"));
   //  if(incoming < 0x10) _debugSerial->print(F("0"));
   //  _debugSerial->print(incoming, HEX);
   //  if(rtcmFrameCounter % 16 == 0) _debugSerial->println();
@@ -2933,6 +2934,8 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 //Returns false if sensor fails to respond to I2C traffic
 sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait)
 {
+  uint16_t ignoreMe = maxWait; // Do something with maxWait just to avoid the pesky compiler warnings!
+  
   // From the integration guide:
   // "The receiver does not provide any write access except for writing UBX and NMEA messages to the
   //  receiver, such as configuration or aiding data. Therefore, the register set mentioned in section Read
@@ -10735,8 +10738,10 @@ uint16_t SFE_UBLOX_GNSS::getMagAcc(uint16_t maxWait)
 }
 
 // getGeoidSeparation is currently redundant. The geoid separation seems to only be provided in NMEA GGA and GNS messages.
-int32_t SFE_UBLOX_GNSS::getGeoidSeparation(uint16_t maxWait) // IGNORE COMPILER WARNING unused parameter 'maxWait'
+int32_t SFE_UBLOX_GNSS::getGeoidSeparation(uint16_t maxWait)
 {
+  uint16_t ignoreMe = maxWait; // Do something with maxWait just to get rid of the pesky compiler warning
+
   return (0);
 }
 

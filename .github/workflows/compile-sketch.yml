@@ -27,6 +27,9 @@ jobs:
             platforms: |
               - name: esp32:esp32
                 source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+                env:
+                  CS: 1
+                  LED_BUILTIN: 13
 
           # ESP32-S2
           # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
@@ -34,6 +37,9 @@ jobs:
             platforms: |
               - name: esp32:esp32
                 source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+                env:
+                  CS: 1
+                  LED_BUILTIN: 13
 
           # ESP32-C3
           # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
@@ -41,6 +47,9 @@ jobs:
             platforms: |
               - name: esp32:esp32
                 source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+                env:
+                  CS: 1
+                  LED_BUILTIN: 13
 
           # Artemis / Apollo3
           # https://github.com/sparkfun/Arduino_Apollo3/blob/main/boards.txt
@@ -55,6 +64,8 @@ jobs:
             platforms: |
               - name: esp8266:esp8266
                 source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+                env:
+                  CS: 1
 
           # SAMD21
           # https://github.com/arduino/ArduinoCore-samd/blob/master/boards.txt
@@ -97,6 +108,16 @@ jobs:
             - source-url: https://github.com/${{github.repository}}.git
           sketch-paths: |
             - ./
+            - '!./examples/Example11_ResetModule/Example2_FactoryDefaultsviaSerial/**'
+            - '!./examples/Example12_UseUart/**'
+            - '!./examples/Example13_PVT/Example3_AutoPVTviaUart/**'
+            - '!./examples/Example13_PVT/Example4_AssumeAutoPVTviaUart/**'
+            - '!./examples/Example2_NMEAParsing/**'
+            - '!./examples/Example8_GetProtocolVersion_Serial/**'
+            - '!./examples/NEO-M8P-2/Example3_BaseWithLCD/**'
+            - '!./examples/Data_Logging/**'
+            - '!./examples/ZED-F9P/Example14_NTRIPServer/**'
+            - '!./examples/ZED-F9P/Example4_BaseWithLCD/**'
           enable-warnings-report: true
           # verbose: true
 
