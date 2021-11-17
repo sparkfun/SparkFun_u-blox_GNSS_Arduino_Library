@@ -94,7 +94,7 @@ jobs:
           platforms: ${{ matrix.board.platforms }}
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
-            - source-url: https://github.com/${{github.repository}}/tree/${{github.ref:11}}.git
+            - source-url: https://github.com/${{github.repository}}/tree/${GITHUB_REF:11}.git
           sketch-paths: |
             - examples/Example10_AltitudeMSL
             - examples/Example11_ResetModule/Example1_FactoryDefaultviaI2C
