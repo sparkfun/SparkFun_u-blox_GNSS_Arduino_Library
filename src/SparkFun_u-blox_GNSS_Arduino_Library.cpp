@@ -845,7 +845,6 @@ bool SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClas
 
     while (bytesAvailable)
     {
-      // PaulZC : November 15th 2021
       // From the u-blox integration manual:
       // "There are two forms of DDC read transfer. The "random access" form includes a peripheral register
       //  address and thus allows any register to be read. The second "current address" form omits the
@@ -869,7 +868,7 @@ bool SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClas
 
       //Here it would be desireable to use a restart where possible / supported, but only if there will be multiple reads.
       //However, if an individual requestFrom fails, we could end up leaving the bus hanging.
-      //On balance, it is probably safest to not use restarts.
+      //On balance, it is probably safest to not use restarts here.
       uint8_t bytesReturned = _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead);
       if ((uint16_t)bytesReturned == bytesToRead)
       {
@@ -877,7 +876,7 @@ bool SFE_UBLOX_GNSS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClas
         {
           uint8_t incoming = _i2cPort->read(); //Grab the actual character
 
-          //Check to see if the first read is 0x7F. If it is, the module is not ready to respond. Stop, wait, and try again
+          //Check to see if the first read is 0x7F. If it is, the module is not ready to respond. Stop, wait, and try again.
           //Note: the integration manual says:
           //"If there is no data awaiting transmission from the receiver, then this register will deliver the value 0xFF,
           // which cannot be the first byte of a valid message."
@@ -3185,7 +3184,7 @@ void SFE_UBLOX_GNSS::printPacket(ubxPacket *packet, bool alwaysPrintPayload)
   // Only print the payload is ignoreThisPayload is false otherwise
   // we could be printing gibberish from beyond the end of packetBuf
   // (These two lines get rid of a pesky compiler warning)
-  bool printPayload =  (ignoreThisPayload == false);
+  bool printPayload = (ignoreThisPayload == false);
   printPayload |= (alwaysPrintPayload == true);
 
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
