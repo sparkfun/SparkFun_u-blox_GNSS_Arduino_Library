@@ -1,0 +1,115 @@
+name: Compile Sketch
+
+on:
+  # - push
+  - pull_request
+
+
+jobs:
+  compile-sketch:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        board:
+          # Uno
+          # https://github.com/arduino/ArduinoCore-avr/blob/master/boards.txt
+          - fqbn: arduino:avr:uno
+            platforms: |
+              - name: arduino:avr
+                source-url: https://downloads.arduino.cc/packages/package_index.json
+
+          # ESP32
+          # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
+          - fqbn: esp32:esp32:esp32
+            platforms: |
+              - name: esp32:esp32
+                source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+          # ESP32-S2
+          # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
+          - fqbn: esp32:esp32:esp32s2
+            platforms: |
+              - name: esp32:esp32
+                source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+          # ESP32-C3
+          # https://github.com/espressif/arduino-esp32/blob/master/boards.txt
+          - fqbn: esp32:esp32:esp32c3
+            platforms: |
+              - name: esp32:esp32
+                source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+          # Artemis / Apollo3
+          # https://github.com/sparkfun/Arduino_Apollo3/blob/main/boards.txt
+          - fqbn: SparkFun:apollo3:sfe_artemis_atp
+            platforms: |
+              - name: SparkFun:apollo3
+                source-url: https://raw.githubusercontent.com/sparkfun/Arduino_Apollo3/master/package_sparkfun_apollo3_index.json
+
+          # ESP8266
+          # https://github.com/esp8266/Arduino/blob/master/boards.txt
+          - fqbn: esp8266:esp8266:thingdev
+            platforms: |
+              - name: esp8266:esp8266
+                source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+          # SAMD21
+          # https://github.com/arduino/ArduinoCore-samd/blob/master/boards.txt
+          - fqbn: arduino:samd:mkr1000
+            platforms: |
+              - name: arduino:samd
+                # source-url: https://downloads.arduino.cc/packages/package_index.json
+
+          # Nano BLE 33 / nRF52840
+          # https://github.com/arduino/ArduinoCore-mbed/blob/master/boards.txt
+          - fqbn: arduino:mbed:nano33ble
+            platforms: |
+              - name: arduino:mbed
+                # source-url: https://downloads.arduino.cc/packages/package_index.json
+
+          # RP2040
+          # https://github.com/arduino/ArduinoCore-mbed/blob/master/boards.txt
+          - fqbn: rp2040:rp2040:sparkfun_promicrorp2040
+            platforms: |
+              - name: rp2040:rp2040
+                source-url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+
+          # STM32
+          # https://github.com/arduino/ArduinoCore-mbed/blob/master/boards.txt
+          - fqbn: STMicroelectronics:stm32:GenF4
+            platforms: |
+              - name: STMicroelectronics:stm32
+                source-url: https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Compile Sketch
+        uses: arduino/compile-sketches@v1
+        with:
+          platforms: ${{ matrix.board.platforms }}
+          fqbn: ${{ matrix.board.fqbn }}
+          libraries: |
+            - source-url: https://github.com/${{github.repository}}.git
+          sketch-paths: |
+            - examples/Example10_AltitudeMSL
+            - examples/Example11_ResetModule/Example1_FactoryDefaultviaI2C
+            - examples/Example13_PVT/Example1_AutoPVT
+            - examples/Example13_PVT/Example2_AutoPVT_ExplicitUpdate
+            - examples/Example14_DebugOutput
+            - examples/Example15_GetDateTime
+            - examples/Example16_Nanosecond_MaxOutput
+            - examples/Example16_PartialSecond_MaxOutput
+            - examples/Example18_PowerSaveMode
+            - examples/Example19_DynamicModel
+            - examples/Example20_SendCustomCommand
+          enable-warnings-report: true
+          # verbose: true
+
+    # outputs:
+    #   report-artifact-name: ${{ steps.report-artifact-name.outputs.report-artifact-name }}
+

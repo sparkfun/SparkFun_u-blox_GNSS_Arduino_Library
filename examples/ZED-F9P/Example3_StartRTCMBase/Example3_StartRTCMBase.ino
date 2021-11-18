@@ -61,7 +61,7 @@ void setup()
   Serial.println(F("Press any key to send commands to begin Survey-In"));
   while (Serial.available() == 0) ; //Wait for user to press a key
 
-  boolean response = true;
+  bool response = true;
   response &= myGNSS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
   response &= myGNSS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_I2C, 1);
   response &= myGNSS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_I2C, 1);

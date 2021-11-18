@@ -56,6 +56,8 @@ setI2CpollingWait	KEYWORD2
 setSPIpollingWait	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
+setI2cStopRestart	KEYWORD2
+getI2cStopRestart	KEYWORD2
 setSpiTransactionSize   KEYWORD2
 getSpiTransactionSize   KEYWORD2
 setMaxNMEAByteCount   KEYWORD2
