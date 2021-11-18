@@ -62,9 +62,9 @@ If you want to reduce the amount of memory used by the library, you can edit the
 #define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages to save memory
 ```
 
-Doing this will save approximately 15% of program memory on the ATmega328.
+Doing this will save approximately 15% of the program memory used by the library. From v2.0.18 of the library, the debug messages are automatically deleted on ARDUINO_AVR_UNO platforms. For other platforms, you will need to uncomment that line manually.
 
-On Windows platforms, you will normally find _SparkFun_u-blox_GNSS_Arduino_Library.h_ in:
+On Windows, you will normally find _SparkFun_u-blox_GNSS_Arduino_Library.h_ in:
 - Documents\Arduino\libraries\SparkFun_u-blox_GNSS_Arduino_Library\src
 
 ## SPI Support
