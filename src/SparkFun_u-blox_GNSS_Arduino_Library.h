@@ -759,7 +759,7 @@ public:
 	bool powerSaveMode(bool power_save = true, uint16_t maxWait = defaultMaxWait);
 	uint8_t getPowerSaveMode(uint16_t maxWait = defaultMaxWait); // Returns 255 if the sendCommand fails
 	bool configurePowerManagement(UBX_CFG_PM2_data_t* data = NULL, uint16_t maxWait = defaultMaxWait);
-	bool getPowerManagementConfiguration(uint16_t maxWait = defaultMaxWait);
+	UBX_CFG_PM2_data_t getPowerManagementConfiguration(uint16_t maxWait = defaultMaxWait);
 	bool powerOff(uint32_t durationInMs, uint16_t maxWait = defaultMaxWait);
 	bool powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources = VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0, boolean forceWhileUsb = true, uint16_t maxWait = 1100);
 

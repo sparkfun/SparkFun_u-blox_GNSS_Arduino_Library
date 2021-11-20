@@ -4994,7 +4994,7 @@ uint8_t SFE_UBLOX_GNSS::getPowerSaveMode(uint16_t maxWait)
 // Sends the UBX-CFG-PM2 message to configure extended power management
 // Note: Section 32.10.23 of the u-blox 8 / u-blox M8 Receiver description document gives three different versions
 // of this message. Version 0x01 is implemented here since it is the most widely supported version
-boolean SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint16_t maxWait)
 {
   if (data == NULL) // If the user forgot to include the data pointer, bail
     return (false);
@@ -5056,12 +5056,12 @@ boolean SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint1
 
   // Bytes 24 through (UBX_CFG_PM2_LEN-1) are reserved
 
-  boolean cfg_result = sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
+  bool cfg_result = sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
 
   return (cfg_result); // We are only expecting an ACK
 }
 
-boolean SFE_UBLOX_GNSS::getPowerManagementConfiguration(uint16_t maxWait)
+UBX_CFG_PM2_data_t SFE_UBLOX_GNSS::getPowerManagementConfiguration(uint16_t maxWait)
 {
   packetCfg.cls          = UBX_CLASS_CFG;
   packetCfg.id           = UBX_CFG_PM2;
@@ -5069,19 +5069,34 @@ boolean SFE_UBLOX_GNSS::getPowerManagementConfiguration(uint16_t maxWait)
   packetCfg.startingSpot = 0;
 
   // Don't setup any payload items; we're just reading the current configuration
-  // Instead clear the structure since it will be read into
+  // Instead, clear the structure since it will be read into
   memset(payloadCfg, 0, UBX_CFG_PM2_LEN);
 
-  boolean cfg_result = sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
+  // Not sure where it happens, but after sending the PM2 command to read the configuration data, the data is read into packetCfg
+  sendCommand(&packetCfg, maxWait);
 
-  Serial.println("Data:");
-  Serial.println(payloadCfg[0]);
-  Serial.println(payloadCfg[1]);
-  Serial.println(payloadCfg[2]);
-  Serial.println(payloadCfg[3]);
-  Serial.println(payloadCfg[4]);
+  // Interpret the config data read back
+  UBX_CFG_PM2_data_t data_read;
 
-  return (cfg_result); // We are only expecting an ACK
+  memcpy(&data_read.maxStartupStateDur, &payloadCfg[ 2], sizeof(data_read.maxStartupStateDur));
+
+  data_read.flagExtintSel      = (payloadCfg[4] >> 4) & 0b01;
+  data_read.flagExtintWake     = (payloadCfg[4] >> 5) & 0b01;
+  data_read.flagExtintBackup   = (payloadCfg[4] >> 6) & 0b01;
+  data_read.flagLimitPeakCurr  = (payloadCfg[5] >> 0) & 0b11;
+  data_read.flagWaitTimeFix    = (payloadCfg[5] >> 2) & 0b01;
+  data_read.flagUpdateRTC      = (payloadCfg[5] >> 3) & 0b01;
+  data_read.flagUpdateEPH      = (payloadCfg[5] >> 4) & 0b01;
+  data_read.flagDoNotEnterOff  = (payloadCfg[6] >> 0) & 0b01;
+  data_read.flagMode           = (payloadCfg[6] >> 1) & 0b11;
+
+  memcpy(&data_read.updatePeriod, &payloadCfg[ 8], sizeof(data_read.updatePeriod));
+  memcpy(&data_read.searchPeriod, &payloadCfg[12], sizeof(data_read.searchPeriod));
+  memcpy(&data_read.gridOffset,   &payloadCfg[16], sizeof(data_read.gridOffset));
+  memcpy(&data_read.onTime,       &payloadCfg[20], sizeof(data_read.onTime));
+  memcpy(&data_read.minAcqTime,   &payloadCfg[22], sizeof(data_read.minAcqTime));
+
+  return (data_read);
 }
 
 // Powers off the GPS device for a given duration to reduce power consumption.
