@@ -1,0 +1,163 @@
+/*
+  Use ESP32 WiFi to get AssistNow Online data from u-blox Thingstream
+  By: SparkFun Electronics / Paul Clark
+  Date: November 24th, 2021
+  License: MIT. See license file for more information but you can
+  basically do whatever you want with this code.
+
+  This example shows how to obtain AssistNow Online data from u-blox Thingstream over WiFi
+  and push it over I2C to a ZED-F9x.
+
+  You will need to have a token to be able to access Thingstream. See the AssistNow README for more details.
+
+  Update secrets.h with your:
+  - WiFi credentials
+  - AssistNow token string
+
+  Feel like supporting open source hardware?
+  Buy a board from SparkFun!
+  SparkFun Thing Plus - ESP32 WROOM: https://www.sparkfun.com/products/15663
+  ZED-F9P RTK2: https://www.sparkfun.com/products/16481
+  SparkFun GPS Breakout - ZOE-M8Q (Qwiic): https://www.sparkfun.com/products/15193
+
+  Hardware Connections:
+  Plug a Qwiic cable into the GNSS and a ESP32 Thing Plus
+  If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
+  Open the serial monitor at 115200 baud to see the output
+*/
+
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "secrets.h"
+
+const char assistNowServer[] = "https://online-live1.services.u-blox.com";
+//const char assistNowServer[] = "https://online-live2.services.u-blox.com"; // Alternate server
+
+const char getQuery[] = "GetOnlineData.ashx?";
+const char tokenPrefix[] = "token=";
+const char tokenSuffix[] = ";";
+const char getGNSS[] = "gnss=gps,glo;"; // GNSS can be: gps,qzss,glo,bds,gal
+const char getDataType[] = "datatype=eph,alm,aux;"; // Data type can be: eph,alm,aux,pos
+
+const unsigned long maxTimeBeforeHangup_ms = 10000; //If we fail to get data after 10s, then disconnect
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS myGNSS;
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+void setup()
+{
+  delay(1000);
+
+  Serial.begin(115200);
+  Serial.println("AssistNow Example");
+
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Start I2C. Connect to the GNSS.
+
+//  Wire.begin(); //Start I2C
+//
+//  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
+//  {
+//    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+//    while (1);
+//  }
+//  Serial.println(F("u-blox module connected"));
+//
+//  myGNSS.setI2COutput(COM_TYPE_UBX); //Turn off NMEA noise
+//
+//  myGNSS.setNavigationFrequency(1); //Set output in Hz.
+
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Connect to WiFi.
+
+  Serial.print("Connecting to local WiFi");
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  Serial.println("WiFi connected!");
+
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Make the HTTP request
+
+  const int URL_BUFFER_SIZE  = 512;
+  char theURL[URL_BUFFER_SIZE];
+  int payloadSize;
+  String payload;
+
+  // Assemble the URL
+  snprintf(theURL, URL_BUFFER_SIZE, "%s/%s%s%s%s%s%s",
+    assistNowServer,
+    getQuery,
+    tokenPrefix,
+    myAssistNowToken,
+    tokenSuffix,
+    getGNSS,
+    getDataType);
+
+  Serial.print("URL is: ");
+  Serial.println(theURL);
+
+  HTTPClient http;
+
+  http.begin(theURL);
+
+  int httpCode = http.GET();
+
+  // httpCode will be negative on error
+  if(httpCode > 0)
+  {
+    // HTTP header has been sent and Server response header has been handled
+    Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+  
+    // file found at server
+    if(httpCode == HTTP_CODE_OK) // Code 200
+    {
+      payloadSize = http.getSize();
+      Serial.printf("Server returned %d bytes\r\n", payloadSize);
+      
+      payload = http.getString(); // Get the payload
+
+       // Pretty-print the payload as HEX
+      int i;
+      for(i = 0; i < payloadSize; i++)
+      {
+        if (payload[i] < 0x10) // Print leading zero
+          Serial.print("0");
+        Serial.print(payload[i], HEX);
+        Serial.print(" ");
+        if ((i % 16) == 15)
+          Serial.println();
+      }
+      if ((i % 16) != 15)
+        Serial.println();
+    }
+  }
+  else
+  {
+    Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  }
+  
+  http.end();  
+  
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Push the AssistNow data to the module
+
+  
+
+}
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+void loop()
+{
+  // Nothing to do here
+}
