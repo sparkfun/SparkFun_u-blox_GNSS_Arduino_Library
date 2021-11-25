@@ -2715,6 +2715,44 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
       }
     }
     break;
+  case UBX_CLASS_MGA:
+    if (msg->id == UBX_MGA_ACK_DATA0 && msg->len == UBX_MGA_ACK_DATA0_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXMGAACK != NULL)
+      {
+        // Calculate how many ACKs are already stored in the ring buffer
+        uint8_t ackBufferContains;
+        if (packetUBXMGAACK->head >= packetUBXMGAACK->tail) // Check if wrap-around has occurred
+        {
+          // Wrap-around has not occurred so do a simple subtraction
+          ackBufferContains = packetUBXMGAACK->head - packetUBXMGAACK->tail;
+        }
+        else
+        {
+          // Wrap-around has occurred so do a simple subtraction but add in the buffer length (UBX_MGA_ACK_RINGBUFFER_LEN)
+          ackBufferContains = ((uint8_t)(((uint16_t)packetUBXMGAACK->head + (uint16_t)UBX_MGA_ACK_DATA0_RINGBUFFER_LEN) - (uint16_t)packetUBXMGAACK->tail));
+        }
+        // Have we got space to store this ACK?
+        if (ackBufferContains < (UBX_MGA_ACK_DATA0_RINGBUFFER_LEN - 1))
+        {
+          // Yes, we have, so store it
+          packetUBXMGAACK->data[packetUBXMGAACK->head].type = extractByte(msg, 0);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].version = extractByte(msg, 1);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].infoCode = extractByte(msg, 2);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgId = extractByte(msg, 3);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[0] = extractByte(msg, 4);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[1] = extractByte(msg, 5);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[2] = extractByte(msg, 6);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[3] = extractByte(msg, 7);
+          // Increment the head
+          packetUBXMGAACK->head++;
+          if (packetUBXMGAACK->head == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+            packetUBXMGAACK->head = 0;
+        }
+      }
+    }
+    break;
   case UBX_CLASS_HNR:
     if (msg->id == UBX_HNR_PVT && msg->len == UBX_HNR_PVT_LEN)
     {
@@ -3929,6 +3967,169 @@ bool SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool s
 #endif
     return (false);
   }
+}
+
+// Push MGA AssistNow data to the module
+// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE)
+// Wait for maxWait millis after sending each packet (if mgaAck is NO)
+// Return how many MGA packets were pushed successfully
+uint16_t SFE_UBLOX_GNSS::pushAssistNowData(uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  size_t dataPtr = 0; // Pointer into dataBytes
+  uint16_t packetsProcessed = 0; // Keep count of how many packets have been processed
+
+  bool checkForAcks = (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_YES); // If mgaAck is YES, always check for Acks
+
+  // If mgaAck is ENQUIRE, we need to check UBX-CFG-NAVX5 ackAiding to determine if UBX-MGA-ACK's are expected
+  if (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE)
+  {
+    uint8_t ackAiding = getAckAiding(maxWait); // Enquire if we should expect Acks
+    if (ackAiding == 1)
+      checkForAcks = true;
+  }
+
+  // If checkForAcks is true, then we need to set up storage for the UBX-MGA-ACK-DATA0 messages and use the callback
+  if (checkForAcks)
+  {
+    if (packetUBXMGAACK == NULL) initPacketUBXMGAACK(); //Check that RAM has been allocated for the MGA_ACK data
+    if (packetUBXMGAACK == NULL) //Bail if the RAM allocation failed
+      return (0);
+  }
+  
+  while (dataPtr < numDataBytes) // Keep going until we have processed all the bytes
+  {
+    // Start by checking the validity of the packet being pointed to
+    bool dataIsOK = true;
+
+    dataIsOK &= dataBytes[dataPtr + 0] == UBX_SYNCH_1; // Check for 0xB5
+    dataIsOK &= dataBytes[dataPtr + 1] == UBX_SYNCH_2; // Check for 0x62
+    dataIsOK &= dataBytes[dataPtr + 2] == UBX_CLASS_MGA; // Check for class UBX-MGA
+    
+    size_t packetLength = (size_t)dataBytes[dataPtr + 4] + ((size_t)dataBytes[dataPtr + 5] << 8); // Extract the length
+    uint8_t checksumA = 0;
+    uint8_t checksumB = 0;
+    // Calculate the checksum bytes
+    // Keep going until the end of the packet is reached (payloadPtr == (dataPtr + packetLength))
+    // or we reach the end of the AssistNow data (payloadPtr == numDataBytes)
+    for (size_t payloadPtr = dataPtr + ((size_t)6); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < numDataBytes); payloadPtr++)
+    {
+      checksumA += dataBytes[payloadPtr];
+      checksumB += checksumA;
+    }
+    // Check the checksum bytes
+    dataIsOK &= checksumA == dataBytes[dataPtr + packetLength + ((size_t)6)];
+    dataIsOK &= checksumB == dataBytes[dataPtr + packetLength + ((size_t)7)];
+    dataIsOK &= (dataPtr + packetLength + ((size_t)8)) <= numDataBytes; // Check we haven't overrun
+
+    // If the data is valid, push it
+    if (dataIsOK)
+    {
+      pushRawData((uint8_t *)&dataBytes[dataPtr], packetLength + ((size_t)8)); // Push the data
+
+      if (checkForAcks)
+      {
+        unsigned long startTime = millis();
+        bool keepGoing = true;
+        while (keepGoing && (millis() < (startTime + maxWait))) // Keep checking for the ACK until we time out
+        {
+          checkUblox();
+          if (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any ACK's?
+          {
+            bool dataAckd = true; // Check if we've received the correct ACK
+            dataAckd &= packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == dataBytes[dataPtr + 3];
+            dataAckd &= packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == dataBytes[dataPtr + 6];
+            dataAckd &= packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == dataBytes[dataPtr + 7];
+            dataAckd &= packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == dataBytes[dataPtr + 8];
+            dataAckd &= packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == dataBytes[dataPtr + 9];
+
+            if (dataAckd) // Is this the ACK we are looking for?
+            {
+              if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+              {
+                _debugSerial->print(F("pushAssistNowData: packet ID 0x"));
+                if (dataBytes[dataPtr + 3] < 0x10)
+                  _debugSerial->print(F("0"));
+                _debugSerial->print(dataBytes[dataPtr + 3], HEX);
+              }
+              if ((packetUBXMGAACK->data[packetUBXMGAACK->tail].type == (uint8_t)1) && (packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode == (uint8_t)SFE_UBLOX_MGA_ACK_INFOCODE_ACCEPTED))
+              {
+                if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+                {
+                  _debugSerial->println(F(" was accepted"));
+                }
+                packetsProcessed++;
+              }
+              else
+              {
+                if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+                {
+                  _debugSerial->print(F(" was _not_ accepted. infoCode is "));
+                  _debugSerial->println(packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode);
+                }
+              }
+              keepGoing = false;
+            }
+            // Increment the tail
+            packetUBXMGAACK->tail++;
+            if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+              packetUBXMGAACK->tail = 0;
+          }
+        }
+        if (keepGoing) // If keepGoing is still true, we must have timed out
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->print(F("pushAssistNowData: packet ID 0x"));
+            if (dataBytes[dataPtr + 3] < 0x10)
+              _debugSerial->print(F("0"));
+            _debugSerial->print(dataBytes[dataPtr + 3], HEX);
+            _debugSerial->println(F(" timed out!"));
+          }
+        }
+      }
+      else
+      {
+        // We are not checking for Acks, so delay for maxWait millis unless we've reached the end of the data
+        if ((dataPtr + packetLength + ((size_t)8)) < numDataBytes)
+        {
+          delay(maxWait);
+        }
+      }
+
+      dataPtr += packetLength + ((size_t)8); // Point to the next message
+    }
+    else
+    {
+      // The data was invalid. Send a debug message and then try to find the next 0xB5
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      {
+        _debugSerial->print(F("pushAssistNowData: bad data - ignored! dataPtr is"));
+        _debugSerial->println(dataPtr);
+      }
+      
+      while ((dataPtr < numDataBytes) && (dataBytes[++dataPtr] != UBX_SYNCH_1))
+      {
+        ; // Increment dataPtr until we are pointing at the next 0xB5 - or we reach the end of the data
+      }
+    }
+  }
+
+  return (packetsProcessed);
+}
+
+// PRIVATE: Allocate RAM for packetUBXMGAACK and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXMGAACK()
+{
+  packetUBXMGAACK = new UBX_MGA_ACK_DATA0_t; //Allocate RAM for the main struct
+  if (packetUBXMGAACK == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXMGAACK: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXMGAACK->head = 0; // Initialize the ring buffer pointers
+  packetUBXMGAACK->tail = 0;
+  return (true);
 }
 
 // Support for data logging
@@ -5379,6 +5580,44 @@ bool SFE_UBLOX_GNSS::setTimePulseParameters(UBX_CFG_TP5_data_t *data, uint16_t m
   payloadCfg[29] = (data->flags.all >> 8) & 0xFF;
   payloadCfg[30] = (data->flags.all >> 16) & 0xFF;
   payloadCfg[31] = (data->flags.all >> 24) & 0xFF;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
+uint8_t SFE_UBLOX_GNSS::getAckAiding(uint16_t maxWait) // Get the ackAiding byte - returns 255 if the sendCommand fails
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (255);
+
+  // Extract the ackAiding byte
+  // There are three versions of UBX-CFG-NAVX5 but ackAiding is always in byte 17
+  return (extractByte(&packetCfg, 17));
+}
+bool SFE_UBLOX_GNSS::setAckAiding(uint8_t ackAiding, uint16_t maxWait) // Set the ackAiding byte
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Set the ackAiding byte
+  // There are three versions of UBX-CFG-NAVX5 but ackAiding is always in byte 17
+  payloadCfg[17] = ackAiding;
+
+  // There are three versions of UBX-CFG-NAVX5 but the ackAid flag is always in bit 10 of mask1
+  payloadCfg[2] = 0x00; // Clear the LS byte of mask1
+  payloadCfg[3] = 0x40; // Set _only_ the ackAid flag = bit 10 of mask1 = bit 2 of the MS byte
+  payloadCfg[4] = 0x00; // Clear the LS byte of mask2, just in case
+  payloadCfg[5] = 0x00; // Clear the LS byte of mask2, just in case
 
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }

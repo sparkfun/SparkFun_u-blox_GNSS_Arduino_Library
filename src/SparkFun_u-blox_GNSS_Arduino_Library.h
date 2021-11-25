@@ -200,7 +200,7 @@ const uint8_t UBX_CFG_BATCH = 0x93;		//Get/set data batching configuration.
 const uint8_t UBX_CFG_CFG = 0x09;		//Clear, Save, and Load Configurations. Used to save current configuration
 const uint8_t UBX_CFG_DAT = 0x06;		//Set User-defined Datum or The currently defined Datum
 const uint8_t UBX_CFG_DGNSS = 0x70;		//DGNSS configuration
-const uint8_t UBX_CFG_ESFALG = 0x56;		//ESF alignment
+const uint8_t UBX_CFG_ESFALG = 0x56;	//ESF alignment
 const uint8_t UBX_CFG_ESFA = 0x4C;		//ESF accelerometer
 const uint8_t UBX_CFG_ESFG = 0x4D;		//ESF gyro
 const uint8_t UBX_CFG_GEOFENCE = 0x69;	//Geofencing configuration. Used to configure a geofence
@@ -496,6 +496,27 @@ enum sfe_ublox_ls_src_e
 	SFE_UBLOX_LS_SRC_UNKNOWN = 255
 };
 
+typedef enum
+{
+	SFE_UBLOX_MGA_ASSIST_ACK_NO,		// Do not expect UBX-MGA-ACK's. If the module outputs them, they will be ignored
+	SFE_UBLOX_MGA_ASSIST_ACK_YES,		// Expect and check for UBX-MGA-ACK's
+	SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE	// Check UBX-CFG-NAVX5 ackAiding to determine if UBX-MGA-ACK's are expected
+}  sfe_ublox_mga_assist_ack_e;
+
+// The infoCode byte included in UBX-MGA-ACK-DATA0
+enum sfe_ublox_mga_ack_infocode_e
+{
+	SFE_UBLOX_MGA_ACK_INFOCODE_ACCEPTED,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NO_TIME,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_SUPPORTED,
+	SFE_UBLOX_MGA_ACK_INFOCODE_SIZE_MISMATCH,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_STORED,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_READY,
+	SFE_UBLOX_MGA_ACK_INFOCODE_TYPE_UNKNOWN
+};
+
+//-=-=-=-=-
+
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
 #define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
@@ -683,6 +704,13 @@ public:
 	// Default to using a restart between transmissions. But processors like ESP32 seem to need a stop (#30). Set stop to true to use a stop instead.
 	bool pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool stop = false);
 
+	// Push MGA AssistNow data to the module
+	// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE)
+	// Wait for maxWait millis after sending each packet (if mgaAck is NO)
+	// Return how many MGA packets were pushed successfully
+	#define defaultMGAdelay 10 // Default to waiting for 10ms between each MGA message
+	uint16_t pushAssistNowData(uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
 	uint16_t getFileBufferSize(void); // Return the size of the file buffer
@@ -784,6 +812,10 @@ public:
 	//Configure Time Pulse Parameters
 	bool getTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the time pulse parameters using UBX_CFG_TP5
 	bool setTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Set the time pulse parameters using UBX_CFG_TP5
+
+	//UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
+	uint8_t getAckAiding(uint16_t maxWait = defaultMaxWait); // Get the ackAiding byte - returns 255 if the sendCommand fails
+	bool setAckAiding(uint8_t ackAiding, uint16_t maxWait = defaultMaxWait); // Set the ackAiding byte
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
@@ -1242,6 +1274,8 @@ public:
 	UBX_HNR_ATT_t *packetUBXHNRATT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_HNR_INS_t *packetUBXHNRINS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
+	UBX_MGA_ACK_DATA0_t *packetUBXMGAACK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
 private:
@@ -1313,6 +1347,7 @@ private:
 	bool initPacketUBXHNRATT(); // Allocate RAM for packetUBXHNRATT and initialize it
 	bool initPacketUBXHNRINS(); // Allocate RAM for packetUBXHNRINS and initialize it
 	bool initPacketUBXHNRPVT(); // Allocate RAM for packetUBXHNRPVT and initialize it
+	bool initPacketUBXMGAACK(); // Allocate RAM for packetUBXMGAACK and initialize it
 
 	//Variables
 	TwoWire *_i2cPort;				//The generic connection to user's chosen I2C hardware

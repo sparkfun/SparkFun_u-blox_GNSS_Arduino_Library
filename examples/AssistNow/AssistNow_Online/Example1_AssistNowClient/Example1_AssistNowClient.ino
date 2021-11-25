@@ -39,8 +39,6 @@ const char tokenSuffix[] = ";";
 const char getGNSS[] = "gnss=gps,glo;"; // GNSS can be: gps,qzss,glo,bds,gal
 const char getDataType[] = "datatype=eph,alm,aux;"; // Data type can be: eph,alm,aux,pos
 
-const unsigned long maxTimeBeforeHangup_ms = 10000; //If we fail to get data after 10s, then disconnect
-
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
@@ -58,18 +56,18 @@ void setup()
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Start I2C. Connect to the GNSS.
 
-//  Wire.begin(); //Start I2C
-//
-//  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
-//  {
-//    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
-//    while (1);
-//  }
-//  Serial.println(F("u-blox module connected"));
-//
-//  myGNSS.setI2COutput(COM_TYPE_UBX); //Turn off NMEA noise
-//
-//  myGNSS.setNavigationFrequency(1); //Set output in Hz.
+  Wire.begin(); //Start I2C
+
+  if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
+  {
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    while (1);
+  }
+  Serial.println(F("u-blox module connected"));
+
+  myGNSS.setI2COutput(COM_TYPE_UBX); //Turn off NMEA noise
+
+  myGNSS.setNavigationFrequency(1); //Set output in Hz.
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Connect to WiFi.
@@ -86,14 +84,14 @@ void setup()
   Serial.println("WiFi connected!");
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // Make the HTTP request
+  // Use HTTP GET to receive the AssistNow_Online data
 
-  const int URL_BUFFER_SIZE  = 512;
-  char theURL[URL_BUFFER_SIZE];
-  int payloadSize;
-  String payload;
+  const int URL_BUFFER_SIZE  = 256;
+  char theURL[URL_BUFFER_SIZE]; // This will contain the HTTP URL
+  int payloadSize = 0; // This will be updated with the length of the data we get from the server
+  String payload; // This will store the data we get from the server
 
-  // Assemble the URL
+  // Assemble the URL. Note the slash after assistNowServer
   snprintf(theURL, URL_BUFFER_SIZE, "%s/%s%s%s%s%s%s",
     assistNowServer,
     getQuery,
@@ -103,14 +101,14 @@ void setup()
     getGNSS,
     getDataType);
 
-  Serial.print("URL is: ");
+  Serial.print("HTTP URL is: ");
   Serial.println(theURL);
 
   HTTPClient http;
 
   http.begin(theURL);
 
-  int httpCode = http.GET();
+  int httpCode = http.GET(); // HTTP GET
 
   // httpCode will be negative on error
   if(httpCode > 0)
@@ -118,7 +116,7 @@ void setup()
     // HTTP header has been sent and Server response header has been handled
     Serial.printf("[HTTP] GET... code: %d\n", httpCode);
   
-    // file found at server
+    // If the GET was successful, read the data
     if(httpCode == HTTP_CODE_OK) // Code 200
     {
       payloadSize = http.getSize();
@@ -127,6 +125,7 @@ void setup()
       payload = http.getString(); // Get the payload
 
        // Pretty-print the payload as HEX
+       /*
       int i;
       for(i = 0; i < payloadSize; i++)
       {
@@ -139,6 +138,7 @@ void setup()
       }
       if ((i % 16) != 15)
         Serial.println();
+      */
     }
   }
   else
@@ -151,13 +151,46 @@ void setup()
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Push the AssistNow data to the module
 
+  if (payloadSize > 0)
+  {
+    // Enable the 'major' debug messages on Serial so we can see what AssistNow data is being sent
+    myGNSS.enableDebugging(Serial, true);
   
-
+    // Push all the AssistNow data - without checking for UBX-MGA-ACK messages
+    myGNSS.pushAssistNowData((uint8_t *)&payload, (size_t)payloadSize);
+  }
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void loop()
 {
-  // Nothing to do here
+  long latitude = myGNSS.getLatitude();
+  Serial.print(F("Lat: "));
+  Serial.print(latitude);
+
+  long longitude = myGNSS.getLongitude();
+  Serial.print(F(" Long: "));
+  Serial.print(longitude);
+  Serial.print(F(" (degrees * 10^-7)"));
+
+  long altitude = myGNSS.getAltitude();
+  Serial.print(F(" Alt: "));
+  Serial.print(altitude);
+  Serial.print(F(" (mm)"));
+
+  byte SIV = myGNSS.getSIV();
+  Serial.print(F(" SIV: "));
+  Serial.print(SIV);
+
+  byte fixType = myGNSS.getFixType();
+  Serial.print(F(" Fix: "));
+  if(fixType == 0) Serial.print(F("No fix"));
+  else if(fixType == 1) Serial.print(F("Dead reckoning"));
+  else if(fixType == 2) Serial.print(F("2D"));
+  else if(fixType == 3) Serial.print(F("3D"));
+  else if(fixType == 4) Serial.print(F("GNSS + Dead reckoning"));
+  else if(fixType == 5) Serial.print(F("Time only"));
+
+  Serial.println();
 }

@@ -1656,6 +1656,31 @@ typedef struct
   UBX_ESF_STATUS_data_t  *callbackData;
 } UBX_ESF_STATUS_t;
 
+// MGA-specific structs
+
+// UBX-MGA-ACK-DATA0 (0x13 0x60): Multiple GNSS acknowledge message
+const uint16_t UBX_MGA_ACK_DATA0_LEN = 8;
+
+typedef struct
+{
+  uint8_t type;     // Type of acknowledgment:
+                    // 0: The message was not used by the receiver (see infoCode field for an indication of why)
+                    // 1: The message was accepted for use by the receiver (the infoCode field will be 0)
+  uint8_t version;  // Message version
+  uint8_t infoCode; // Provides greater information on what the receiver chose to do with the message contents
+                    // See sfe_ublox_mga_ack_infocode_e
+  uint8_t msgId;    // UBX message ID of the acknowledged message
+  uint8_t msgPayloadStart[4]; // The first 4 bytes of the acknowledged message's payload
+} UBX_MGA_ACK_DATA0_data_t;
+
+#define UBX_MGA_ACK_DATA0_RINGBUFFER_LEN 16 // Provide storage for 16 MGA ACK packets
+typedef struct
+{
+	uint8_t head;
+  uint8_t tail;
+  UBX_MGA_ACK_DATA0_data_t data[UBX_MGA_ACK_DATA0_RINGBUFFER_LEN]; // Create a storage array for the MGA ACK packets
+} UBX_MGA_ACK_DATA0_t;
+
 // HNR-specific structs
 
 // UBX-HNR-PVT (0x28 0x00): High rate output of PVT solution
