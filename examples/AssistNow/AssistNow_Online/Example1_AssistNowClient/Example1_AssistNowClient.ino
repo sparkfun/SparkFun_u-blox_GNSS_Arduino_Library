@@ -6,7 +6,7 @@
   basically do whatever you want with this code.
 
   This example shows how to obtain AssistNow Online data from u-blox Thingstream over WiFi
-  and push it over I2C to a ZED-F9x.
+  and push it over I2C to a u-blox module.
 
   You will need to have a token to be able to access Thingstream. See the AssistNow README for more details.
 
@@ -14,17 +14,22 @@
   - WiFi credentials
   - AssistNow token string
 
+  Uncomment the "#define USE_MGA_ACKs" below to test the more robust method of using the
+  UBX_MGA_ACK_DATA0 acknowledgements to confirm that each MGA message has been accepted.
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  SparkFun Thing Plus - ESP32 WROOM: https://www.sparkfun.com/products/15663
-  ZED-F9P RTK2: https://www.sparkfun.com/products/16481
-  SparkFun GPS Breakout - ZOE-M8Q (Qwiic): https://www.sparkfun.com/products/15193
+  SparkFun Thing Plus - ESP32 WROOM:        https://www.sparkfun.com/products/15663
+  ZED-F9P RTK2:                             https://www.sparkfun.com/products/16481
+  SparkFun GPS Breakout - ZOE-M8Q (Qwiic):  https://www.sparkfun.com/products/15193
 
   Hardware Connections:
   Plug a Qwiic cable into the GNSS and a ESP32 Thing Plus
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
+
+//#define USE_MGA_ACKs // Uncomment this line to use the UBX_MGA_ACK_DATA0 acknowledgements
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -67,8 +72,6 @@ void setup()
 
   myGNSS.setI2COutput(COM_TYPE_UBX); //Turn off NMEA noise
 
-  myGNSS.setNavigationFrequency(1); //Set output in Hz.
-
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Connect to WiFi.
 
@@ -91,7 +94,8 @@ void setup()
   int payloadSize = 0; // This will be updated with the length of the data we get from the server
   String payload; // This will store the data we get from the server
 
-  // Assemble the URL. Note the slash after assistNowServer
+  // Assemble the URL
+  // Note the slash after the first %s (assistNowServer)
   snprintf(theURL, URL_BUFFER_SIZE, "%s/%s%s%s%s%s%s",
     assistNowServer,
     getQuery,
@@ -114,18 +118,18 @@ void setup()
   if(httpCode > 0)
   {
     // HTTP header has been sent and Server response header has been handled
-    Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+    Serial.printf("[HTTP] GET... code: %d\r\n", httpCode);
   
     // If the GET was successful, read the data
-    if(httpCode == HTTP_CODE_OK) // Code 200
+    if(httpCode == HTTP_CODE_OK) // Check for code 200
     {
       payloadSize = http.getSize();
       Serial.printf("Server returned %d bytes\r\n", payloadSize);
       
       payload = http.getString(); // Get the payload
 
-       // Pretty-print the payload as HEX
-       /*
+      // Pretty-print the payload as HEX
+      /*
       int i;
       for(i = 0; i < payloadSize; i++)
       {
@@ -143,7 +147,7 @@ void setup()
   }
   else
   {
-    Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("[HTTP] GET... failed, error: %s\r\n", http.errorToString(httpCode).c_str());
   }
   
   http.end();  
@@ -152,12 +156,40 @@ void setup()
   // Push the AssistNow data to the module
 
   if (payloadSize > 0)
-  {
+  {  
     // Enable the 'major' debug messages on Serial so we can see what AssistNow data is being sent
     myGNSS.enableDebugging(Serial, true);
-  
-    // Push all the AssistNow data - without checking for UBX-MGA-ACK messages
-    myGNSS.pushAssistNowData((uint8_t *)&payload, (size_t)payloadSize);
+
+#ifndef USE_MGA_ACKs
+
+    // ***** Don't use the UBX_MGA_ACK_DATA0 messages *****
+
+    // Push all the AssistNow data. Don't use UBX_MGA_ACK_DATA0's. Use the default delay of 7ms between messages.
+    myGNSS.pushAssistNowData(payload, (size_t)payloadSize);
+
+#else
+
+    // ***** Use the UBX_MGA_ACK_DATA0 messages *****
+
+    // Tell the module to return UBX_MGA_ACK_DATA0 messages when we push the AssistNow data
+    myGNSS.setAckAiding(1);
+
+    // Speed things up by setting setI2CpollingWait to 1ms
+    myGNSS.setI2CpollingWait(1);
+
+    // Push all the AssistNow data.
+    // We have called setAckAiding(1) to instruct the module to return MGA-ACK messages.
+    // So, we could set the pushAssistNowData mgaAck parameter to SFE_UBLOX_MGA_ASSIST_ACK_YES.
+    // But, just for giggles, let's use SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE just to confirm that the
+    // MGA-ACK messages are actually enabled.
+    // Wait for up to 1000ms for each ACK to arrive! 1000ms is a bit excessive... 7ms is nearer the mark.
+    myGNSS.pushAssistNowData(payload, (size_t)payloadSize, SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE, 1000);
+
+    // Set setI2CpollingWait to 125ms to avoid pounding the I2C bus
+    myGNSS.setI2CpollingWait(125);
+
+#endif
+
   }
 }
 
@@ -165,6 +197,8 @@ void setup()
 
 void loop()
 {
+  // Print the UBX-NAV-PVT data so we can see how quickly the fixType goes to 3D
+  
   long latitude = myGNSS.getLatitude();
   Serial.print(F("Lat: "));
   Serial.print(latitude);

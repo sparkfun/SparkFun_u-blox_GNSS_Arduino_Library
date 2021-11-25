@@ -708,8 +708,8 @@ public:
 	// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE)
 	// Wait for maxWait millis after sending each packet (if mgaAck is NO)
 	// Return how many MGA packets were pushed successfully
-	#define defaultMGAdelay 10 // Default to waiting for 10ms between each MGA message
-	uint16_t pushAssistNowData(uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	#define defaultMGAdelay 7 // Default to waiting for 7ms between each MGA message
+	uint16_t pushAssistNowData(String dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
 
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
