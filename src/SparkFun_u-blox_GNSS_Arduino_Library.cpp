@@ -4245,7 +4245,7 @@ bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t 
   }
 
   // Return true if the one packet was pushed successfully
-  return (pushAssistNowDataInternal(true, iniTimeUTC, 32, mgaAck, maxWait) == 1);
+  return (pushAssistNowDataInternal(false, iniTimeUTC, 32, mgaAck, maxWait) == 1);
 }
 
 // Support for data logging
