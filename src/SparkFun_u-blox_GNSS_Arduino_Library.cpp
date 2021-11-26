@@ -3987,11 +3987,6 @@ bool SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool s
 // allowing the user to override with their own time data with setUTCTimeAssistance.
 size_t SFE_UBLOX_GNSS::pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
-  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-  {
-    _debugSerial->println(F("pushAssistNowData: OK so far... (1)"));
-    _debugSerial->flush();
-  }
   return (pushAssistNowDataInternal(false, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
 }
 size_t SFE_UBLOX_GNSS::pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
@@ -4010,12 +4005,6 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(bool skipTime, const uint8_t *d
 {
   size_t dataPtr = 0; // Pointer into dataBytes
   size_t packetsProcessed = 0; // Keep count of how many packets have been processed
-
-  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-  {
-    _debugSerial->println(F("pushAssistNowData: OK so far... (2)"));
-    _debugSerial->flush();
-  }
 
   bool checkForAcks = (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_YES); // If mgaAck is YES, always check for Acks
 
@@ -4052,12 +4041,6 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(bool skipTime, const uint8_t *d
     dataIsOK &= (*(dataBytes + dataPtr + 1) == UBX_SYNCH_2); // Check for 0x62
     dataIsOK &= (*(dataBytes + dataPtr + 2) == UBX_CLASS_MGA); // Check for class UBX-MGA
     
-    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-    {
-      _debugSerial->println(F("pushAssistNowData: OK so far... (3)"));
-      _debugSerial->flush();
-    }
-
     size_t packetLength = ((size_t)*(dataBytes + dataPtr + 4)) | (((size_t)*(dataBytes + dataPtr + 5)) << 8); // Extract the length
 
     uint8_t checksumA = 0;
@@ -4262,7 +4245,7 @@ bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t 
   }
 
   // Return true if the one packet was pushed successfully
-  return (pushAssistNowData(true, iniTimeUTC, 32, mgaAck, maxWait) == 1);
+  return (pushAssistNowDataInternal(true, iniTimeUTC, 32, mgaAck, maxWait) == 1);
 }
 
 // Support for data logging

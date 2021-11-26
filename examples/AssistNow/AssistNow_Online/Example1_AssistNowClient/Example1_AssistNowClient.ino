@@ -56,7 +56,11 @@ void setup()
   delay(1000);
 
   Serial.begin(115200);
-  Serial.println("AssistNow Example");
+  Serial.println(F("AssistNow Example"));
+
+  while (Serial.available()) Serial.read(); // Empty the serial buffer
+  Serial.println(F("Press any key to begin..."));
+  while (!Serial.available()); // Wait for a keypress
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Start I2C. Connect to the GNSS.
@@ -75,16 +79,16 @@ void setup()
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Connect to WiFi.
 
-  Serial.print("Connecting to local WiFi");
+  Serial.print(F("Connecting to local WiFi"));
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print(F("."));
   }
   Serial.println();
 
-  Serial.println("WiFi connected!");
+  Serial.println(F("WiFi connected!"));
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Use HTTP GET to receive the AssistNow_Online data
@@ -105,7 +109,7 @@ void setup()
     getGNSS,
     getDataType);
 
-  Serial.print("HTTP URL is: ");
+  Serial.print(F("HTTP URL is: "));
   Serial.println(theURL);
 
   HTTPClient http;
@@ -157,8 +161,8 @@ void setup()
 
   if (payloadSize > 0)
   {  
-    // Enable the 'major' debug messages on Serial so we can see what AssistNow data is being sent
-    myGNSS.enableDebugging(Serial, true);
+    // Uncomment the next line to enable the 'major' debug messages on Serial so you can see what AssistNow data is being sent
+    //myGNSS.enableDebugging(Serial, true);
 
 #ifndef USE_MGA_ACKs
 
@@ -191,6 +195,8 @@ void setup()
 #endif
 
   }
+
+  Serial.println(F("Here we go!"));
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
