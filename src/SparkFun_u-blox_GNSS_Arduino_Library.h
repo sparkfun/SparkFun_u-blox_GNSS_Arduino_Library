@@ -704,12 +704,23 @@ public:
 	// Default to using a restart between transmissions. But processors like ESP32 seem to need a stop (#30). Set stop to true to use a stop instead.
 	bool pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool stop = false);
 
-	// Push MGA AssistNow data to the module
-	// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE)
-	// Wait for maxWait millis after sending each packet (if mgaAck is NO)
-	// Return how many MGA packets were pushed successfully
+	// Push MGA AssistNow data to the module.
+	// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE).
+	// Wait for maxWait millis after sending each packet (if mgaAck is NO).
+	// Return how many MGA packets were pushed successfully.
+	// If skipTime is true, any UBX-MGA-INI-TIME_UTC or UBX-MGA-INI-TIME_GNSS packets found in the data will be skipped,
+	// allowing the user to override with their own time data with setUTCTimeAssistance.
 	#define defaultMGAdelay 7 // Default to waiting for 7ms between each MGA message
-	uint16_t pushAssistNowData(String dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+
+	// Provide initial time assistance
+	#define defaultMGAINITIMEtAccS 2 // Default to setting the seconds time accuracy to 2 seconds
+	#define defaultMGAINITIMEtAccNs 0 // Default to setting the nanoseconds time accuracy to zero
+	#define defaultMGAINITIMEsource 0 // Set default source to none, i.e. on receipt of message (will be inaccurate!)
+	bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos = 0, uint16_t tAccS = defaultMGAINITIMEtAccS, uint32_t tAccNs = defaultMGAINITIMEtAccNs, uint8_t source = defaultMGAINITIMEsource, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
 
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
@@ -1306,6 +1317,7 @@ private:
 	//Functions
 	bool checkUbloxInternal(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Checks module with user selected commType
 	void addToChecksum(uint8_t incoming);																		 //Given an incoming byte, adjust rollingChecksumA/B
+	size_t pushAssistNowDataInternal(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
 
 	//Return true if this "automatic" message has storage allocated for it
 	bool checkAutomatic(uint8_t Class, uint8_t ID);

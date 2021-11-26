@@ -3979,14 +3979,43 @@ bool SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool s
   }
 }
 
-// Push MGA AssistNow data to the module
-// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE)
-// Wait for maxWait millis after sending each packet (if mgaAck is NO)
-// Return how many MGA packets were pushed successfully
-uint16_t SFE_UBLOX_GNSS::pushAssistNowData(String dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+// Push MGA AssistNow data to the module.
+// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE).
+// Wait for maxWait millis after sending each packet (if mgaAck is NO).
+// Return how many MGA packets were pushed successfully.
+// If skipTime is true, any UBX-MGA-INI-TIME_UTC or UBX-MGA-INI-TIME_GNSS packets found in the data will be skipped,
+// allowing the user to override with their own time data with setUTCTimeAssistance.
+size_t SFE_UBLOX_GNSS::pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+  {
+    _debugSerial->println(F("pushAssistNowData: OK so far... (1)"));
+    _debugSerial->flush();
+  }
+  return (pushAssistNowDataInternal(false, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(false, dataBytes, numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(skipTime, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(skipTime, dataBytes, numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
   size_t dataPtr = 0; // Pointer into dataBytes
-  uint16_t packetsProcessed = 0; // Keep count of how many packets have been processed
+  size_t packetsProcessed = 0; // Keep count of how many packets have been processed
+
+  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+  {
+    _debugSerial->println(F("pushAssistNowData: OK so far... (2)"));
+    _debugSerial->flush();
+  }
 
   bool checkForAcks = (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_YES); // If mgaAck is YES, always check for Acks
 
@@ -3997,11 +4026,13 @@ uint16_t SFE_UBLOX_GNSS::pushAssistNowData(String dataBytes, size_t numDataBytes
     if (ackAiding == 1)
       checkForAcks = true;
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
       _debugSerial->print(F("pushAssistNowData: mgaAck is ENQUIRE. getAckAiding returned "));
       _debugSerial->println(ackAiding);
     }
+#endif
   }
 
   // If checkForAcks is true, then we need to set up storage for the UBX-MGA-ACK-DATA0 messages
@@ -4017,11 +4048,17 @@ uint16_t SFE_UBLOX_GNSS::pushAssistNowData(String dataBytes, size_t numDataBytes
     // Start by checking the validity of the packet being pointed to
     bool dataIsOK = true;
 
-    dataIsOK &= (dataBytes[dataPtr + 0] == UBX_SYNCH_1); // Check for 0xB5
-    dataIsOK &= (dataBytes[dataPtr + 1] == UBX_SYNCH_2); // Check for 0x62
-    dataIsOK &= (dataBytes[dataPtr + 2] == UBX_CLASS_MGA); // Check for class UBX-MGA
+    dataIsOK &= (*(dataBytes + dataPtr + 0) == UBX_SYNCH_1); // Check for 0xB5
+    dataIsOK &= (*(dataBytes + dataPtr + 1) == UBX_SYNCH_2); // Check for 0x62
+    dataIsOK &= (*(dataBytes + dataPtr + 2) == UBX_CLASS_MGA); // Check for class UBX-MGA
     
-    size_t packetLength = ((size_t)dataBytes[dataPtr + 4]) | (((size_t)dataBytes[dataPtr + 5]) << 8); // Extract the length
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("pushAssistNowData: OK so far... (3)"));
+      _debugSerial->flush();
+    }
+
+    size_t packetLength = ((size_t)*(dataBytes + dataPtr + 4)) | (((size_t)*(dataBytes + dataPtr + 5)) << 8); // Extract the length
 
     uint8_t checksumA = 0;
     uint8_t checksumB = 0;
@@ -4030,90 +4067,110 @@ uint16_t SFE_UBLOX_GNSS::pushAssistNowData(String dataBytes, size_t numDataBytes
     // or we reach the end of the AssistNow data (payloadPtr == numDataBytes)
     for (size_t payloadPtr = dataPtr + ((size_t)2); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < numDataBytes); payloadPtr++)
     {
-      checksumA += dataBytes[payloadPtr];
+      checksumA += *(dataBytes + payloadPtr);
       checksumB += checksumA;
     }
     // Check the checksum bytes
-    dataIsOK &= (checksumA == dataBytes[dataPtr + packetLength + ((size_t)6)]);
-    dataIsOK &= (checksumB == dataBytes[dataPtr + packetLength + ((size_t)7)]);
+    dataIsOK &= (checksumA == *(dataBytes + dataPtr + packetLength + ((size_t)6)));
+    dataIsOK &= (checksumB == *(dataBytes + dataPtr + packetLength + ((size_t)7)));
 
     dataIsOK &= ((dataPtr + packetLength + ((size_t)8)) <= numDataBytes); // Check we haven't overrun
 
     // If the data is valid, push it
     if (dataIsOK)
     {
-      pushRawData((uint8_t *)&dataBytes[dataPtr], packetLength + ((size_t)8)); // Push the data
-
-      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      // Check if this is time assistance data which should be skipped
+      if ((skipTime) && ((*(dataBytes + dataPtr + 3) == UBX_MGA_INI_TIME_UTC) || (*(dataBytes + dataPtr + 3) == UBX_MGA_INI_TIME_GNSS)))
       {
-        _debugSerial->print(F("pushAssistNowData: packet ID 0x"));
-        if (dataBytes[dataPtr + 3] < 0x10)
-          _debugSerial->print(F("0"));
-        _debugSerial->print(dataBytes[dataPtr + 3], HEX);
-        _debugSerial->print(F(" length "));
-        _debugSerial->println(packetLength);
-      }
-
-      if (checkForAcks)
-      {
-        unsigned long startTime = millis();
-        bool keepGoing = true;
-        while (keepGoing && (millis() < (startTime + maxWait))) // Keep checking for the ACK until we time out
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         {
-          checkUblox();
-          if (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any ACK's?
-          {
-            bool dataAckd = true; // Check if we've received the correct ACK
-            dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == dataBytes[dataPtr + 3]); // Check if the message ID matches
-            dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == dataBytes[dataPtr + 6]); // Check if the first four data bytes match
-            dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == dataBytes[dataPtr + 7]);
-            dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == dataBytes[dataPtr + 8]);
-            dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == dataBytes[dataPtr + 9]);
-
-            if (dataAckd) // Is this the ACK we are looking for?
-            {
-              if ((packetUBXMGAACK->data[packetUBXMGAACK->tail].type == (uint8_t)1) && (packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode == (uint8_t)SFE_UBLOX_MGA_ACK_INFOCODE_ACCEPTED))
-              {
-                if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-                {
-                  _debugSerial->print(F("pushAssistNowData: packet was accepted after "));
-                  _debugSerial->print(millis() - startTime);
-                  _debugSerial->println(F(" ms"));
-                }
-                packetsProcessed++;
-              }
-              else
-              {
-                if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-                {
-                  _debugSerial->print(F("pushAssistNowData: packet was _not_ accepted. infoCode is "));
-                  _debugSerial->println(packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode);
-                }
-              }
-              keepGoing = false;
-            }
-            // Increment the tail
-            packetUBXMGAACK->tail++;
-            if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
-              packetUBXMGAACK->tail = 0;
-          }
+          _debugSerial->print(F("pushAssistNowData: skipped INI_TIME ID 0x"));
+          if (*(dataBytes + dataPtr + 3) < 0x10)
+            _debugSerial->print(F("0"));
+          _debugSerial->println(*(dataBytes + dataPtr + 3), HEX);
         }
-        if (keepGoing) // If keepGoing is still true, we must have timed out
-        {
-          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-          {
-            _debugSerial->println(F("pushAssistNowData: packet ack timed out!"));
-          }
-        }
+#endif
       }
       else
       {
-        // We are not checking for Acks, so let's assume the send was successful?
-        packetsProcessed++;
-        // We are not checking for Acks, so delay for maxWait millis unless we've reached the end of the data
-        if ((dataPtr + packetLength + ((size_t)8)) < numDataBytes)
+        pushRawData((uint8_t *)(dataBytes + dataPtr), packetLength + ((size_t)8)); // Push the data
+
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         {
-          delay(maxWait);
+          _debugSerial->print(F("pushAssistNowData: packet ID 0x"));
+          if (*(dataBytes + dataPtr + 3) < 0x10)
+            _debugSerial->print(F("0"));
+          _debugSerial->print(*(dataBytes + dataPtr + 3), HEX);
+          _debugSerial->print(F(" length "));
+          _debugSerial->println(packetLength);
+        }
+
+        if (checkForAcks)
+        {
+          unsigned long startTime = millis();
+          bool keepGoing = true;
+          while (keepGoing && (millis() < (startTime + maxWait))) // Keep checking for the ACK until we time out
+          {
+            checkUblox();
+            if (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any ACK's?
+            {
+              bool dataAckd = true; // Check if we've received the correct ACK
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == *(dataBytes + dataPtr + 3)); // Check if the message ID matches
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == *(dataBytes + dataPtr + 6)); // Check if the first four data bytes match
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == *(dataBytes + dataPtr + 7));
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == *(dataBytes + dataPtr + 8));
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == *(dataBytes + dataPtr + 9));
+
+              if (dataAckd) // Is this the ACK we are looking for?
+              {
+                if ((packetUBXMGAACK->data[packetUBXMGAACK->tail].type == (uint8_t)1) && (packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode == (uint8_t)SFE_UBLOX_MGA_ACK_INFOCODE_ACCEPTED))
+                {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+                  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+                  {
+                    _debugSerial->print(F("pushAssistNowData: packet was accepted after "));
+                    _debugSerial->print(millis() - startTime);
+                    _debugSerial->println(F(" ms"));
+                  }
+#endif
+                  packetsProcessed++;
+                }
+                else
+                {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+                  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+                  {
+                    _debugSerial->print(F("pushAssistNowData: packet was _not_ accepted. infoCode is "));
+                    _debugSerial->println(packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode);
+                  }
+#endif
+                }
+                keepGoing = false;
+              }
+              // Increment the tail
+              packetUBXMGAACK->tail++;
+              if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+                packetUBXMGAACK->tail = 0;
+            }
+          }
+          if (keepGoing) // If keepGoing is still true, we must have timed out
+          {
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+            {
+              _debugSerial->println(F("pushAssistNowData: packet ack timed out!"));
+            }
+          }
+        }
+        else
+        {
+          // We are not checking for Acks, so let's assume the send was successful?
+          packetsProcessed++;
+          // We are not checking for Acks, so delay for maxWait millis unless we've reached the end of the data
+          if ((dataPtr + packetLength + ((size_t)8)) < numDataBytes)
+          {
+            delay(maxWait);
+          }
         }
       }
 
@@ -4121,25 +4178,30 @@ uint16_t SFE_UBLOX_GNSS::pushAssistNowData(String dataBytes, size_t numDataBytes
     }
     else
     {
+ 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
       // The data was invalid. Send a debug message and then try to find the next 0xB5
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       {
         _debugSerial->print(F("pushAssistNowData: bad data - ignored! dataPtr is "));
         _debugSerial->println(dataPtr);
       }
+#endif
       
-      while ((dataPtr < numDataBytes) && (dataBytes[++dataPtr] != UBX_SYNCH_1))
+      while ((dataPtr < numDataBytes) && (*(dataBytes + ++dataPtr) != UBX_SYNCH_1))
       {
         ; // Increment dataPtr until we are pointing at the next 0xB5 - or we reach the end of the data
       }
     }
   }
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
   {
     _debugSerial->print(F("pushAssistNowData: packetsProcessed: "));
     _debugSerial->println(packetsProcessed);
   }
+#endif
 
   return (packetsProcessed);
 }
@@ -4157,6 +4219,50 @@ bool SFE_UBLOX_GNSS::initPacketUBXMGAACK()
   packetUBXMGAACK->head = 0; // Initialize the ring buffer pointers
   packetUBXMGAACK->tail = 0;
   return (true);
+}
+
+// Provide initial time assistance
+bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  uint8_t iniTimeUTC[32]; // Create the UBX-MGA-INI-TIME_UTC message by hand
+  memset(iniTimeUTC, 0x00, 32); // Set all unused / reserved bytes and the checksum to zero
+
+  iniTimeUTC[0] = UBX_SYNCH_1; // Sync char 1
+  iniTimeUTC[1] = UBX_SYNCH_2; // Sync char 2
+  iniTimeUTC[2] = UBX_CLASS_MGA; // Class
+  iniTimeUTC[3] = UBX_MGA_INI_TIME_UTC; // ID
+  iniTimeUTC[4] = 24; // Length LSB
+  iniTimeUTC[5] = 0x00; // Length MSB
+  iniTimeUTC[6] = 0x10; // type
+  iniTimeUTC[7] = 0x00; // version
+  iniTimeUTC[8] = source; // ref (source)
+  iniTimeUTC[9] = 0x80; // leapSecs. Set to 0x80 = unknown
+  iniTimeUTC[10] = (uint8_t)(year & 0xFF); // year LSB
+  iniTimeUTC[11] = (uint8_t)(year >> 8); // year MSB
+  iniTimeUTC[12] = month; // month starting at 1
+  iniTimeUTC[13] = day; // day starting at 1
+  iniTimeUTC[14] = hour; // hour 0:23
+  iniTimeUTC[15] = minute; // minute 0:59
+  iniTimeUTC[16] = second; // seconds 0:59
+  iniTimeUTC[18] = (uint8_t)(nanos & 0xFF); // nanoseconds LSB
+  iniTimeUTC[19] = (uint8_t)((nanos >> 8) & 0xFF);
+  iniTimeUTC[20] = (uint8_t)((nanos >> 16) & 0xFF);
+  iniTimeUTC[21] = (uint8_t)(nanos >> 24); // nanoseconds MSB
+  iniTimeUTC[22] = (uint8_t)(tAccS & 0xFF); // seconds part of the accuracy LSB
+  iniTimeUTC[23] = (uint8_t)(tAccS >> 8); // seconds part of the accuracy MSB
+  iniTimeUTC[26] = (uint8_t)(tAccNs & 0xFF); // nanoseconds part of the accuracy LSB
+  iniTimeUTC[27] = (uint8_t)((tAccNs >> 8) & 0xFF);
+  iniTimeUTC[28] = (uint8_t)((tAccNs >> 16) & 0xFF);
+  iniTimeUTC[29] = (uint8_t)(tAccNs >> 24); // nanoseconds part of the accuracy MSB
+
+  for (uint8_t i = 2; i < 30; i++) // Calculate the checksum
+  {
+    iniTimeUTC[30] += iniTimeUTC[i];
+    iniTimeUTC[31] += iniTimeUTC[30];
+  }
+
+  // Return true if the one packet was pushed successfully
+  return (pushAssistNowData(true, iniTimeUTC, 32, mgaAck, maxWait) == 1);
 }
 
 // Support for data logging

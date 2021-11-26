@@ -91,6 +91,7 @@ checkCallbacks	KEYWORD2
 pushRawData	KEYWORD2
 
 pushAssistNowData	KEYWORD2
+setUTCTimeAssistance	KEYWORD2
 
 setFileBufferSize	KEYWORD2
 getFileBufferSize	KEYWORD2
