@@ -3987,23 +3987,56 @@ bool SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool s
 // allowing the user to override with their own time data with setUTCTimeAssistance.
 size_t SFE_UBLOX_GNSS::pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
-  return (pushAssistNowDataInternal(false, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+  return (pushAssistNowDataInternal(0, false, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
 }
 size_t SFE_UBLOX_GNSS::pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
-  return (pushAssistNowDataInternal(false, dataBytes, numDataBytes, mgaAck, maxWait));
+  return (pushAssistNowDataInternal(0, false, dataBytes, numDataBytes, mgaAck, maxWait));
 }
 size_t SFE_UBLOX_GNSS::pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
-  return (pushAssistNowDataInternal(skipTime, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+  return (pushAssistNowDataInternal(0, skipTime, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
 }
 size_t SFE_UBLOX_GNSS::pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
-  return (pushAssistNowDataInternal(skipTime, dataBytes, numDataBytes, mgaAck, maxWait));
+  return (pushAssistNowDataInternal(0, skipTime, dataBytes, numDataBytes, mgaAck, maxWait));
 }
-size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+size_t SFE_UBLOX_GNSS::pushAssistNowData(size_t offset, bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
-  size_t dataPtr = 0; // Pointer into dataBytes
+  return (pushAssistNowDataInternal(offset, skipTime, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(offset, skipTime, dataBytes, numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  size_t dataPtr = offset; // Pointer into dataBytes
+
+  if ((offset >= numDataBytes) || (offset < 0)) // Sanity check. Return now if offset is invalid.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->print(F("pushAssistNowData: offset ("));
+      _debugSerial->print(offset);
+      _debugSerial->println(F(") is invalid! Aborting..."));
+    }
+#endif
+    return ((size_t)0);
+  }
+
+  if (numDataBytes < 0) // Sanity check. Return now if numDataBytes is negative.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("pushAssistNowData: numDataBytes is negative! Aborting..."));
+    }
+#endif
+    return ((size_t)0);
+  }
+
   size_t packetsProcessed = 0; // Keep count of how many packets have been processed
 
   bool checkForAcks = (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_YES); // If mgaAck is YES, always check for Acks
@@ -4245,7 +4278,152 @@ bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t 
   }
 
   // Return true if the one packet was pushed successfully
-  return (pushAssistNowDataInternal(false, iniTimeUTC, 32, mgaAck, maxWait) == 1);
+  return (pushAssistNowDataInternal(0, false, iniTimeUTC, 32, mgaAck, maxWait) == 1);
+}
+
+// Find the start of the AssistNow Offline (UBX_MGA_ANO) data for the chosen day
+// The daysIntoFture parameter makes it easy to get the data for (e.g.) tomorrow based on today's date
+// Returns numDataBytes if unsuccessful
+// TO DO: enhance this so it will find the nearest data for the chosen day - instead of an exact match
+size_t SFE_UBLOX_GNSS::findMGAANOForDate(const String &dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture)
+{
+  return (findMGAANOForDateInternal((const uint8_t *)dataBytes.c_str(), numDataBytes, year, month, day, daysIntoFuture));
+}
+size_t SFE_UBLOX_GNSS::findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture)
+{
+  return (findMGAANOForDateInternal(dataBytes, numDataBytes, year, month, day, daysIntoFuture));
+}
+size_t SFE_UBLOX_GNSS::findMGAANOForDateInternal(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture)
+{
+  size_t dataPtr = 0; // Pointer into dataBytes
+  bool dateFound = false; // Flag to indicate when the date has been found
+
+  // Calculate matchDay, matchMonth and matchYear
+  uint8_t matchDay = day;
+  uint8_t matchMonth = month;
+  uint8_t matchYear = (uint8_t)(year - 2000);
+
+  // Add on daysIntoFuture
+  uint8_t daysIntoFutureCopy = daysIntoFuture;
+  while (daysIntoFutureCopy > 0)
+  {
+    matchDay++;
+    daysIntoFutureCopy--;
+    switch (matchMonth)
+    {
+      case 1:
+      case 3:
+      case 5:
+      case 7:
+      case 8:
+      case 10:
+      case 12:
+        if (matchDay == 32)
+        {
+          matchDay = 1;
+          matchMonth++;
+          if (matchMonth == 13)
+          {
+            matchMonth = 1;
+            matchYear++;
+          }
+        }
+        break;
+      case 4:
+      case 6:
+      case 9:
+      case 11:
+        if (matchDay == 31)
+        {
+          matchDay = 1;
+          matchMonth++;
+        }
+        break;
+      default: // February
+        if (((matchYear % 4) == 0) && (matchDay == 30))
+        {
+          matchDay = 1;
+          matchMonth++;
+        }
+        else if (((matchYear % 4) > 0) && (matchDay == 29))
+        {
+          matchDay = 1;
+          matchMonth++;
+        }
+        break;
+    }
+  }
+
+  while ((!dateFound) && (dataPtr < numDataBytes)) // Keep going until we have found the date or processed all the bytes
+  {
+    // Start by checking the validity of the packet being pointed to
+    bool dataIsOK = true;
+
+    dataIsOK &= (*(dataBytes + dataPtr + 0) == UBX_SYNCH_1); // Check for 0xB5
+    dataIsOK &= (*(dataBytes + dataPtr + 1) == UBX_SYNCH_2); // Check for 0x62
+    dataIsOK &= (*(dataBytes + dataPtr + 2) == UBX_CLASS_MGA); // Check for class UBX-MGA
+    
+    size_t packetLength = ((size_t)*(dataBytes + dataPtr + 4)) | (((size_t)*(dataBytes + dataPtr + 5)) << 8); // Extract the length
+
+    uint8_t checksumA = 0;
+    uint8_t checksumB = 0;
+    // Calculate the checksum bytes
+    // Keep going until the end of the packet is reached (payloadPtr == (dataPtr + packetLength))
+    // or we reach the end of the AssistNow data (payloadPtr == numDataBytes)
+    for (size_t payloadPtr = dataPtr + ((size_t)2); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < numDataBytes); payloadPtr++)
+    {
+      checksumA += *(dataBytes + payloadPtr);
+      checksumB += checksumA;
+    }
+    // Check the checksum bytes
+    dataIsOK &= (checksumA == *(dataBytes + dataPtr + packetLength + ((size_t)6)));
+    dataIsOK &= (checksumB == *(dataBytes + dataPtr + packetLength + ((size_t)7)));
+
+    dataIsOK &= ((dataPtr + packetLength + ((size_t)8)) <= numDataBytes); // Check we haven't overrun
+
+    // If the data is valid, check for a date match
+    if (dataIsOK)
+    {
+      if ((*(dataBytes + dataPtr + 3) == UBX_MGA_ANO)
+      &&  (*(dataBytes + dataPtr + 10) == matchYear)
+      &&  (*(dataBytes + dataPtr + 11) == matchMonth)
+      &&  (*(dataBytes + dataPtr + 12) == matchDay))
+      {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("findMGAANOForDate: found date match at location "));
+          _debugSerial->println(dataPtr);
+        }
+#endif
+        dateFound = true;
+      }
+      else
+      {
+        // The data is valid, but these are not the droids we are looking for...
+        dataPtr += packetLength + ((size_t)8); // Point to the next message
+      }
+    }
+    else
+    {
+ 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+      // The data was invalid. Send a debug message and then try to find the next 0xB5
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      {
+        _debugSerial->print(F("findMGAANOForDate: bad data - ignored! dataPtr is "));
+        _debugSerial->println(dataPtr);
+      }
+#endif
+      
+      while ((dataPtr < numDataBytes) && (*(dataBytes + ++dataPtr) != UBX_SYNCH_1))
+      {
+        ; // Increment dataPtr until we are pointing at the next 0xB5 - or we reach the end of the data
+      }
+    }
+  }
+
+  return (dataPtr);
 }
 
 // Support for data logging

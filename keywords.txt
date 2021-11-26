@@ -92,6 +92,7 @@ pushRawData	KEYWORD2
 
 pushAssistNowData	KEYWORD2
 setUTCTimeAssistance	KEYWORD2
+findMGAANOForDate	KEYWORD2
 
 setFileBufferSize	KEYWORD2
 getFileBufferSize	KEYWORD2

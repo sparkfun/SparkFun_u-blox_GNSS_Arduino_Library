@@ -16,6 +16,8 @@ With the AssistNow Offline service, users can download long-term orbit data over
 
 Please see the [AssistNow_Offline](./AssistNow_Offline) examples for more details. These examples were written for the ESP32, but will run on other platforms too.
 
+**Note: AssistNow Offline is not supported by the ZED-F9P. "The ZED-F9P supports AssistNow Online only."**
+
 ## AssistNow<sup>TM</sup> Autonomous
 
 AssistNow Autonomous provides aiding information without the need for a host or external network connection. Based on previous broadcast satellite ephemeris data downloaded to and stored by the GNSS receiver, AssistNow Autonomous automatically generates accurate predictions of satellite orbital data (“AssistNow Autonomous data”) that is usable for future GNSS position fixes.
