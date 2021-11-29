@@ -186,8 +186,8 @@ void setup()
     // So, we could set the pushAssistNowData mgaAck parameter to SFE_UBLOX_MGA_ASSIST_ACK_YES.
     // But, just for giggles, let's use SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE just to confirm that the
     // MGA-ACK messages are actually enabled.
-    // Wait for up to 1000ms for each ACK to arrive! 1000ms is a bit excessive... 7ms is nearer the mark.
-    myGNSS.pushAssistNowData(payload, (size_t)payloadSize, SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE, 1000);
+    // Wait for up to 100ms for each ACK to arrive! 100ms is a bit excessive... 7ms is nearer the mark.
+    myGNSS.pushAssistNowData(payload, (size_t)payloadSize, SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE, 100);
 
     // Set setI2CpollingWait to 125ms to avoid pounding the I2C bus
     myGNSS.setI2CpollingWait(125);

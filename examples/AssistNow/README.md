@@ -10,6 +10,8 @@ With AssistNow Online, an Internet connected host downloads assistance data from
 
 Please see the [AssistNow_Online](./AssistNow_Online) examples for more details. These examples were written for the ESP32, but will run on other platforms too.
 
+The new functions we've added to the library to support AssistNow Online are described [Code Support for AssistNow below](#Code-Support-for-AssistNow)
+
 ## AssistNow<sup>TM</sup> Offline
 
 With the AssistNow Offline service, users can download long-term orbit data over the Internet at their convenience. The orbit data can be stored in the memory of the application processor. The function requires no connectivity at system start-up, enabling a position fix within seconds, even when no network is available. AssistNow Offline offers augmentation for up to 35 days.
@@ -17,6 +19,8 @@ With the AssistNow Offline service, users can download long-term orbit data over
 Please see the [AssistNow_Offline](./AssistNow_Offline) examples for more details. These examples were written for the ESP32, but will run on other platforms too.
 
 **Note: AssistNow Offline is not supported by the ZED-F9P. "The ZED-F9P supports AssistNow Online only."**
+
+The new functions we've added to the library to support AssistNow Offline are described [Code Support for AssistNow below](#Code-Support-for-AssistNow)
 
 ## AssistNow<sup>TM</sup> Autonomous
 
@@ -32,6 +36,8 @@ The benefits of AssistNow Autonomous are:
 AssistNow Autonomous offers augmentation for up to 6 days.
 
 Please see the [AssistNow_Autonomous](./AssistNow_Autonomous) examples for more details.
+
+The new functions we've added to the library to support AssistNow Autonomous are described [Code Support for AssistNow below](#Code-Support-for-AssistNow)
 
 ## AssistNow Service Token
 
@@ -55,3 +61,81 @@ The _free_ AssistNow Developer token entitles you to:
 * CellLocate Developer: 5K free location requests per month. Capped.
 
 The free token will expire after 90 days, but you can continue to use it beyond that by registering it on [Thingstream](https://portal.thingstream.io/).
+
+## Code Support for AssistNow
+
+```pushAssistNowData``` allows the AssistNow Online data or Offline data from the u-blox server to be pushed to the module. As the ESP32 HTTP GET function returns a ```String```, we've included overloaded functions which allow you to pass the data as a ```String``` or as ```const uint8_t *```.
+
+The String-based function declarations are:
+
+* size_t pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+* size_t pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+* size_t pushAssistNowData(size_t offset, bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+
+The const uint8_t * function declarations are:
+
+* size_t pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+* size_t pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+* size_t pushAssistNowData(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+
+```dataBytes``` is a pointer to the AssistNow Online data.
+<br>
+```numDataBytes``` is the length of the AssistNow Online data.
+<br>
+
+```pushAssistNowData``` pushes individual packets of data to the u-blox module. Sending all of the data contiguously would overload the module, so ```pushAssistNowData``` can either:
+
+* insert a small delay between each packet (the default is 7ms)
+* or use the ```UBX-MGA-ACK-DATA0``` acknowledgement message to acknowledge each packet
+
+```mgaAck``` controls which method is used.
+
+* if ```mgaAck``` is ```SFE_UBLOX_MGA_ASSIST_ACK_NO``` (**default**), a delay of ```maxWait``` milliseconds is inserted between eack packet. ```maxWait``` defaults to 7ms.
+* if ```mgaAck``` is ```SFE_UBLOX_MGA_ASSIST_ACK_YES```, acknowledgement messages will be expected with a _timeout_ of ```maxWait``` milliseconds. The default timeout is again 7ms, but you can increase this if required by passing a larger value.
+* if ```mgaAck``` is ```SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE```, the code will poll the module to enquire if the achnowledgement messages are enabled. If they are, they will be used. If not, a delay is used.
+
+```setAckAiding``` enables or disables the acknowledgement messages. By default they are disabled. ```setAckAiding(1)``` will enable them. ```setAckAiding(0)``` will disable them again.
+<br>
+```getAckAiding``` returns 1 if the acknowledgement messages are enabled, 0 if they are disabled. 255 indicates an error or timeout.
+<br>
+
+AssistNow Online data is valid for 2-4 hours. 'Stale' data can be re-used but:
+
+* ```pushAssistNowData``` needs to be told to skip the time information contained in the AssistNow data
+* the user needs to provide the module with UTC time separately
+
+The ```skipTime``` parameter tells ```pushAssistNowData``` to skip any time information in the data. ```skipTime``` is bool. Set it to ```true``` to skip the time information.
+<br>
+UTC time can be pushed to the module first by calling ```setUTCTimeAssistance```:
+
+* bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+
+Only the ```year```, ```month```, ```day```, ```hour```, ```minute``` and ```second``` parameters are mandatory. The others default to sensible values. Again ```mgaAck``` and ```maxWait``` control if a delay is used when configuring the time, or if an acknowledgement message will be expected.
+<br>
+```nanos``` (nanoseconds), ```tAccS``` (time accuracy estimate (seconds)), ```tAccNs``` (time accuracy estimate (nanoseconds)) and ```source``` (if a clock signal will be provided on EXT_INT) are optional, but are available for advanced users.
+<br>
+```year``` numbering starts at 0; 2021 is 2021, not 121 (years since 1900). ```month``` and ```day``` numbering starts at 1, not 0.
+<br>
+
+Call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
+
+## Additional Code Support for AssistNow Offline
+
+AssistNow Offline data downloaded from the u-blox server can contain 1-5 weeks of data. However, only the data for _today_ should be pushed the module. Sending data for past or future days will confuse the module.
+```findMGAANOForDate``` can be used to find the location of the start of the UBX-MGA-ANO data for the specified date within the offline data. That location can then be passed to ```pushAssistNowData``` using the ```offset``` parameter.
+
+* size_t findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture);
+
+The sequence of events is:
+
+* call ```findMGAANOForDate``` passing the ```year```, ```month``` and ```day``` for today. ```findMGAANOForDate``` will return the location / offset of the data for today within the offline data.
+* call ```findMGAANOForDate``` again passing the ```year```, ```month``` and ```day``` for _today_ but also set ```daysIntoFuture``` to 1. ```findMGAANOForDate``` will then return the location / offset of the data for _tomorrow_ (one day into the future).
+* call ```pushAssistNowData``` setting:
+  * ```offset``` to the location (offset) of today's data within the offline data
+  * ```skipTime``` to ```true```
+  * ```numDataBytes``` to ((tomorrow's location) - (today's location)). Only the offline data for today will be pushed.
+
+```findMGAANOForDate``` will return a value of numDataBytes if the data for the chosen day cannot be found.
+<br>
+Again, call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
+

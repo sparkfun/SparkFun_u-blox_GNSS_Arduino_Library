@@ -109,9 +109,11 @@ void setup()
   if(!getLocalTime(&timeinfo))
   {
     Serial.println("Failed to obtain time");
-    return;
   }
-  Serial.println(&timeinfo, "Time is: %A, %B %d %Y %H:%M:%S");
+  else
+  {
+    Serial.println(&timeinfo, "Time is: %A, %B %d %Y %H:%M:%S");
+  }
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Use HTTP GET to receive the AssistNow_Online data
