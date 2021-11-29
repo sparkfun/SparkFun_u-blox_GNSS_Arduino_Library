@@ -244,6 +244,16 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXNAVRELPOSNED = NULL; // Redundant?
   }
 
+  if (packetUBXNAVAOPSTATUS != NULL)
+  {
+    if (packetUBXNAVAOPSTATUS->callbackData != NULL)
+    {
+      delete packetUBXNAVAOPSTATUS->callbackData;
+    }
+    delete packetUBXNAVAOPSTATUS;
+    packetUBXNAVAOPSTATUS = NULL; // Redundant?
+  }
+
   if (packetUBXRXMSFRBX != NULL)
   {
     if (packetUBXRXMSFRBX->callbackData != NULL)
@@ -1023,6 +1033,9 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_RELPOSNED:
           if (packetUBXNAVRELPOSNED != NULL) result = true;
         break;
+        case UBX_NAV_AOPSTATUS:
+          if (packetUBXNAVAOPSTATUS != NULL) result = true;
+        break;
       }
     }
     break;
@@ -1157,6 +1170,9 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
         break;
         case UBX_NAV_RELPOSNED:
           maxSize = UBX_NAV_RELPOSNED_LEN_F9;
+        break;
+        case UBX_NAV_AOPSTATUS:
+          maxSize = UBX_NAV_AOPSTATUS_LEN;
         break;
       }
     }
@@ -2412,6 +2428,33 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
 
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storePacket(msg);
+        }
+      }
+    }
+    else if (msg->id == UBX_NAV_AOPSTATUS && msg->len == UBX_NAV_AOPSTATUS_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVAOPSTATUS != NULL)
+      {
+        packetUBXNAVAOPSTATUS->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVAOPSTATUS->data.aopCfg.all = extractByte(msg, 4);
+        packetUBXNAVAOPSTATUS->data.status = extractByte(msg, 5);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVAOPSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVAOPSTATUS->callbackData->iTOW, &packetUBXNAVAOPSTATUS->data.iTOW, sizeof(UBX_NAV_AOPSTATUS_data_t));
+          packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.addToFileBuffer)
         {
           storePacket(msg);
         }
@@ -3754,6 +3797,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV RELPOSNED"));
     packetUBXNAVRELPOSNED->callbackPointer(*packetUBXNAVRELPOSNED->callbackData); // Call the callback
     packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXNAVAOPSTATUS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVAOPSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVAOPSTATUS->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for NAV AOPSTATUS"));
+    packetUBXNAVAOPSTATUS->callbackPointer(*packetUBXNAVAOPSTATUS->callbackData); // Call the callback
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
   if ((packetUBXRXMSFRBX != NULL) // If RAM has been allocated for message storage
@@ -7130,11 +7184,11 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVATT()
   return (true);
 }
 
-//Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
+//Mark all the ATT data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GNSS::flushNAVATT()
 {
   if (packetUBXNAVATT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
-  packetUBXNAVATT->moduleQueried.moduleQueried.all = 0; //Mark all DOPs as stale (read before)
+  packetUBXNAVATT->moduleQueried.moduleQueried.all = 0; //Mark all ATT data as stale (read before)
 }
 
 //Log this data in file buffer
@@ -8536,6 +8590,182 @@ void SFE_UBLOX_GNSS::logNAVRELPOSNED(bool enabled)
 {
   if (packetUBXNAVRELPOSNED == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
   packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
+
+// ***** AOPSTATUS automatic support
+
+bool SFE_UBLOX_GNSS::getAOPSTATUS(uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the AOPSTATUS data
+  if (packetUBXNAVAOPSTATUS == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic && packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getAOPSTATUS: Autoreporting"));
+    // }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_AOPSTATUS);
+    return packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all;
+  }
+  else if (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic && !packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getAOPSTATUS: Exit immediately"));
+    // }
+    return (false);
+  }
+  else
+  {
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getAOPSTATUS: Polling"));
+    // }
+
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_AOPSTATUS;
+    packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+    {
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getAOPSTATUS: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
+      return (true);
+    }
+
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getAOPSTATUS retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
+    return (false);
+  }
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getAOPSTATUS
+//works.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUS(bool enable, uint16_t maxWait)
+{
+  return setAutoAOPSTATUSrate(enable ? 1 : 0, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getAOPSTATUS
+//works.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUS(bool enable, bool implicitUpdate, uint16_t maxWait)
+{
+  return setAutoAOPSTATUSrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getAOPSTATUS
+//works.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUSrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the data
+  if (packetUBXNAVAOPSTATUS == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_AOPSTATUS;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
+
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all = false;
+  return ok;
+}
+
+//Enable automatic navigation message generation by the GNSS.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoAOPSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVAOPSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVAOPSTATUS->callbackData = new UBX_NAV_AOPSTATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVAOPSTATUS->callbackData == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoAOPSTATUScallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  packetUBXNAVAOPSTATUS->callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and AOPSTATUS is send cyclically already
+//set config to suitable parameters
+bool SFE_UBLOX_GNSS::assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the data
+  if (packetUBXNAVAOPSTATUS == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  bool changes = packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXNAVAOPSTATUS()
+{
+  packetUBXNAVAOPSTATUS = new UBX_NAV_AOPSTATUS_t; //Allocate RAM for the main struct
+  if (packetUBXNAVAOPSTATUS == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVAOPSTATUS: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXNAVAOPSTATUS->automaticFlags.flags.all = 0;
+  packetUBXNAVAOPSTATUS->callbackPointer = NULL;
+  packetUBXNAVAOPSTATUS->callbackData = NULL;
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0;
+  return (true);
+}
+
+//Mark all the AOPSTATUS data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GNSS::flushAOPSTATUS()
+{
+  if (packetUBXNAVAOPSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0; //Mark all AOPSTATUSs as stale (read before)
+}
+
+//Log this data in file buffer
+void SFE_UBLOX_GNSS::logNAVAOPSTATUS(bool enabled)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** RXM SFRBX automatic support
@@ -11802,6 +12032,34 @@ float SFE_UBLOX_GNSS::getRelPosAccD(uint16_t maxWait) // Returned as m
   packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.bits.accD = false; //Since we are about to give this to user, mark this data as stale
   packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.bits.all = false;
   return (((float)packetUBXNAVRELPOSNED->data.accD) / 10000.0); // Convert to m
+}
+
+// ***** AOPSTATUS Helper Functions
+
+uint8_t SFE_UBLOX_GNSS::getAOPSTATUSuseAOP(uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the AOPSTATUS data
+  if (packetUBXNAVAOPSTATUS == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.useAOP == false)
+    getAOPSTATUS(maxWait);
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.useAOP = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all = false;
+  return (packetUBXNAVAOPSTATUS->data.aopCfg.bits.useAOP);
+}
+
+uint8_t SFE_UBLOX_GNSS::getAOPSTATUSstatus(uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the AOPSTATUS data
+  if (packetUBXNAVAOPSTATUS == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.status == false)
+    getAOPSTATUS(maxWait);
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.status = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all = false;
+  return (packetUBXNAVAOPSTATUS->data.status);
 }
 
 // ***** ESF Helper Functions

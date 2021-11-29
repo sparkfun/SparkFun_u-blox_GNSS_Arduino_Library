@@ -65,6 +65,8 @@ struct ubxAutomaticFlags
   } flags;
 };
 
+// NAV-specific structs
+
 // UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF
 const uint16_t UBX_NAV_POSECEF_LEN = 20;
 
@@ -1070,6 +1072,51 @@ typedef struct
   void (*callbackPointer)(UBX_NAV_RELPOSNED_data_t);
   UBX_NAV_RELPOSNED_data_t  *callbackData;
 } UBX_NAV_RELPOSNED_t;
+
+// UBX-NAV-AOPSTATUS (0x01 0x60): AssistNow Autonomous status
+const uint16_t UBX_NAV_AOPSTATUS_LEN = 16;
+
+typedef struct
+{
+  uint32_t iTOW; // GPS time of week of the navigation epoch: ms
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t useAOP : 1; // AOP enabled flag
+    } bits;
+  } aopCfg; // AssistNow Autonomous configuration
+  uint8_t status; // AssistNow Autonomous subsystem is idle (0) or running (not 0)
+  uint8_t reserved1[10];
+} UBX_NAV_AOPSTATUS_data_t;
+
+typedef struct
+{
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t all : 1;
+
+      uint32_t iTOW : 1;
+
+      uint32_t useAOP : 1;
+
+      uint32_t status : 1;
+    } bits;
+  } moduleQueried;
+} UBX_NAV_AOPSTATUS_moduleQueried_t;
+
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  UBX_NAV_AOPSTATUS_data_t data;
+  UBX_NAV_AOPSTATUS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t);
+  UBX_NAV_AOPSTATUS_data_t  *callbackData;
+} UBX_NAV_AOPSTATUS_t;
 
 // RXM-specific structs
 

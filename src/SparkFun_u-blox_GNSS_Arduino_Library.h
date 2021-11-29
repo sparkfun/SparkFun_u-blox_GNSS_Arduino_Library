@@ -369,6 +369,7 @@ const uint8_t UBX_NAV_TIMELS = 0x26;	//Leap second event information
 const uint8_t UBX_NAV_TIMEUTC = 0x21;	//UTC Time Solution
 const uint8_t UBX_NAV_VELECEF = 0x11;	//Velocity Solution in ECEF
 const uint8_t UBX_NAV_VELNED = 0x12;	//Velocity Solution in NED
+const uint8_t UBX_NAV_AOPSTATUS = 0x60; //AssistNow Autonomous status
 
 //Class: RXM
 //The following are used to configure the RXM UBX messages (receiver manager messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
@@ -1001,6 +1002,15 @@ public:
 	void flushNAVRELPOSNED(); //Mark all the data as read/stale
 	void logNAVRELPOSNED(bool enabled = true); // Log data to file buffer
 
+	bool getAOPSTATUS(uint16_t maxWait = defaultMaxWait); //Query module for latest AssistNow Autonomous status and load global vars:. If autoAOPSTATUS is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new AOPSTATUS is available.
+	bool setAutoAOPSTATUS(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic AOPSTATUS reports at the navigation frequency
+	bool setAutoAOPSTATUS(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic AOPSTATUS reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	bool setAutoAOPSTATUSrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic AOPSTATUS reports
+	bool setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic AOPSTATUS reports at the navigation frequency. Data is accessed from the callback.
+	bool assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and AOPSTATUS is send cyclically already
+	void flushAOPSTATUS(); //Mark all the AOPSTATUS data as read/stale
+	void logNAVAOPSTATUS(bool enabled = true); // Log data to file buffer
+
 	// Receiver Manager Messages (RXM)
 
 	bool getRXMSFRBX(uint16_t maxWait = defaultMaxWait); // RXM SFRBX
@@ -1244,6 +1254,11 @@ public:
 	float getRelPosAccE(uint16_t maxWait = defaultMaxWait); // Returned as m
 	float getRelPosAccD(uint16_t maxWait = defaultMaxWait); // Returned as m
 
+	// Helper functions for AOPSTATUS
+
+	uint8_t getAOPSTATUSuseAOP(uint16_t maxWait = defaultMaxWait); // Returns the UBX-NAV-AOPSTATUS useAOP flag. Don't confuse this with getAopCfg - which returns the aopCfg byte from UBX-CFG-NAVX5
+	uint8_t getAOPSTATUSstatus(uint16_t maxWait = defaultMaxWait); // Returns the UBX-NAV-AOPSTATUS status field. A host application can determine the optimal time to shut down the receiver by monitoring the status field for a steady 0.
+
 	// Helper functions for ESF
 
 	float getESFroll(uint16_t maxWait = defaultMaxWait); // Returned as degrees
@@ -1290,6 +1305,7 @@ public:
 	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_AOPSTATUS_t *packetUBXNAVAOPSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1371,6 +1387,7 @@ private:
 	bool initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	bool initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
 	bool initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
+	bool initPacketUBXNAVAOPSTATUS(); // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
 	bool initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
 	bool initPacketUBXRXMRAWX(); // Allocate RAM for packetUBXRXMRAWX and initialize it
 	bool initPacketUBXCFGRATE(); // Allocate RAM for packetUBXCFGRATE and initialize it
