@@ -334,6 +334,12 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXESFRAW = NULL; // Redundant?
   }
 
+  if (packetUBXMGAACK != NULL)
+  {
+    delete packetUBXMGAACK;
+    packetUBXMGAACK = NULL; // Redundant?
+  }
+
   if (packetUBXHNRATT != NULL)
   {
     if (packetUBXHNRATT->callbackData != NULL)
@@ -6020,6 +6026,48 @@ bool SFE_UBLOX_GNSS::setAckAiding(uint8_t ackAiding, uint16_t maxWait) // Set th
   // There are three versions of UBX-CFG-NAVX5 but the ackAid flag is always in bit 10 of mask1
   payloadCfg[2] = 0x00; // Clear the LS byte of mask1
   payloadCfg[3] = 0x04; // Set _only_ the ackAid flag = bit 10 of mask1 = bit 2 of the MS byte
+  payloadCfg[4] = 0x00; // Clear the LS byte of mask2, just in case
+  payloadCfg[5] = 0x00; // Clear the LS byte of mask2, just in case
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//AssistNow Autonomous support
+//UBX-CFG-NAVX5 - get the AssistNow Autonomous configuration (aopCfg) - returns 255 if the sendCommand fails
+uint8_t SFE_UBLOX_GNSS::getAopCfg(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (255);
+
+  // Extract the aopCfg byte
+  // There are three versions of UBX-CFG-NAVX5 but aopCfg is always in byte 27
+  return (extractByte(&packetCfg, 27));
+}
+// Set the aopCfg byte and the aopOrdMaxErr word
+bool SFE_UBLOX_GNSS::setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Set the aopCfg byte
+  // There are three versions of UBX-CFG-NAVX5 but aopCfg is always in byte 27 and aopOrbMaxErr is always in bytes 30 & 31
+  payloadCfg[27] = aopCfg;
+  payloadCfg[30] = (uint8_t)(aopOrbMaxErr & 0xFF); // aopOrbMaxErr LSB
+  payloadCfg[31] = (uint8_t)(aopOrbMaxErr >> 8); // aopOrbMaxErr MSB
+
+  // There are three versions of UBX-CFG-NAVX5 but the aop flag is always in bit 14 of mask1
+  payloadCfg[2] = 0x00; // Clear the LS byte of mask1
+  payloadCfg[3] = 0x40; // Set _only_ the aop flag = bit 14 of mask1 = bit 6 of the MS byte
   payloadCfg[4] = 0x00; // Clear the LS byte of mask2, just in case
   payloadCfg[5] = 0x00; // Clear the LS byte of mask2, just in case
 

@@ -10,7 +10,7 @@ With AssistNow Online, an Internet connected host downloads assistance data from
 
 Please see the [AssistNow_Online](./AssistNow_Online) examples for more details. These examples were written for the ESP32, but will run on other platforms too.
 
-The new functions we've added to the library to support AssistNow Online are described [Code Support for AssistNow below](#Code-Support-for-AssistNow).
+The new functions we've added to the library to support AssistNow Online are described [Support for AssistNow below](#Support-for-AssistNow).
 
 ## AssistNow<sup>TM</sup> Offline
 
@@ -20,7 +20,7 @@ Please see the [AssistNow_Offline](./AssistNow_Offline) examples for more detail
 
 **Note: AssistNow Offline is not supported by the ZED-F9P. "The ZED-F9P supports AssistNow Online only."**
 
-The new functions we've added to the library to support AssistNow Offline are described [Code Support for AssistNow below](#Code-Support-for-AssistNow).
+The new functions we've added to the library to support AssistNow Offline are described [Support for AssistNow](#Support-for-AssistNow) and [Additional Support for AssistNow Offline](#Additional-Support-for-AssistNow-Offline).
 
 ## AssistNow<sup>TM</sup> Autonomous
 
@@ -37,7 +37,7 @@ AssistNow Autonomous offers augmentation for up to 6 days.
 
 Please see the [AssistNow_Autonomous](./AssistNow_Autonomous) examples for more details.
 
-The new functions we've added to the library to support AssistNow Autonomous are described [Code Support for AssistNow below](#Code-Support-for-AssistNow).
+The new functions we've added to the library to support AssistNow Autonomous are described [Support for AssistNow Autonomous below](#Support-for-AssistNow-Autonomous).
 
 ## AssistNow Service Token
 
@@ -62,7 +62,23 @@ The _free_ AssistNow Developer token entitles you to:
 
 The free token will expire after 90 days, but you can continue to use it beyond that by registering it on [Thingstream](https://portal.thingstream.io/).
 
-## Code Support for AssistNow
+## Initial Position Assistance
+
+You can further decrease the time-to-first-fix by providing the receiver's approximate position - if known. There are two ways to do this:
+
+* The position can be specified when requesting AssistNow Online data from the server:
+  * include the key name ```lat``` with the approximate user latitude in WGS 84 expressed in degrees and fractional degrees. Must be in range -90 to 90. Example: ```lat=47.2;```
+  * include the key name ```lon``` with the approximate user longitude in WGS 84 expressed in degrees and fractional degrees. Must be in range -180 to 180. Example: ```lon=8.55;```
+  * include the key name ```alt``` with the approximate user altitude above WGS 84 Ellipsoid in meters. If this value is not provided, the server assumes an altitude of 0 meters. Must be in range -1000 to 50000
+  * include the key name ```pacc``` with the approximate accuracy of submitted position in meters. If this value is not provided, the server assumes an accuracy of 300 km. Must be in range 0 to 6000000
+  * the position assistance data will then be automatically included in the AssistNow Online data
+* Provide initial position assistance data by calling one of:
+  * <b>bool setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+  * The units for ```ecefX/Y/Z``` and ```posAcc``` (stddev) are cm
+  * <b>bool setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+  * The units for ```lat``` and ```lon``` are degrees * 1e-7 (WGS84). The units for ```alt``` (WGS84) and ```posAcc``` (stddev) are cm (not m)
+
+## Support for AssistNow
 
 ```pushAssistNowData``` allows the AssistNow Online data or AssistNow Offline data from the u-blox server to be pushed to the module. As the ESP32 HTTP GET function returns a ```String```, we've included overloaded functions which allow you to pass the data as a ```String``` or as ```const uint8_t *```.
 
@@ -124,23 +140,7 @@ Only the ```year```, ```month```, ```day```, ```hour```, ```minute``` and ```sec
 
 Call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
 
-## Initial Position Assistance
-
-You can further decrease the time-to-first-fix by also providing the receiver's position - if known. There are two ways to do this:
-
-* The position can be specified when requesting AssistNow Online data from the server:
-  * include the key name ```lat``` with the approximate user latitude in WGS 84 expressed in degrees and fractional degrees. Must be in range -90 to 90. Example: ```lat=47.2;```
-  * include the key name ```lon``` with the approximate user longitude in WGS 84 expressed in degrees and fractional degrees. Must be in range -180 to 180. Example: ```lon=8.55;```
-  * include the key name ```alt``` with the approximate user altitude above WGS 84 Ellipsoid in meters. If this value is not provided, the server assumes an altitude of 0 meters. Must be in range -1000 to 50000
-  * if possible, include the key name ```pacc``` with the approximate accuracy of submitted position in meters. If this value is not provided, the server assumes an accuracy of 300 km. Must be in range 0 to 6000000
-  * the position assistance data will then be automatically included in the AssistNow Online data
-* Provide initial position assistance data by calling one of:
-  * <b>bool setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
-  * The units for ```ecefX/Y/Z``` and ```posAcc``` (stddev) are cm
-  * <b>bool setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
-  * The units for ```lat``` and ```lon``` are degrees * 1e-7 (WGS84). The units for ```alt``` (WGS84) and ```posAcc``` (stddev) are cm (not m)
-
-## Additional Code Support for AssistNow Offline
+## Additional Support for AssistNow Offline
 
 AssistNow Offline data downloaded from the u-blox server can contain 1-5 weeks of data. However, only the data for _today_ should be pushed the module. Sending data for past or future days will confuse the module.
 ```findMGAANOForDate``` can be used to find the location of the start of the UBX-MGA-ANO data for the specified date within the offline data. That location can then be passed to ```pushAssistNowData``` using the ```offset``` parameter.
@@ -161,3 +161,16 @@ The sequence of events is:
 
 Again, call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
 
+## Support for AssistNow Autonomous
+
+AssistNow Autonomous is disabled by default. You can enable it by calling ```setAopCfg``` and check if it is enabled by calling ```getAopCfg```:
+
+* <b>uint8_t getAopCfg(uint16_t maxWait);</b>
+* <b>bool SFE_UBLOX_GNSS::setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr, uint16_t maxWait)</b>
+
+```getAopCfg``` will return 1 if AssistNow Autonomous is enabled, 0 if disabled. 255 indicates an error or timeout.
+
+```setAopCfg``` has two parameters:
+
+* set ```aopCfg``` to 1 to enable AssistNow Autonomous, or 0 to disable it
+* ```aopOrbMaxErr``` is used to set the 'lifetime' of the AssistNow data. It is recommended to set aopOrbMaxErr to 0 (the default value). This instructs the module to use the firmware default value that corresponds to a default orbit data validity of approximately three days (for GPS satellites observed once) and up to six days (for GPS and GLONASS satellites observed multiple times over a period of at least half a day).

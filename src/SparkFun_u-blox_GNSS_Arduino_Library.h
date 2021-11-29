@@ -846,6 +846,11 @@ public:
 	uint8_t getAckAiding(uint16_t maxWait = defaultMaxWait); // Get the ackAiding byte - returns 255 if the sendCommand fails
 	bool setAckAiding(uint8_t ackAiding, uint16_t maxWait = defaultMaxWait); // Set the ackAiding byte
 
+	//AssistNow Autonomous support
+	//UBX-CFG-NAVX5 - get/set the aopCfg byte and set the aopOrdMaxErr word. If aopOrbMaxErr is 0 (default), the max orbit error is reset to the firmware default.
+	uint8_t getAopCfg(uint16_t maxWait = defaultMaxWait); // Get the AssistNow Autonomous configuration (aopCfg) - returns 255 if the sendCommand fails
+	bool setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr = 0, uint16_t maxWait = defaultMaxWait); // Set the aopCfg byte and the aopOrdMaxErr word
+
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.

@@ -172,6 +172,9 @@ setTimePulseParameters	KEYWORD2
 getAckAiding	KEYWORD2
 setAckAiding	KEYWORD2
 
+getAopCfg	KEYWORD2
+setAopCfg	KEYWORD2
+
 createKey	KEYWORD2
 getVal	KEYWORD2
 getVal8	KEYWORD2
