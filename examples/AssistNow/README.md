@@ -10,7 +10,7 @@ With AssistNow Online, an Internet connected host downloads assistance data from
 
 Please see the [AssistNow_Online](./AssistNow_Online) examples for more details. These examples were written for the ESP32, but will run on other platforms too.
 
-The new functions we've added to the library to support AssistNow Online are described [Code Support for AssistNow below](#Code-Support-for-AssistNow)
+The new functions we've added to the library to support AssistNow Online are described [Code Support for AssistNow below](#Code-Support-for-AssistNow).
 
 ## AssistNow<sup>TM</sup> Offline
 
@@ -20,7 +20,7 @@ Please see the [AssistNow_Offline](./AssistNow_Offline) examples for more detail
 
 **Note: AssistNow Offline is not supported by the ZED-F9P. "The ZED-F9P supports AssistNow Online only."**
 
-The new functions we've added to the library to support AssistNow Offline are described [Code Support for AssistNow below](#Code-Support-for-AssistNow)
+The new functions we've added to the library to support AssistNow Offline are described [Code Support for AssistNow below](#Code-Support-for-AssistNow).
 
 ## AssistNow<sup>TM</sup> Autonomous
 
@@ -37,7 +37,7 @@ AssistNow Autonomous offers augmentation for up to 6 days.
 
 Please see the [AssistNow_Autonomous](./AssistNow_Autonomous) examples for more details.
 
-The new functions we've added to the library to support AssistNow Autonomous are described [Code Support for AssistNow below](#Code-Support-for-AssistNow)
+The new functions we've added to the library to support AssistNow Autonomous are described [Code Support for AssistNow below](#Code-Support-for-AssistNow).
 
 ## AssistNow Service Token
 
@@ -123,6 +123,22 @@ Only the ```year```, ```month```, ```day```, ```hour```, ```minute``` and ```sec
 <br>
 
 Call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
+
+## Initial Position Assistance
+
+You can further decrease the time-to-first-fix by also providing the receiver's position - if known. There are two ways to do this:
+
+* The position can be specified when requesting AssistNow Online data from the server:
+  * include the key name ```lat``` with the approximate user latitude in WGS 84 expressed in degrees and fractional degrees. Must be in range -90 to 90. Example: ```lat=47.2;```
+  * include the key name ```lon``` with the approximate user longitude in WGS 84 expressed in degrees and fractional degrees. Must be in range -180 to 180. Example: ```lon=8.55;```
+  * include the key name ```alt``` with the approximate user altitude above WGS 84 Ellipsoid in meters. If this value is not provided, the server assumes an altitude of 0 meters. Must be in range -1000 to 50000
+  * if possible, include the key name ```pacc``` with the approximate accuracy of submitted position in meters. If this value is not provided, the server assumes an accuracy of 300 km. Must be in range 0 to 6000000
+  * the position assistance data will then be automatically included in the AssistNow Online data
+* Provide initial position assistance data by calling one of:
+  * <b>bool setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+  * The units for ```ecefX/Y/Z``` and ```posAcc``` (stddev) are cm
+  * <b>bool setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+  * The units for ```lat``` and ```lon``` are degrees * 1e-7 (WGS84). The units for ```alt``` (WGS84) and ```posAcc``` (stddev) are cm (not m)
 
 ## Additional Code Support for AssistNow Offline
 

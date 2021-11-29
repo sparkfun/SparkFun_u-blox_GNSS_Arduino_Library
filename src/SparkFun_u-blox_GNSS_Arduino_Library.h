@@ -726,6 +726,13 @@ public:
 	#define defaultMGAINITIMEsource 0 // Set default source to none, i.e. on receipt of message (will be inaccurate!)
 	bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos = 0, uint16_t tAccS = defaultMGAINITIMEtAccS, uint32_t tAccNs = defaultMGAINITIMEtAccNs, uint8_t source = defaultMGAINITIMEsource, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
 
+	// Provide initial position assistance
+	// The units for ecefX/Y/Z and posAcc (stddev) are cm.
+	bool setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	// The units for lat and lon are degrees * 1e-7 (WGS84)
+	// The units for alt (WGS84) and posAcc (stddev) are cm.
+	bool setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+
 	// Find the start of the AssistNow Offline (UBX_MGA_ANO) data for the chosen day
 	// The daysIntoFture parameter makes it easy to get the data for (e.g.) tomorrow based on today's date
 	// Returns numDataBytes if unsuccessful

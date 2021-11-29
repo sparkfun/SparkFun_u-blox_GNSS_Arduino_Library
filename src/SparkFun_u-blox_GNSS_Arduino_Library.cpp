@@ -4281,6 +4281,116 @@ bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t 
   return (pushAssistNowDataInternal(0, false, iniTimeUTC, 32, mgaAck, maxWait) == 1);
 }
 
+// Provide initial position assistance
+// The units for ecefX/Y/Z and posAcc (stddev) are cm.
+bool SFE_UBLOX_GNSS::setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  uint8_t iniPosXYZ[28]; // Create the UBX-MGA-INI-POS_XYZ message by hand
+  memset(iniPosXYZ, 0x00, 28); // Set all unused / reserved bytes and the checksum to zero
+
+  iniPosXYZ[0] = UBX_SYNCH_1; // Sync char 1
+  iniPosXYZ[1] = UBX_SYNCH_2; // Sync char 2
+  iniPosXYZ[2] = UBX_CLASS_MGA; // Class
+  iniPosXYZ[3] = UBX_MGA_INI_POS_XYZ; // ID
+  iniPosXYZ[4] = 20; // Length LSB
+  iniPosXYZ[5] = 0x00; // Length MSB
+  iniPosXYZ[6] = 0x00; // type
+  iniPosXYZ[7] = 0x00; // version
+  
+  union // Use a union to convert from int32_t to uint32_t
+  {
+      int32_t signedLong;
+      uint32_t unsignedLong;
+  } signedUnsigned;
+
+  signedUnsigned.signedLong = ecefX;
+  iniPosXYZ[10] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosXYZ[11] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosXYZ[12] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosXYZ[13] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = ecefY;
+  iniPosXYZ[14] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosXYZ[15] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosXYZ[16] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosXYZ[17] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = ecefZ;
+  iniPosXYZ[18] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosXYZ[19] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosXYZ[20] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosXYZ[21] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  iniPosXYZ[22] = (uint8_t)(posAcc & 0xFF); // LSB
+  iniPosXYZ[23] = (uint8_t)((posAcc >> 8) & 0xFF);
+  iniPosXYZ[24] = (uint8_t)((posAcc >> 16) & 0xFF);
+  iniPosXYZ[25] = (uint8_t)(posAcc >> 24); // MSB
+
+  for (uint8_t i = 2; i < 26; i++) // Calculate the checksum
+  {
+    iniPosXYZ[26] += iniPosXYZ[i];
+    iniPosXYZ[27] += iniPosXYZ[26];
+  }
+
+  // Return true if the one packet was pushed successfully
+  return (pushAssistNowDataInternal(0, false, iniPosXYZ, 28, mgaAck, maxWait) == 1);
+}
+
+// The units for lat and lon are degrees * 1e-7 (WGS84)
+// The units for alt (WGS84) and posAcc (stddev) are cm.
+bool SFE_UBLOX_GNSS::setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  uint8_t iniPosLLH[28]; // Create the UBX-MGA-INI-POS_LLH message by hand
+  memset(iniPosLLH, 0x00, 28); // Set all unused / reserved bytes and the checksum to zero
+
+  iniPosLLH[0] = UBX_SYNCH_1; // Sync char 1
+  iniPosLLH[1] = UBX_SYNCH_2; // Sync char 2
+  iniPosLLH[2] = UBX_CLASS_MGA; // Class
+  iniPosLLH[3] = UBX_MGA_INI_POS_LLH; // ID
+  iniPosLLH[4] = 20; // Length LSB
+  iniPosLLH[5] = 0x00; // Length MSB
+  iniPosLLH[6] = 0x01; // type
+  iniPosLLH[7] = 0x00; // version
+  
+  union // Use a union to convert from int32_t to uint32_t
+  {
+      int32_t signedLong;
+      uint32_t unsignedLong;
+  } signedUnsigned;
+
+  signedUnsigned.signedLong = lat;
+  iniPosLLH[10] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosLLH[11] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosLLH[12] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosLLH[13] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = lon;
+  iniPosLLH[14] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosLLH[15] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosLLH[16] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosLLH[17] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = alt;
+  iniPosLLH[18] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosLLH[19] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosLLH[20] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosLLH[21] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  iniPosLLH[22] = (uint8_t)(posAcc & 0xFF); // LSB
+  iniPosLLH[23] = (uint8_t)((posAcc >> 8) & 0xFF);
+  iniPosLLH[24] = (uint8_t)((posAcc >> 16) & 0xFF);
+  iniPosLLH[25] = (uint8_t)(posAcc >> 24); // MSB
+
+  for (uint8_t i = 2; i < 26; i++) // Calculate the checksum
+  {
+    iniPosLLH[26] += iniPosLLH[i];
+    iniPosLLH[27] += iniPosLLH[26];
+  }
+
+  // Return true if the one packet was pushed successfully
+  return (pushAssistNowDataInternal(0, false, iniPosLLH, 28, mgaAck, maxWait) == 1);
+}
+
 // Find the start of the AssistNow Offline (UBX_MGA_ANO) data for the chosen day
 // The daysIntoFture parameter makes it easy to get the data for (e.g.) tomorrow based on today's date
 // Returns numDataBytes if unsuccessful
