@@ -68,15 +68,15 @@ The free token will expire after 90 days, but you can continue to use it beyond 
 
 The String-based function declarations are:
 
-* **size_t pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
-* **size_t pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
-* **size_t pushAssistNowData(size_t offset, bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
+* <b>size_t pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+* <b>size_t pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+* <b>size_t pushAssistNowData(size_t offset, bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
 
 The const uint8_t * function declarations are:
 
-* **size_t pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
-* **size_t pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
-* **size_t pushAssistNowData(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
+* <b>size_t pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+* <b>size_t pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
+* <b>size_t pushAssistNowData(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
 
 ```dataBytes``` is a pointer to the AssistNow data.
 <br>
@@ -96,11 +96,11 @@ The const uint8_t * function declarations are:
 
 ```setAckAiding``` enables or disables the acknowledgement messages. By default they are disabled. ```setAckAiding(1)``` will enable them. ```setAckAiding(0)``` will disable them again.
 
-* **bool setAckAiding(uint8_t ackAiding, uint16_t maxWait);**
+* <b>bool setAckAiding(uint8_t ackAiding, uint16_t maxWait);</b>
 
 ```getAckAiding``` returns 1 if the acknowledgement messages are enabled, 0 if they are disabled. 255 indicates an error or timeout.
 
-* **uint8_t getAckAiding(uint16_t maxWait);**
+* <b>uint8_t getAckAiding(uint16_t maxWait);</b>
 
 AssistNow Online data is valid for 2-4 hours. 'Stale' data can be re-used but:
 
@@ -111,7 +111,7 @@ The ```skipTime``` parameter tells ```pushAssistNowData``` to skip any time info
 <br>
 UTC time can be pushed to the module first by calling ```setUTCTimeAssistance```:
 
-* **bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);**
+* <b>bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
 
 Only the ```year```, ```month```, ```day```, ```hour```, ```minute``` and ```second``` parameters are mandatory. The others default to sensible values. Again ```mgaAck``` and ```maxWait``` control if a delay is used when configuring the time, or if an acknowledgement message will be expected.
 <br>
@@ -129,7 +129,7 @@ Call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
 AssistNow Offline data downloaded from the u-blox server can contain 1-5 weeks of data. However, only the data for _today_ should be pushed the module. Sending data for past or future days will confuse the module.
 ```findMGAANOForDate``` can be used to find the location of the start of the UBX-MGA-ANO data for the specified date within the offline data. That location can then be passed to ```pushAssistNowData``` using the ```offset``` parameter.
 
-* **size_t findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture);**
+* <b>size_t findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture);</b>
 
 The sequence of events is:
 
