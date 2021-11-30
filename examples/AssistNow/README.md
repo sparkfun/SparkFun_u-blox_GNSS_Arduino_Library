@@ -80,7 +80,7 @@ You can further decrease the time-to-first-fix by providing the receiver's appro
 
 ## Support for AssistNow
 
-```pushAssistNowData``` allows the AssistNow Online data or AssistNow Offline data from the u-blox server to be pushed to the module. As the ESP32 HTTP GET function returns a ```String```, we've included overloaded functions which allow you to pass the data as a ```String``` or as ```const uint8_t *```.
+```pushAssistNowData``` allows AssistNow Online, Offline or Autonomous data to be pushed to the module. As the ESP32 HTTP GET function returns a ```String```, we've included overloaded functions which allow you to pass the data as a ```String``` or as ```const uint8_t *```.
 
 The String-based function declarations are:
 
@@ -125,6 +125,7 @@ AssistNow Online data is valid for 2-4 hours. 'Stale' data can be re-used but:
 
 The ```skipTime``` parameter tells ```pushAssistNowData``` to skip any time information in the data. ```skipTime``` is bool. Set it to ```true``` to skip the time information.
 <br>
+
 UTC time can be pushed to the module first by calling ```setUTCTimeAssistance```:
 
 * <b>bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);</b>
@@ -175,7 +176,7 @@ AssistNow Autonomous is disabled by default. You can enable it by calling ```set
 * set ```aopCfg``` to 1 to enable AssistNow Autonomous, or 0 to disable it
 * ```aopOrbMaxErr``` is used to set the 'lifetime' of the AssistNow data. It is recommended to set aopOrbMaxErr to 0 (the default value). This instructs the module to use the firmware default value that corresponds to a default orbit data validity of approximately three days (for GPS satellites observed once) and up to six days (for GPS and GLONASS satellites observed multiple times over a period of at least half a day).
 
-Once AssistNow Autonomous is enabled, you can monitor its progress via the ```status``` field in the UBX-NAV-AOPSTATUS message. You can read the ```status``` by calling ```getAOPSTATUSstatus```. It will return zero when the AssistNow Autonomous data collection is complete. Non-zero values indicate that data collection is still in progress.
+Once AssistNow Autonomous is enabled, you can monitor its progress via the ```status``` field in the UBX-NAV-AOPSTATUS message. You can read the ```status``` by calling the helper function ```getAOPSTATUSstatus```. It will return zero when the AssistNow Autonomous data collection is idle. Non-zero values indicate that data collection is in progress.
 
 * <b>uint8_t getAOPSTATUSstatus(uint16_t maxWait);</b>
 * <b>uint8_t getAOPSTATUSuseAOP(uint16_t maxWait);</b>
