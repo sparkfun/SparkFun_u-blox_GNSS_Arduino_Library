@@ -5,7 +5,6 @@ When the user calls one of the methods the library will poll the u-blox module f
 * Wait for a minimum of 25 ms between polls (configured dynamically when update rate is set)
 * Write 0xFD to module
 * Read two bytes (0xFD and 0xFE) for bytes available
-* If 0x7F or 0xFF then no bytes are available
 * Otherwise, read number of bytes and process into NMEA, UBX, or RTCM frame.
 * If checksum is valid, flag frame as complete.
 
@@ -58,6 +57,7 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-CLOCK (0x01 0x22): Clock solution
 - UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
 - UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
+- UBX-NAV-AOPSTATUS (0x01 0x60): AssistNow Autonomous status
 - UBX-RXM-SFRBX (0x02 0x13): Broadcast navigation data subframe
 - UBX-RXM-RAWX (0x02 0x15): Multi-GNSS raw measurement data (**only with ADR or High Precision GNSS or Time Sync products**)
 - UBX-TIM-TM2 (0x0D 0x03): Time mark data

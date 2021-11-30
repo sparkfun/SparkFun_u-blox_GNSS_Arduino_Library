@@ -350,6 +350,12 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXMGAACK = NULL; // Redundant?
   }
 
+  if (packetUBXMGADBD != NULL)
+  {
+    delete packetUBXMGADBD;
+    packetUBXMGADBD = NULL; // Redundant?
+  }
+
   if (packetUBXHNRATT != NULL)
   {
     if (packetUBXHNRATT->callbackData != NULL)
@@ -1096,7 +1102,15 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
     break;
     case UBX_CLASS_MGA:
     {
-      if (packetUBXMGAACK != NULL) result = true;
+      switch (ID)
+      {
+        case UBX_MGA_ACK_DATA0:
+          if (packetUBXMGAACK != NULL) result = true;
+        break;
+        case UBX_MGA_DBD:
+          if (packetUBXMGADBD != NULL) result = true;
+        break;
+      }
     }
     break;
     case UBX_CLASS_HNR:
@@ -1234,7 +1248,15 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
     break;
     case UBX_CLASS_MGA:
     {
-      maxSize = UBX_MGA_ACK_DATA0_LEN;
+      switch (ID)
+      {
+        case UBX_MGA_ACK_DATA0:
+          maxSize = UBX_MGA_ACK_DATA0_LEN;
+        break;
+        case UBX_MGA_DBD:
+          maxSize = UBX_MGA_DBD_LEN; // UBX_MGA_DBD_LEN is actually a maximum length. The packets could be shorter than this.
+        break;
+      }
     }
     break;
     case UBX_CLASS_HNR:
@@ -1263,7 +1285,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 {
   if ((currentSentence == NONE) || (currentSentence == NMEA))
   {
-    if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
+    if (incoming == UBX_SYNCH_1) //UBX binary frames start with 0xB5, aka μ
     {
       //This is the start of a binary sentence. Reset flags.
       //We still don't know the response class
@@ -1295,9 +1317,9 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
   if (currentSentence == UBX)
   {
     //Decide what type of response this is
-    if ((ubxFrameCounter == 0) && (incoming != 0xB5))      //ISO 'μ'
+    if ((ubxFrameCounter == 0) && (incoming != UBX_SYNCH_1))      //ISO 'μ'
       currentSentence = NONE;                              //Something went wrong. Reset.
-    else if ((ubxFrameCounter == 1) && (incoming != 0x62)) //ASCII 'b'
+    else if ((ubxFrameCounter == 1) && (incoming != UBX_SYNCH_2)) //ASCII 'b'
       currentSentence = NONE;                              //Something went wrong. Reset.
     // Note to future self:
     // There may be some duplication / redundancy in the next few lines as processUBX will also
@@ -2808,6 +2830,61 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
           packetUBXMGAACK->head++;
           if (packetUBXMGAACK->head == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
             packetUBXMGAACK->head = 0;
+        }
+        else
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->println(F("processUBXpacket: packetUBXMGAACK is full. ACK will be lost!"));      
+          }
+        }
+      }
+    }
+    else if (msg->id == UBX_MGA_DBD && msg->len <= UBX_MGA_DBD_LEN) // Message length may be less than UBX_MGA_DBD_LEN. UBX_MGA_DBD_LEN is the maximum it will be.
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXMGADBD != NULL)
+      {
+        // Calculate how many DBDs are already stored in the ring buffer
+        uint8_t dbdBufferContains;
+        if (packetUBXMGADBD->head >= packetUBXMGADBD->tail) // Check if wrap-around has occurred
+        {
+          // Wrap-around has not occurred so do a simple subtraction
+          dbdBufferContains = packetUBXMGADBD->head - packetUBXMGADBD->tail;
+        }
+        else
+        {
+          // Wrap-around has occurred so do a simple subtraction but add in the buffer length (UBX_MGA_DBD_RINGBUFFER_LEN)
+          dbdBufferContains = ((uint8_t)(((uint16_t)packetUBXMGADBD->head + (uint16_t)UBX_MGA_DBD_RINGBUFFER_LEN) - (uint16_t)packetUBXMGADBD->tail));
+        }
+        // Have we got space to store this DBD?
+        if (dbdBufferContains < (UBX_MGA_DBD_RINGBUFFER_LEN - 1))
+        {
+          // Yes, we have, so store it
+          // We need to save the entire message - header, payload and checksum
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryHeader1 = UBX_SYNCH_1; 
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryHeader2 = UBX_SYNCH_2;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryClass = UBX_CLASS_MGA;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryID = UBX_MGA_DBD;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryLenLSB = (uint8_t)(msg->len & 0xFF); // We need to store the length of the DBD entry. The entry itself does not contain a length...
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryLenMSB = (uint8_t)((msg->len >> 8) & 0xFF);
+          for (uint16_t i = 0; i < msg->len; i++)
+          {
+            packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntry[i] = extractByte(msg, i);
+          }
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryChecksumA = msg->checksumA;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryChecksumB = msg->checksumB;
+          // Increment the head
+          packetUBXMGADBD->head++;
+          if (packetUBXMGADBD->head == UBX_MGA_DBD_RINGBUFFER_LEN)
+            packetUBXMGADBD->head = 0;
+        }
+        else
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->println(F("processUBXpacket: packetUBXMGADBD is full. DBD data will be lost!"));      
+          }
         }
       }
     }
@@ -4596,6 +4673,215 @@ size_t SFE_UBLOX_GNSS::findMGAANOForDateInternal(const uint8_t *dataBytes, size_
   return (dataPtr);
 }
 
+// Read the whole navigation data base. The receiver will send all available data from its internal database.
+// Data is written to dataBytes. Set maxNumDataBytes to the (maximum) size of dataBytes.
+// If the database exceeds maxNumDataBytes, the excess bytes will be lost.
+// The function returns the number of database bytes written to dataBytes.
+// The return value will be equal to maxNumDataBytes if excess data was received.
+// The function will timeout after maxWait milliseconds - in case the final UBX-MGA-ACK was missed.
+size_t SFE_UBLOX_GNSS::readNavigationDatabase(uint8_t *dataBytes, size_t maxNumDataBytes, uint16_t maxWait)
+{
+  // Allocate RAM to store the MGA ACK message
+  if (packetUBXMGAACK == NULL) initPacketUBXMGAACK(); //Check that RAM has been allocated for the MGA_ACK data
+  if (packetUBXMGAACK == NULL) //Bail if the RAM allocation failed
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGAACK RAM allocation failed!"));
+    }
+#endif
+    return ((size_t)0);
+  }
+  if (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any data?
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGAACK contains unprocessed data. Clearing it."));
+    }
+#endif
+    packetUBXMGAACK->tail = packetUBXMGAACK->head; // Clear the buffer by setting the tail equal to the head
+  }
+
+  // Allocate RAM to store the MGA DBD messages
+  if (packetUBXMGADBD == NULL) initPacketUBXMGADBD(); //Check that RAM has been allocated for the MGA_DBD data
+  if (packetUBXMGADBD == NULL) //Bail if the RAM allocation failed
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGADBD RAM allocation failed!"));
+    }
+#endif
+    return ((size_t)0);
+  }
+  if (packetUBXMGADBD->head != packetUBXMGADBD->tail) // Does the MGA DBD ringbuffer contain any data?
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGADBD contains unprocessed data. Clearing it."));
+    }
+#endif
+    packetUBXMGADBD->tail = packetUBXMGADBD->head; // Clear the buffer by setting the tail equal to the head
+  }
+
+  // Record what ackAiding is currently set to so we can restore it
+  uint8_t currentAckAiding = getAckAiding();
+  if (currentAckAiding == 255)
+    currentAckAiding = 0; // If the get failed, disable the ACKs when returning
+  // Enable ackAiding
+  setAckAiding(1);
+
+  // Record what i2cPollingWait is currently set to so we can restore it
+  uint8_t currentI2cPollingWait = i2cPollingWait;
+  // Set the I2C polling wait to 1ms
+  i2cPollingWait = 1;
+
+  // Construct the poll message:
+  uint8_t pollNaviDatabase[8]; // Create the UBX-MGA-DBD message by hand
+  memset(pollNaviDatabase, 0x00, 8); // Set all unused / reserved bytes and the checksum to zero
+
+  pollNaviDatabase[0] = UBX_SYNCH_1; // Sync char 1
+  pollNaviDatabase[1] = UBX_SYNCH_2; // Sync char 2
+  pollNaviDatabase[2] = UBX_CLASS_MGA; // Class
+  pollNaviDatabase[3] = UBX_MGA_DBD; // ID
+  pollNaviDatabase[4] = 0x00; // Length LSB
+  pollNaviDatabase[5] = 0x00; // Length MSB
+
+  for (uint8_t i = 2; i < 6; i++) // Calculate the checksum
+  {
+    pollNaviDatabase[6] += pollNaviDatabase[i];
+    pollNaviDatabase[7] += pollNaviDatabase[6];
+  }
+
+  // Push the poll message to the module.
+  // Do not Wait for an ACK - the DBD data will start arriving immediately.
+  size_t pushResult = pushAssistNowDataInternal(0, false, pollNaviDatabase, (size_t)8, SFE_UBLOX_MGA_ASSIST_ACK_NO, 0);
+
+  // Check pushResult == 1. Redundant?!
+  if (pushResult != 1)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: pushAssistNowDataInternal failed!"));
+    }
+#endif
+    i2cPollingWait = currentI2cPollingWait; // Restore i2cPollingWait
+    setAckAiding(currentAckAiding); // Restore Ack Aiding
+    return ((size_t)0);
+  }
+
+  // Now keep checking for the arrival of UBX-MGA-DBD packets and write them to dataBytes
+  bool keepGoing = true;
+  unsigned long startTime = millis();
+  uint32_t databaseEntriesRX = 0; // Keep track of how many database entries are received
+  size_t numBytesReceived = 0; // Keep track of how many bytes are received
+
+  while (keepGoing && (millis() < (startTime + maxWait)))
+  {
+    checkUblox();
+
+    while (packetUBXMGADBD->head != packetUBXMGADBD->tail) // Does the MGA DBD ringbuffer contain any data?
+    {
+      // The data will be valid - process will have already checked it. So we can simply copy the data into dataBuffer.
+      // We do not need to check if there is room to store the entire database entry. pushAssistNowData will check the data before pushing it.
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryHeader1;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryHeader2;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryClass;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryID;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenLSB;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenMSB;
+      size_t msgLen = (((size_t)packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenMSB) * 256) + ((size_t)packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenLSB);
+      for (size_t i = 0; i < msgLen; i++)
+      {
+        if (numBytesReceived < maxNumDataBytes)
+          *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntry[i];
+      }
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryChecksumA;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryChecksumB;
+
+      // Increment the tail
+      packetUBXMGADBD->tail++;
+      if (packetUBXMGADBD->tail == UBX_MGA_DBD_RINGBUFFER_LEN)
+        packetUBXMGADBD->tail = 0;
+
+      databaseEntriesRX++; // Increment the number of entries received
+    }
+
+    // The final MGA-ACK is sent at the end of the DBD packets. So, we need to check the ACK buffer _after_ the DBD buffer.
+    while (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any data?
+    {
+      // Check if we've received the correct ACK
+      bool dataAckd = true;
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == UBX_MGA_DBD); // Check if the message ID matches
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == (uint8_t)(databaseEntriesRX & 0xFF)); // Check if the ACK contents match databaseEntriesRX
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == (uint8_t)((databaseEntriesRX >> 8) & 0xFF));
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == (uint8_t)((databaseEntriesRX >> 16) & 0xFF));
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == (uint8_t)((databaseEntriesRX >> 24) & 0xFF));
+
+      if (dataAckd) // Is the ACK valid?
+      {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("readNavigationDatabase: ACK received. databaseEntriesRX is "));
+          _debugSerial->print(databaseEntriesRX);
+          _debugSerial->print(F(". numBytesReceived is "));
+          _debugSerial->print(numBytesReceived);
+          _debugSerial->print(F(". DBD read complete after "));
+          _debugSerial->print(millis() - startTime);
+          _debugSerial->println(F(" ms"));
+        }
+#endif
+        keepGoing = false;
+      }
+      // Increment the tail
+      packetUBXMGAACK->tail++;
+      if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+        packetUBXMGAACK->tail = 0;
+    }
+  }
+
+  if (keepGoing) // If keepGoing is still true, we must have timed out
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("readNavigationDatabase: DBD RX timed out!"));
+    }
+  }
+
+  i2cPollingWait = currentI2cPollingWait; // Restore i2cPollingWait
+  setAckAiding(currentAckAiding); // Restore Ack Aiding
+
+  return (numBytesReceived);
+}
+
+// PRIVATE: Allocate RAM for packetUBXMGADBD and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXMGADBD()
+{
+  packetUBXMGADBD = new UBX_MGA_DBD_t; //Allocate RAM for the main struct
+  if (packetUBXMGADBD == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXMGADBD: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXMGADBD->head = 0; // Initialize the ring buffer pointers
+  packetUBXMGADBD->tail = 0;
+  return (true);
+}
+
 // Support for data logging
 
 //Set the file buffer size. This must be called _before_ .begin
@@ -4768,7 +5054,7 @@ bool SFE_UBLOX_GNSS::storePacket(ubxPacket *msg)
   }
 
   //Store the two sync chars
-  uint8_t sync_chars[] = {0xB5, 0x62};
+  uint8_t sync_chars[] = {UBX_SYNCH_1, UBX_SYNCH_2};
   writeToFileBuffer(sync_chars, 2);
 
   //Store the Class & ID
@@ -10805,12 +11091,15 @@ uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
 //Max is 40Hz(?!)
 bool SFE_UBLOX_GNSS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 {
+  if (navFreq == 0) // Return now if navFreq is zero
+    return (false);
+
   if (navFreq > 40)
     navFreq = 40; // Limit navFreq to 40Hz so i2cPollingWait is set correctly
 
   //Adjust the I2C polling timeout based on update rate
   //Do this even if the sendCommand fails
-  i2cPollingWaitNAV = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWaitNAV = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data. Max is 250. Min is 6.
   i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   //Query the module
@@ -10861,7 +11150,10 @@ bool SFE_UBLOX_GNSS::setMeasurementRate(uint16_t rate, uint16_t maxWait)
     rate = 25;
 
   //Adjust the I2C polling timeout based on update rate
-  i2cPollingWaitNAV = rate / 4; //This is the number of ms to wait between checks for new I2C data
+  if (rate >= 1000)
+    i2cPollingWaitNAV = 250;
+  else
+    i2cPollingWaitNAV = rate / 4; //This is the number of ms to wait between checks for new I2C data
   i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   //Query the module
@@ -12177,12 +12469,15 @@ bool SFE_UBLOX_GNSS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sensor
 // Returns true if the setHNRNavigationRate is successful
 bool SFE_UBLOX_GNSS::setHNRNavigationRate(uint8_t rate, uint16_t maxWait)
 {
+  if (rate == 0) // Return now if rate is zero
+    return (false);
+
   if (rate > 40)
     rate = 40; // Limit rate to 40Hz so i2cPollingWait is set correctly
 
   //Adjust the I2C polling timeout based on update rate
   //Do this even if the sendCommand is not ACK'd
-  i2cPollingWaitHNR = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWaitHNR = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data. Max 250. Min 6.
   i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   packetCfg.cls = UBX_CLASS_CFG;

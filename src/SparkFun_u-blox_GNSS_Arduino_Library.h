@@ -741,6 +741,15 @@ public:
 	size_t findMGAANOForDate(const String &dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture = 0);
 	size_t findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture = 0);
 
+	// Read the whole navigation data base. The receiver will send all available data from its internal database.
+	// Data is written to dataBytes. Set maxNumDataBytes to the (maximum) size of dataBytes.
+	// If the database exceeds maxNumDataBytes, the excess bytes will be lost.
+	// The function returns the number of database bytes written to dataBytes.
+	// The return value will be equal to maxNumDataBytes if excess data was received.
+	// The function will timeout after maxWait milliseconds - in case the final UBX-MGA-ACK was missed.
+	#define defaultNavDBDMaxWait 3100
+	size_t readNavigationDatabase(uint8_t *dataBytes, size_t maxNumDataBytes, uint16_t maxWait = defaultNavDBDMaxWait);
+
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
 	uint16_t getFileBufferSize(void); // Return the size of the file buffer
@@ -878,14 +887,14 @@ public:
 	uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = 250);									 //Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 	uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = 250);									 //Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 
-// getPVT will only return data once in each navigation cycle. By default, that is once per second.
-// Therefore we should set defaultMaxWait to slightly longer than that.
-// If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
-// then you should use a shorter maxWait. 300msec would be about right: getPVT(300)
-
 	// get and set functions for all of the "automatic" message processing
 
 	// Navigation (NAV)
+
+	// getPVT will only return data once in each navigation cycle. By default, that is once per second.
+	// Therefore we should set defaultMaxWait to slightly longer than that.
+	// If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
+	// then you should use a shorter maxWait. 300msec would be about right: getPVT(300)
 
 	bool getNAVPOSECEF(uint16_t maxWait = defaultMaxWait); // NAV POSECEF
 	bool setAutoNAVPOSECEF(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic POSECEF reports at the navigation frequency
@@ -1325,6 +1334,7 @@ public:
 	UBX_HNR_INS_t *packetUBXHNRINS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	UBX_MGA_ACK_DATA0_t *packetUBXMGAACK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_MGA_DBD_t *packetUBXMGADBD = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -1401,6 +1411,7 @@ private:
 	bool initPacketUBXHNRINS(); // Allocate RAM for packetUBXHNRINS and initialize it
 	bool initPacketUBXHNRPVT(); // Allocate RAM for packetUBXHNRPVT and initialize it
 	bool initPacketUBXMGAACK(); // Allocate RAM for packetUBXMGAACK and initialize it
+	bool initPacketUBXMGADBD(); // Allocate RAM for packetUBXMGADBD and initialize it
 
 	//Variables
 	TwoWire *_i2cPort;				//The generic connection to user's chosen I2C hardware

@@ -7,6 +7,10 @@
 
   This example shows how to enable, check the status of, and read the AssistNow Autonomous data from the module.
 
+  Note: this example will only work on boards which have plenty of RAM available.
+        The database can be several kBytes in length and needs to be stored twice:
+        once inside the library (by readNavigationDatabase); and again in this example code.
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   SparkFun Thing Plus - ESP32 WROOM:        https://www.sparkfun.com/products/15663
@@ -49,6 +53,8 @@ void setup()
 
   myGNSS.setI2COutput(COM_TYPE_UBX); //Turn off NMEA noise
 
+  //myGNSS.enableDebugging(Serial, true); // Uncomment this line to see helpful debug messages on Serial
+
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Enable AssistNow Autonomous data collection.
 
@@ -63,30 +69,79 @@ void setup()
   }
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // Keep calling getAOPSTATUSstatus until it returns zero (indicating AssistNow Autonomous data collection si complete)
+  // Keep calling getAOPSTATUSstatus until it returns zero (indicating AssistNow Autonomous data collection is complete)
   // or the user presses a key
 
   Serial.println(F("AssistNow Autonomous data collection is in progress. Press any key to quit."));
+  Serial.println(F("NAV AOPSTATUS status indicates when the AssistNow Autonomous subsystem is idle (0) or running (not 0)."));
 
   bool keepGoing = true;
+  int zerosSeen = 0; // Keep track of how many times aopStatus has been zero
   while (Serial.available()) Serial.read(); // Empty the serial buffer
 
-  while (keepGoing && !Serial.available()); // Wait keepGoing to go false, or for the arrival of a keypress
+  while (keepGoing && !Serial.available()) // Wait for keepGoing to go false, or for the arrival of a keypress
   {
     delay(1000);
-    Serial.print(F("NAV AOPSTATUS status is: "));
     uint8_t aopStatus = myGNSS.getAOPSTATUSstatus();
-    Serial.print(aopStatus);
-    Serial.println(F(". (Don't worry! This could take a _long_ time...)"));
+    Serial.print(F("NAV AOPSTATUS status is: "));
+    Serial.println(aopStatus);
     if (aopStatus == 0) // aopStatus will be zero when the AssistNow Autonomous subsystem is idle - i.e. data collection is complete
-      keepGoing = false;
+    {
+      zerosSeen++; // Keep track of how long aopStatus has been zero
+      if (zerosSeen >= 30)
+        keepGoing = false; // Stop after seeing 30 consecutive zeros
+    }
+    else
+    {
+      zerosSeen = 0; // Reset the number of zeros seen
+    }
   }
 
   if (!keepGoing)
-        Serial.print(F("AssistNow Autonomous data collection is complete!"));
+    Serial.println(F("AssistNow Autonomous data collection is complete!"));
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // Read the AssistNow Autonomous data from the module and pretty-print it (so it can be copied and pasted into Example2)        
+  // Read the AssistNow Autonomous data from the module and pretty-print it (so it can be copied and pasted into Example2)
+
+  #define MAX_DATABASE_LENGTH 32768 // Allocate 32kBytes to store the navigation database
+  size_t maxDatabaseLen = MAX_DATABASE_LENGTH;
+  uint8_t *database = new uint8_t[MAX_DATABASE_LENGTH]; // The database will be stored here
+
+  Serial.println(F("Storage has been allocated for the database.")); Serial.flush();
+
+  size_t actualDatabaseLen = myGNSS.readNavigationDatabase(database, maxDatabaseLen); // Read the database
+
+  Serial.print(F("The Navigation Database length was "));
+  Serial.println(actualDatabaseLen);
+
+  if (actualDatabaseLen == maxDatabaseLen)
+    Serial.println(F("There was not enough memory to store the entire database. Some data will have been lost!"));
+
+  // Pretty-print the database so it can be copied into Example2
+  Serial.println(F("Copy and paste the following into Example2, so you can write it back to the module:"));
+  Serial.println();
+  Serial.print(F("size_t databaseLen = "));
+  Serial.print(actualDatabaseLen);
+  Serial.println(F(";"));
+  Serial.print(F("const uint8_t database["));
+  Serial.print(actualDatabaseLen);
+  Serial.println(F("] = {"));
+  size_t i;
+  for(i = 0; i < actualDatabaseLen; i++)
+  {
+    if ((i % 32) == 0)
+      Serial.print(F("  0x"));
+    if (*(database + i) < 0x10) // Print leading zero
+      Serial.print(F("0"));
+    Serial.print(*(database + i), HEX);
+    if (i == (actualDatabaseLen - 1))
+      Serial.println();
+    else if ((i % 32) == 31)
+      Serial.println(F(","));
+    else
+      Serial.print(F(", 0x"));
+  }
+  Serial.println(F("};"));
 
 }
 
@@ -94,4 +149,5 @@ void setup()
 
 void loop()
 {
+  // Nothing to do here
 }

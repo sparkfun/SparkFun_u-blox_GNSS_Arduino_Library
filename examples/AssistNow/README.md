@@ -174,3 +174,33 @@ AssistNow Autonomous is disabled by default. You can enable it by calling ```set
 
 * set ```aopCfg``` to 1 to enable AssistNow Autonomous, or 0 to disable it
 * ```aopOrbMaxErr``` is used to set the 'lifetime' of the AssistNow data. It is recommended to set aopOrbMaxErr to 0 (the default value). This instructs the module to use the firmware default value that corresponds to a default orbit data validity of approximately three days (for GPS satellites observed once) and up to six days (for GPS and GLONASS satellites observed multiple times over a period of at least half a day).
+
+Once AssistNow Autonomous is enabled, you can monitor its progress via the ```status``` field in the UBX-NAV-AOPSTATUS message. You can read the ```status``` by calling ```getAOPSTATUSstatus```. It will return zero when the AssistNow Autonomous data collection is complete. Non-zero values indicate that data collection is still in progress.
+
+* <b>uint8_t getAOPSTATUSstatus(uint16_t maxWait);</b>
+* <b>uint8_t getAOPSTATUSuseAOP(uint16_t maxWait);</b>
+
+We have included full 'auto' support for UBX-NAV-AOPSTATUS, so you can have the message delivered periodically, add a callback for it, and/or log it to the file buffer:
+
+* <b>bool getAOPSTATUS(uint16_t maxWait);</b>
+* <b>bool setAutoAOPSTATUS(bool enabled, uint16_t maxWait);</b>
+* <b>bool setAutoAOPSTATUS(bool enabled, bool implicitUpdate, uint16_t maxWait);</b>
+* <b>bool setAutoAOPSTATUSrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait);</b>
+* <b>bool setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait);</b>
+* <b>bool assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate);</b>
+* <b>void flushAOPSTATUS();</b>
+* <b>void logNAVAOPSTATUS(bool enabled);</b>
+
+The AssistNow Autonomous data is stored in the module's RAM memory. If that RAM is Battery-Backed - all SparkFun GNSS boards include battery back-up - then the data will be available after the module is powered down and powered back up again. However, you can also read (poll) the navigation database and store the contents in processor memory. ```readNavigationDatabase``` allows you to do that:
+
+* <b>size_t readNavigationDatabase(uint8_t *dataBytes, size_t maxNumDataBytes, uint16_t maxWait);</b>
+
+Data is written to ```dataBytes```. Set ```maxNumDataBytes``` to the (maximum) size of dataBytes. If the database exceeds maxNumDataBytes, the excess bytes will be lost.
+
+```readNavigationDatabase``` returns the number of database bytes written to ```dataBytes```. The return value will be equal to ```maxNumDataBytes``` if excess data was received.
+
+```readNavigationDatabase```  will timeout after ```maxWait``` milliseconds - in case the final UBX-MGA-ACK was missed.
+
+You can then write the database back into the module using ```pushAssistNowData```. Don't forget to call ```setUTCTimeAssistance``` _before_ ```pushAssistNowData```.
+
+Note: UBX-MGA-DBD messages are only intended to be sent back to the same receiver that generated them. They are firmware-specific.

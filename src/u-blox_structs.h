@@ -1728,6 +1728,30 @@ typedef struct
   UBX_MGA_ACK_DATA0_data_t data[UBX_MGA_ACK_DATA0_RINGBUFFER_LEN]; // Create a storage array for the MGA ACK packets
 } UBX_MGA_ACK_DATA0_t;
 
+// UBX-MGA-DBD (0x13 0x80): Navigation database dump entry
+const uint16_t UBX_MGA_DBD_LEN = 164; // "The maximum payload size for firmware 2.01 onwards is 164 bytes"
+
+typedef struct
+{
+  uint8_t dbdEntryHeader1; // We need to save the entire message - header, payload and checksum
+  uint8_t dbdEntryHeader2;
+  uint8_t dbdEntryClass;
+  uint8_t dbdEntryID;
+  uint8_t dbdEntryLenLSB; // We need to store the length of the DBD entry. The entry itself does not contain a length...
+  uint8_t dbdEntryLenMSB;
+  uint8_t dbdEntry[UBX_MGA_DBD_LEN];
+  uint8_t dbdEntryChecksumA;
+  uint8_t dbdEntryChecksumB;
+} UBX_MGA_DBD_data_t;
+
+#define UBX_MGA_DBD_RINGBUFFER_LEN 256 // Provide storage for MGA DBD packets. TO DO: confirm if 256 is large enough!
+typedef struct
+{
+	uint8_t head;
+  uint8_t tail;
+  UBX_MGA_DBD_data_t data[UBX_MGA_DBD_RINGBUFFER_LEN]; // Create a storage array for the MGA DBD packets
+} UBX_MGA_DBD_t;
+
 // HNR-specific structs
 
 // UBX-HNR-PVT (0x28 0x00): High rate output of PVT solution

@@ -95,6 +95,7 @@ setUTCTimeAssistance	KEYWORD2
 setPositionAssistanceXYZ	KEYWORD2
 setPositionAssistanceLLH	KEYWORD2
 findMGAANOForDate	KEYWORD2
+readNavigationDatabase	KEYWORD2
 
 setFileBufferSize	KEYWORD2
 getFileBufferSize	KEYWORD2
