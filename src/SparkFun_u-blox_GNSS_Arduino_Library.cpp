@@ -4486,7 +4486,7 @@ bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t 
   }
 
   // Return true if the one packet was pushed successfully
-  return (pushAssistNowDataInternal(0, false, iniTimeUTC, 32, mgaAck, maxWait) == 1);
+  return (pushAssistNowDataInternal(0, false, iniTimeUTC, 32, mgaAck, maxWait) == 32);
 }
 
 // Provide initial position assistance
@@ -4541,7 +4541,7 @@ bool SFE_UBLOX_GNSS::setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int3
   }
 
   // Return true if the one packet was pushed successfully
-  return (pushAssistNowDataInternal(0, false, iniPosXYZ, 28, mgaAck, maxWait) == 1);
+  return (pushAssistNowDataInternal(0, false, iniPosXYZ, 28, mgaAck, maxWait) == 28);
 }
 
 // The units for lat and lon are degrees * 1e-7 (WGS84)
@@ -4596,7 +4596,7 @@ bool SFE_UBLOX_GNSS::setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t 
   }
 
   // Return true if the one packet was pushed successfully
-  return (pushAssistNowDataInternal(0, false, iniPosLLH, 28, mgaAck, maxWait) == 1);
+  return (pushAssistNowDataInternal(0, false, iniPosLLH, 28, mgaAck, maxWait) == 28);
 }
 
 // Find the start of the AssistNow Offline (UBX_MGA_ANO) data for the chosen day
@@ -4831,8 +4831,8 @@ size_t SFE_UBLOX_GNSS::readNavigationDatabase(uint8_t *dataBytes, size_t maxNumD
   // Do not Wait for an ACK - the DBD data will start arriving immediately.
   size_t pushResult = pushAssistNowDataInternal(0, false, pollNaviDatabase, (size_t)8, SFE_UBLOX_MGA_ASSIST_ACK_NO, 0);
 
-  // Check pushResult == 1. Redundant?!
-  if (pushResult != 1)
+  // Check pushResult == 8
+  if (pushResult != 8)
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if (_printDebug == true)
