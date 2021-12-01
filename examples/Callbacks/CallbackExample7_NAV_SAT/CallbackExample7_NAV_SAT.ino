@@ -40,7 +40,7 @@ void newNAVSAT(UBX_NAV_SAT_data_t ubxDataStruct)
   if (ubxDataStruct.header.numSvs == 1)
     Serial.println(F(" SV."));
   else
-    Serial.println(F(" SVs.));
+    Serial.println(F(" SVs."));
 
   // Just for giggles, print the signal strength for each SV as a barchart
   for (uint16_t block = 0; block < ubxDataStruct.header.numSvs; block++) // For each SV
