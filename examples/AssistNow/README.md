@@ -118,6 +118,8 @@ The const uint8_t * function declarations are:
 
 * <b>uint8_t getAckAiding(uint16_t maxWait);</b>
 
+```pushAssistNowData``` returns the number of _bytes_ pushed (not the number of _packets_). The return value should be equal to ```numDataBytes``` if all data was valid and pushed successfully.
+
 AssistNow Online data is valid for 2-4 hours. 'Stale' data can be re-used but:
 
 * ```pushAssistNowData``` needs to be told to skip the time information contained in the AssistNow data
@@ -176,7 +178,7 @@ AssistNow Autonomous is disabled by default. You can enable it by calling ```set
 * set ```aopCfg``` to 1 to enable AssistNow Autonomous, or 0 to disable it
 * ```aopOrbMaxErr``` is used to set the 'lifetime' of the AssistNow data. It is recommended to set aopOrbMaxErr to 0 (the default value). This instructs the module to use the firmware default value that corresponds to a default orbit data validity of approximately three days (for GPS satellites observed once) and up to six days (for GPS and GLONASS satellites observed multiple times over a period of at least half a day).
 
-Once AssistNow Autonomous is enabled, you can monitor its progress via the ```status``` field in the UBX-NAV-AOPSTATUS message. You can read the ```status``` by calling the helper function ```getAOPSTATUSstatus```. It will return zero when the AssistNow Autonomous data collection is idle. Non-zero values indicate that data collection is in progress.
+Once AssistNow Autonomous is enabled, you can monitor its status via the ```status``` field in the UBX-NAV-AOPSTATUS message. You can read the ```status``` by calling the helper function ```getAOPSTATUSstatus```. It will return zero when the AssistNow Autonomous data collection is idle. Non-zero values indicate that data collection is in progress. Only power-off the receiver when the subsystem is idle (that is, when the status shows a steady zero).
 
 * <b>uint8_t getAOPSTATUSstatus(uint16_t maxWait);</b>
 * <b>uint8_t getAOPSTATUSuseAOP(uint16_t maxWait);</b>
@@ -190,7 +192,18 @@ We have included full 'auto' support for UBX-NAV-AOPSTATUS, so you can have the 
 * <b>bool setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait);</b>
 * <b>bool assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate);</b>
 * <b>void flushAOPSTATUS();</b>
-* <b>void logNAVAOPSTATUS(bool enabled);</b>
+* <b>void logAOPSTATUS(bool enabled);</b>
+
+You can also monitor the AssistNow Autonomous satellite information via the UBX-NAV-SAT message. Again, we have included full 'auto' support for UBX-NAV-SAT. UBX-NAV-SAT contains useful information for each individual satellite which the module has aquired: carrier to noise ratio (signal strength); elevation; azimuth; pseudorange residual; quality indication, health; ephemeris available; almanac available; **AssistNow Offline data availability**; and more. The data can be analyzed using a callback. Please see the AssistNowAutonomous examples for more details.
+
+* <b>bool getNAVSAT(uint16_t maxWait);</b>
+* <b>bool setAutoNAVSAT(bool enabled, uint16_t maxWait);</b>
+* <b>bool setAutoNAVSAT(bool enabled, bool implicitUpdate, uint16_t maxWait);</b>
+* <b>bool setAutoNAVSATrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait);</b>
+* <b>bool setAutoNAVSATcallback(void (*callbackPointer)(UBX_NAV_NAVSAT_data_t), uint16_t maxWait);</b>
+* <b>bool assumeAutoNAVSAT(bool enabled, bool implicitUpdate);</b>
+* <b>void flushNAVSAT();</b>
+* <b>void logNAVSAT(bool enabled);</b>
 
 The AssistNow Autonomous data is stored in the module's RAM memory. If that RAM is Battery-Backed - all SparkFun GNSS boards include battery back-up - then the data will be available after the module is powered down and powered back up again. However, you can also read (poll) the navigation database and store the contents in processor memory. ```readNavigationDatabase``` allows you to do that:
 

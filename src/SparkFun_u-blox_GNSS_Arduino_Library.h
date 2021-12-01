@@ -709,7 +709,7 @@ public:
 	// Push MGA AssistNow data to the module.
 	// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE).
 	// Wait for maxWait millis after sending each packet (if mgaAck is NO).
-	// Return how many MGA packets were pushed successfully.
+	// Return how many bytes were pushed successfully.
 	// If skipTime is true, any UBX-MGA-INI-TIME_UTC or UBX-MGA-INI-TIME_GNSS packets found in the data will be skipped,
 	// allowing the user to override with their own time data with setUTCTimeAssistance.
 	// offset allows a sub-set of the data to be sent - starting from offset.
@@ -1002,6 +1002,15 @@ public:
 	// Add "auto" support for NAV TIMELS - to avoid needing 'global' storage
 	bool getLeapSecondEvent(uint16_t maxWait); //Reads leap second event info
 
+	bool getNAVSAT(uint16_t maxWait = defaultMaxWait); //Query module for latest AssistNow Autonomous status and load global vars:. If autoNAVSAT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new NAVSAT is available.
+	bool setAutoNAVSAT(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic NAVSAT reports at the navigation frequency
+	bool setAutoNAVSAT(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic NAVSAT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	bool setAutoNAVSATrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic NAVSAT reports
+	bool setAutoNAVSATcallback(void (*callbackPointer)(UBX_NAV_SAT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic NAVSAT reports at the navigation frequency. Data is accessed from the callback.
+	bool assumeAutoNAVSAT(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and NAVSAT is send cyclically already
+	void flushNAVSAT(); //Mark all the NAVSAT data as read/stale
+	void logNAVSAT(bool enabled = true); // Log data to file buffer
+
 	bool getRELPOSNED(uint16_t maxWait = defaultMaxWait); //Get Relative Positioning Information of the NED frame
 	bool setAutoRELPOSNED(bool enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED reports
 	bool setAutoRELPOSNED(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -1018,7 +1027,7 @@ public:
 	bool setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic AOPSTATUS reports at the navigation frequency. Data is accessed from the callback.
 	bool assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and AOPSTATUS is send cyclically already
 	void flushAOPSTATUS(); //Mark all the AOPSTATUS data as read/stale
-	void logNAVAOPSTATUS(bool enabled = true); // Log data to file buffer
+	void logAOPSTATUS(bool enabled = true); // Log data to file buffer
 
 	// Receiver Manager Messages (RXM)
 
@@ -1313,6 +1322,7 @@ public:
 	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_SAT_t *packetUBXNAVSAT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_AOPSTATUS_t *packetUBXNAVAOPSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
@@ -1396,6 +1406,7 @@ private:
 	bool initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
 	bool initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	bool initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
+	bool initPacketUBXNAVSAT(); // Allocate RAM for packetUBXNAVSAT and initialize it
 	bool initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 	bool initPacketUBXNAVAOPSTATUS(); // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
 	bool initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it

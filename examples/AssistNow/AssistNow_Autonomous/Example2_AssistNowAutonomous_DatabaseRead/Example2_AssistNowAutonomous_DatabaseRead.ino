@@ -1,5 +1,5 @@
 /*
-  Read the AssistNow Autonomous data from the module
+  Read the AssistNow Autonomous database from the module
   By: SparkFun Electronics / Paul Clark
   Date: November 29th, 2021
   License: MIT. See license file for more information but you can
@@ -8,8 +8,7 @@
   This example shows how to enable, check the status of, and read the AssistNow Autonomous data from the module.
 
   Note: this example will only work on boards which have plenty of RAM available.
-        The database can be several kBytes in length and needs to be stored twice:
-        once inside the library (by readNavigationDatabase); and again in this example code.
+        The database can be several kBytes in length.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -25,6 +24,59 @@
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// Callback: printSATdata will be called when new NAV SAT data arrives
+// See u-blox_structs.h for the full definition of UBX_NAV_SAT_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoNAVSATcallback
+//        /                  _____  This _must_ be UBX_NAV_SAT_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void printSATdata(UBX_NAV_SAT_data_t ubxDataStruct)
+{
+  Serial.println();
+  
+  Serial.print(F("UBX-NAV-SAT contains data for "));
+  Serial.print(ubxDataStruct.header.numSvs);
+  if (ubxDataStruct.header.numSvs == 1)
+    Serial.println(F(" SV"));
+  else
+    Serial.println(F(" SVs"));
+
+  uint16_t numAopAvail = 0; // Count how many SVs have AssistNow Autonomous data available
+    
+  for (uint16_t block = 0; block < ubxDataStruct.header.numSvs; block++) // For each SV
+  {
+    if (ubxDataStruct.blocks[block].flags.bits.aopAvail == 1) // If the aopAvail bit is set
+      numAopAvail++; // Increment the number of SVs
+  }
+
+  Serial.print(F("AssistNow Autonomous data is available for "));
+  Serial.print(numAopAvail);
+  if (numAopAvail == 1)
+    Serial.println(F(" SV"));
+  else
+    Serial.println(F(" SVs"));
+}
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// Callback: printAOPstatus will be called when new NAV AOPSTATUS data arrives
+// See u-blox_structs.h for the full definition of UBX_NAV_AOPSTATUS_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoNAVAOPSTATUScallback
+//        /                  _____  This _must_ be UBX_NAV_AOPSTATUS_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void printAOPstatus(UBX_NAV_AOPSTATUS_data_t ubxDataStruct)
+{
+  //Serial.println();
+  
+  Serial.print(F("AOPSTATUS status is "));
+  Serial.println(ubxDataStruct.status);
+}
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -69,39 +121,40 @@ void setup()
   }
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // Keep calling getAOPSTATUSstatus until it returns zero (indicating AssistNow Autonomous data collection is complete)
-  // or the user presses a key
+  // Enable automatic UBX-NAV-SAT and UBX-NAV-AOPSTATUS messages and set up the callbacks
 
-  Serial.println(F("AssistNow Autonomous data collection is in progress. Press any key to quit."));
-  Serial.println(F("NAV AOPSTATUS status indicates when the AssistNow Autonomous subsystem is idle (0) or running (not 0)."));
+  myGNSS.setNavigationFrequency(1); //Produce one solution per second
 
-  bool keepGoing = true;
-  int zerosSeen = 0; // Keep track of how many times aopStatus has been zero
-  while (Serial.available()) Serial.read(); // Empty the serial buffer
-
-  while (keepGoing && !Serial.available()) // Wait for keepGoing to go false, or for the arrival of a keypress
-  {
-    delay(1000);
-    uint8_t aopStatus = myGNSS.getAOPSTATUSstatus();
-    Serial.print(F("NAV AOPSTATUS status is: "));
-    Serial.println(aopStatus);
-    if (aopStatus == 0) // aopStatus will be zero when the AssistNow Autonomous subsystem is idle - i.e. data collection is complete
-    {
-      zerosSeen++; // Keep track of how long aopStatus has been zero
-      if (zerosSeen >= 30)
-        keepGoing = false; // Stop after seeing 30 consecutive zeros
-    }
-    else
-    {
-      zerosSeen = 0; // Reset the number of zeros seen
-    }
-  }
-
-  if (!keepGoing)
-    Serial.println(F("AssistNow Autonomous data collection is complete!"));
+  myGNSS.setAutoNAVSATcallback(&printSATdata); // Enable automatic NAV SAT messages with callback to printSATdata
+  myGNSS.setAutoAOPSTATUScallback(&printAOPstatus); // Enable automatic NAV AOPSTATUS messages with callback to printAOPstatus
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // Read the AssistNow Autonomous data from the module and pretty-print it (so it can be copied and pasted into Example2)
+  // Keep displaying NAV SAT and AOPSTATUS until the user presses a key
+
+  Serial.println(F("AssistNow Autonomous data collection is in progress. Press any key to quit and read the database."));
+
+  while (Serial.available()) Serial.read(); // Empty the serial buffer
+
+  while (!Serial.available()) // Wait for the arrival of a keypress
+  {
+    myGNSS.checkUblox(); // Check for the arrival of new data and process it.
+    myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+  
+    Serial.print(".");
+    delay(50);
+  }
+
+  Serial.println();
+
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Disable the automatic UBX-NAV-SAT and UBX-NAV-AOPSTATUS messages
+
+  myGNSS.setAutoNAVSAT(false);
+  myGNSS.setAutoAOPSTATUS(false);
+  delay(1100);
+
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Read the AssistNow Autonomous database from the module and pretty-print it (so it can be copied and pasted into the next example)
 
   #define MAX_DATABASE_LENGTH 32768 // Allocate 32kBytes to store the navigation database
   size_t maxDatabaseLen = MAX_DATABASE_LENGTH;
@@ -117,8 +170,8 @@ void setup()
   if (actualDatabaseLen == maxDatabaseLen)
     Serial.println(F("There was not enough memory to store the entire database. Some data will have been lost!"));
 
-  // Pretty-print the database so it can be copied into Example2
-  Serial.println(F("Copy and paste the following into Example2, so you can write it back to the module:"));
+  // Pretty-print the database so it can be copied into the next example
+  Serial.println(F("Copy and paste the following into the next example, so you can write it back to the module:"));
   Serial.println();
   Serial.print(F("size_t databaseLen = "));
   Serial.print(actualDatabaseLen);

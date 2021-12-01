@@ -916,6 +916,79 @@ typedef struct
   UBX_NAV_TIMELS_data_t  *callbackData;
 } UBX_NAV_TIMELS_t;
 
+// UBX-NAV-SAT (0x01 0x35): Satellite Information
+const uint16_t UBX_NAV_SAT_MAX_BLOCKS = 256; // TO DO: confirm if this is large enough for all modules
+const uint16_t UBX_NAV_SAT_MAX_LEN = 8 + (12 * UBX_NAV_SAT_MAX_BLOCKS);
+
+typedef struct
+{
+  uint32_t iTOW; // GPS time of week
+  uint8_t version; // Message version (0x01 for this version)
+  uint8_t numSvs; // Number of satellites
+  uint8_t reserved1[2];
+} UBX_NAV_SAT_header_t;
+
+typedef struct
+{
+  uint8_t gnssId; // GNSS identifier
+  uint8_t svId; // Satellite identifier
+  uint8_t cno; // Carrier-to-noise density ratio: dB-Hz
+  int8_t elev; // Elevation (range: +/-90): deg
+  int16_t azim; // Azimuth (range 0-360): deg
+  int16_t prRes; // Pseudorange residual: m * 0.1
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t qualityInd : 3;  // Signal quality indicator: 0: no signal
+                                // 1: searching signal
+                                // 2: signal acquired
+                                // 3: signal detected but unusable
+                                // 4: code locked and time synchronized
+                                // 5, 6, 7: code and carrier locked and time synchronized
+      uint32_t svUsed : 1; // 1 = Signal in the subset specified in Signal Identifiers is currently being used for navigation
+      uint32_t health : 2; // Signal health flag: 0: unknown  1: healthy  2: unhealthy
+      uint32_t diffCorr : 1; // 1 = differential correction data is available for this SV
+      uint32_t smoothed : 1; // 1 = carrier smoothed pseudorange used
+      uint32_t orbitSource : 3; // Orbit source: 0: no orbit information is available for this SV
+                                // 1: ephemeris is used
+                                // 2: almanac is used
+                                // 3: AssistNow Offline orbit is used
+                                // 4: AssistNow Autonomous orbit is used
+                                // 5, 6, 7: other orbit information is used
+      uint32_t ephAvail : 1; // 1 = ephemeris is available for this SV
+      uint32_t almAvail : 1; // 1 = almanac is available for this SV
+      uint32_t anoAvail : 1; // 1 = AssistNow Offline data is available for this SV
+      uint32_t aopAvail : 1; // 1 = AssistNow Autonomous data is available for this SV
+      uint32_t reserved1 : 1;
+      uint32_t sbasCorrUsed : 1; // 1 = SBAS corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t rtcmCorrUsed : 1; // 1 = RTCM corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t slasCorrUsed : 1; // 1 = QZSS SLAS corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t spartnCorrUsed : 1; // 1 = SPARTN corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t prCorrUsed : 1; // 1 = Pseudorange corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t crCorrUsed : 1; // 1 = Carrier range corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t doCorrUsed : 1; // 1 = Range rate (Doppler) corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t reserved2 : 9;
+    } bits;
+  } flags;
+} UBX_NAV_SAT_block_t;
+
+typedef struct
+{
+  UBX_NAV_SAT_header_t header;
+  UBX_NAV_SAT_block_t blocks[UBX_NAV_SAT_MAX_BLOCKS];
+} UBX_NAV_SAT_data_t;
+
+typedef struct
+{
+	ubxAutomaticFlags automaticFlags;
+  UBX_NAV_SAT_data_t data;
+  bool moduleQueried;
+  void (*callbackPointer)(UBX_NAV_SAT_data_t);
+  UBX_NAV_SAT_data_t  *callbackData;
+} UBX_NAV_SAT_t;
+
 // UBX-NAV-SVIN (0x01 0x3B): Survey-in data
 const uint16_t UBX_NAV_SVIN_LEN = 40;
 
