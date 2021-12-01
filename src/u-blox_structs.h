@@ -65,6 +65,8 @@ struct ubxAutomaticFlags
   } flags;
 };
 
+// NAV-specific structs
+
 // UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF
 const uint16_t UBX_NAV_POSECEF_LEN = 20;
 
@@ -914,6 +916,79 @@ typedef struct
   UBX_NAV_TIMELS_data_t  *callbackData;
 } UBX_NAV_TIMELS_t;
 
+// UBX-NAV-SAT (0x01 0x35): Satellite Information
+const uint16_t UBX_NAV_SAT_MAX_BLOCKS = 256; // TO DO: confirm if this is large enough for all modules
+const uint16_t UBX_NAV_SAT_MAX_LEN = 8 + (12 * UBX_NAV_SAT_MAX_BLOCKS);
+
+typedef struct
+{
+  uint32_t iTOW; // GPS time of week
+  uint8_t version; // Message version (0x01 for this version)
+  uint8_t numSvs; // Number of satellites
+  uint8_t reserved1[2];
+} UBX_NAV_SAT_header_t;
+
+typedef struct
+{
+  uint8_t gnssId; // GNSS identifier
+  uint8_t svId; // Satellite identifier
+  uint8_t cno; // Carrier-to-noise density ratio: dB-Hz
+  int8_t elev; // Elevation (range: +/-90): deg
+  int16_t azim; // Azimuth (range 0-360): deg
+  int16_t prRes; // Pseudorange residual: m * 0.1
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t qualityInd : 3;  // Signal quality indicator: 0: no signal
+                                // 1: searching signal
+                                // 2: signal acquired
+                                // 3: signal detected but unusable
+                                // 4: code locked and time synchronized
+                                // 5, 6, 7: code and carrier locked and time synchronized
+      uint32_t svUsed : 1; // 1 = Signal in the subset specified in Signal Identifiers is currently being used for navigation
+      uint32_t health : 2; // Signal health flag: 0: unknown  1: healthy  2: unhealthy
+      uint32_t diffCorr : 1; // 1 = differential correction data is available for this SV
+      uint32_t smoothed : 1; // 1 = carrier smoothed pseudorange used
+      uint32_t orbitSource : 3; // Orbit source: 0: no orbit information is available for this SV
+                                // 1: ephemeris is used
+                                // 2: almanac is used
+                                // 3: AssistNow Offline orbit is used
+                                // 4: AssistNow Autonomous orbit is used
+                                // 5, 6, 7: other orbit information is used
+      uint32_t ephAvail : 1; // 1 = ephemeris is available for this SV
+      uint32_t almAvail : 1; // 1 = almanac is available for this SV
+      uint32_t anoAvail : 1; // 1 = AssistNow Offline data is available for this SV
+      uint32_t aopAvail : 1; // 1 = AssistNow Autonomous data is available for this SV
+      uint32_t reserved1 : 1;
+      uint32_t sbasCorrUsed : 1; // 1 = SBAS corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t rtcmCorrUsed : 1; // 1 = RTCM corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t slasCorrUsed : 1; // 1 = QZSS SLAS corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t spartnCorrUsed : 1; // 1 = SPARTN corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t prCorrUsed : 1; // 1 = Pseudorange corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t crCorrUsed : 1; // 1 = Carrier range corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t doCorrUsed : 1; // 1 = Range rate (Doppler) corrections have been used for a signal in the subset specified in Signal Identifiers
+      uint32_t reserved2 : 9;
+    } bits;
+  } flags;
+} UBX_NAV_SAT_block_t;
+
+typedef struct
+{
+  UBX_NAV_SAT_header_t header;
+  UBX_NAV_SAT_block_t blocks[UBX_NAV_SAT_MAX_BLOCKS];
+} UBX_NAV_SAT_data_t;
+
+typedef struct
+{
+	ubxAutomaticFlags automaticFlags;
+  UBX_NAV_SAT_data_t data;
+  bool moduleQueried;
+  void (*callbackPointer)(UBX_NAV_SAT_data_t);
+  UBX_NAV_SAT_data_t  *callbackData;
+} UBX_NAV_SAT_t;
+
 // UBX-NAV-SVIN (0x01 0x3B): Survey-in data
 const uint16_t UBX_NAV_SVIN_LEN = 40;
 
@@ -1070,6 +1145,51 @@ typedef struct
   void (*callbackPointer)(UBX_NAV_RELPOSNED_data_t);
   UBX_NAV_RELPOSNED_data_t  *callbackData;
 } UBX_NAV_RELPOSNED_t;
+
+// UBX-NAV-AOPSTATUS (0x01 0x60): AssistNow Autonomous status
+const uint16_t UBX_NAV_AOPSTATUS_LEN = 16;
+
+typedef struct
+{
+  uint32_t iTOW; // GPS time of week of the navigation epoch: ms
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t useAOP : 1; // AOP enabled flag
+    } bits;
+  } aopCfg; // AssistNow Autonomous configuration
+  uint8_t status; // AssistNow Autonomous subsystem is idle (0) or running (not 0)
+  uint8_t reserved1[10];
+} UBX_NAV_AOPSTATUS_data_t;
+
+typedef struct
+{
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t all : 1;
+
+      uint32_t iTOW : 1;
+
+      uint32_t useAOP : 1;
+
+      uint32_t status : 1;
+    } bits;
+  } moduleQueried;
+} UBX_NAV_AOPSTATUS_moduleQueried_t;
+
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  UBX_NAV_AOPSTATUS_data_t data;
+  UBX_NAV_AOPSTATUS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t);
+  UBX_NAV_AOPSTATUS_data_t  *callbackData;
+} UBX_NAV_AOPSTATUS_t;
 
 // RXM-specific structs
 
@@ -1655,6 +1775,55 @@ typedef struct
   void (*callbackPointer)(UBX_ESF_STATUS_data_t);
   UBX_ESF_STATUS_data_t  *callbackData;
 } UBX_ESF_STATUS_t;
+
+// MGA-specific structs
+
+// UBX-MGA-ACK-DATA0 (0x13 0x60): Multiple GNSS acknowledge message
+const uint16_t UBX_MGA_ACK_DATA0_LEN = 8;
+
+typedef struct
+{
+  uint8_t type;     // Type of acknowledgment:
+                    // 0: The message was not used by the receiver (see infoCode field for an indication of why)
+                    // 1: The message was accepted for use by the receiver (the infoCode field will be 0)
+  uint8_t version;  // Message version
+  uint8_t infoCode; // Provides greater information on what the receiver chose to do with the message contents
+                    // See sfe_ublox_mga_ack_infocode_e
+  uint8_t msgId;    // UBX message ID of the acknowledged message
+  uint8_t msgPayloadStart[4]; // The first 4 bytes of the acknowledged message's payload
+} UBX_MGA_ACK_DATA0_data_t;
+
+#define UBX_MGA_ACK_DATA0_RINGBUFFER_LEN 16 // Provide storage for 16 MGA ACK packets
+typedef struct
+{
+	uint8_t head;
+  uint8_t tail;
+  UBX_MGA_ACK_DATA0_data_t data[UBX_MGA_ACK_DATA0_RINGBUFFER_LEN]; // Create a storage array for the MGA ACK packets
+} UBX_MGA_ACK_DATA0_t;
+
+// UBX-MGA-DBD (0x13 0x80): Navigation database dump entry
+const uint16_t UBX_MGA_DBD_LEN = 164; // "The maximum payload size for firmware 2.01 onwards is 164 bytes"
+
+typedef struct
+{
+  uint8_t dbdEntryHeader1; // We need to save the entire message - header, payload and checksum
+  uint8_t dbdEntryHeader2;
+  uint8_t dbdEntryClass;
+  uint8_t dbdEntryID;
+  uint8_t dbdEntryLenLSB; // We need to store the length of the DBD entry. The entry itself does not contain a length...
+  uint8_t dbdEntryLenMSB;
+  uint8_t dbdEntry[UBX_MGA_DBD_LEN];
+  uint8_t dbdEntryChecksumA;
+  uint8_t dbdEntryChecksumB;
+} UBX_MGA_DBD_data_t;
+
+#define UBX_MGA_DBD_RINGBUFFER_LEN 256 // Provide storage for MGA DBD packets. TO DO: confirm if 256 is large enough!
+typedef struct
+{
+	uint8_t head;
+  uint8_t tail;
+  UBX_MGA_DBD_data_t data[UBX_MGA_DBD_RINGBUFFER_LEN]; // Create a storage array for the MGA DBD packets
+} UBX_MGA_DBD_t;
 
 // HNR-specific structs
 

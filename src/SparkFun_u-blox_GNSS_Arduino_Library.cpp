@@ -234,6 +234,16 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXNAVSVIN = NULL; // Redundant?
   }
 
+  if (packetUBXNAVSAT != NULL)
+  {
+    if (packetUBXNAVSAT->callbackData != NULL)
+    {
+      delete packetUBXNAVSAT->callbackData;
+    }
+    delete packetUBXNAVSAT;
+    packetUBXNAVSAT = NULL; // Redundant?
+  }
+
   if (packetUBXNAVRELPOSNED != NULL)
   {
     if (packetUBXNAVRELPOSNED->callbackData != NULL)
@@ -242,6 +252,16 @@ void SFE_UBLOX_GNSS::end(void)
     }
     delete packetUBXNAVRELPOSNED;
     packetUBXNAVRELPOSNED = NULL; // Redundant?
+  }
+
+  if (packetUBXNAVAOPSTATUS != NULL)
+  {
+    if (packetUBXNAVAOPSTATUS->callbackData != NULL)
+    {
+      delete packetUBXNAVAOPSTATUS->callbackData;
+    }
+    delete packetUBXNAVAOPSTATUS;
+    packetUBXNAVAOPSTATUS = NULL; // Redundant?
   }
 
   if (packetUBXRXMSFRBX != NULL)
@@ -332,6 +352,18 @@ void SFE_UBLOX_GNSS::end(void)
     }
     delete packetUBXESFRAW;
     packetUBXESFRAW = NULL; // Redundant?
+  }
+
+  if (packetUBXMGAACK != NULL)
+  {
+    delete packetUBXMGAACK;
+    packetUBXMGAACK = NULL; // Redundant?
+  }
+
+  if (packetUBXMGADBD != NULL)
+  {
+    delete packetUBXMGADBD;
+    packetUBXMGADBD = NULL; // Redundant?
   }
 
   if (packetUBXHNRATT != NULL)
@@ -1014,8 +1046,14 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_SVIN:
           if (packetUBXNAVSVIN != NULL) result = true;
         break;
+        case UBX_NAV_SAT:
+          if (packetUBXNAVSAT != NULL) result = true;
+        break;
         case UBX_NAV_RELPOSNED:
           if (packetUBXNAVRELPOSNED != NULL) result = true;
+        break;
+        case UBX_NAV_AOPSTATUS:
+          if (packetUBXNAVAOPSTATUS != NULL) result = true;
         break;
       }
     }
@@ -1071,6 +1109,19 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         break;
         case UBX_ESF_STATUS:
           if (packetUBXESFSTATUS != NULL) result = true;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_MGA:
+    {
+      switch (ID)
+      {
+        case UBX_MGA_ACK_DATA0:
+          if (packetUBXMGAACK != NULL) result = true;
+        break;
+        case UBX_MGA_DBD:
+          if (packetUBXMGADBD != NULL) result = true;
         break;
       }
     }
@@ -1144,8 +1195,14 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
         case UBX_NAV_SVIN:
           maxSize = UBX_NAV_SVIN_LEN;
         break;
+        case UBX_NAV_SAT:
+          maxSize = UBX_NAV_SAT_MAX_LEN;
+        break;
         case UBX_NAV_RELPOSNED:
           maxSize = UBX_NAV_RELPOSNED_LEN_F9;
+        break;
+        case UBX_NAV_AOPSTATUS:
+          maxSize = UBX_NAV_AOPSTATUS_LEN;
         break;
       }
     }
@@ -1205,6 +1262,19 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
       }
     }
     break;
+    case UBX_CLASS_MGA:
+    {
+      switch (ID)
+      {
+        case UBX_MGA_ACK_DATA0:
+          maxSize = UBX_MGA_ACK_DATA0_LEN;
+        break;
+        case UBX_MGA_DBD:
+          maxSize = UBX_MGA_DBD_LEN; // UBX_MGA_DBD_LEN is actually a maximum length. The packets could be shorter than this.
+        break;
+      }
+    }
+    break;
     case UBX_CLASS_HNR:
     {
       switch (ID)
@@ -1231,7 +1301,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 {
   if ((currentSentence == NONE) || (currentSentence == NMEA))
   {
-    if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
+    if (incoming == UBX_SYNCH_1) //UBX binary frames start with 0xB5, aka μ
     {
       //This is the start of a binary sentence. Reset flags.
       //We still don't know the response class
@@ -1263,9 +1333,9 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
   if (currentSentence == UBX)
   {
     //Decide what type of response this is
-    if ((ubxFrameCounter == 0) && (incoming != 0xB5))      //ISO 'μ'
+    if ((ubxFrameCounter == 0) && (incoming != UBX_SYNCH_1))      //ISO 'μ'
       currentSentence = NONE;                              //Something went wrong. Reset.
-    else if ((ubxFrameCounter == 1) && (incoming != 0x62)) //ASCII 'b'
+    else if ((ubxFrameCounter == 1) && (incoming != UBX_SYNCH_2)) //ASCII 'b'
       currentSentence = NONE;                              //Something went wrong. Reset.
     // Note to future self:
     // There may be some duplication / redundancy in the next few lines as processUBX will also
@@ -2334,6 +2404,46 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
+    else if (msg->id == UBX_NAV_SAT) // Note: length is variable
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVSAT != NULL)
+      {
+        packetUBXNAVSAT->data.header.iTOW = extractLong(msg, 0);
+        packetUBXNAVSAT->data.header.version = extractByte(msg, 4);
+        packetUBXNAVSAT->data.header.numSvs = extractByte(msg, 5);
+
+        for (uint8_t i = 0; (i < UBX_NAV_SAT_MAX_BLOCKS) && (i < packetUBXNAVSAT->data.header.numSvs)
+          && ((((uint16_t)i) * 12) < (msg->len - 8)); i++)
+        {
+          uint16_t offset = (((uint16_t)i) * 12) + 8;
+          packetUBXNAVSAT->data.blocks[i].gnssId = extractByte(msg, offset + 0);
+          packetUBXNAVSAT->data.blocks[i].svId = extractByte(msg, offset + 1);
+          packetUBXNAVSAT->data.blocks[i].cno = extractByte(msg, offset + 2);
+          packetUBXNAVSAT->data.blocks[i].elev = extractSignedChar(msg, offset + 3);
+          packetUBXNAVSAT->data.blocks[i].azim = extractSignedInt(msg, offset + 4);
+          packetUBXNAVSAT->data.blocks[i].prRes = extractSignedInt(msg, offset + 6);
+          packetUBXNAVSAT->data.blocks[i].flags.all = extractLong(msg, offset + 8);
+        }
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVSAT->moduleQueried = true;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVSAT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVSAT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVSAT->callbackData->header.iTOW, &packetUBXNAVSAT->data.header.iTOW, sizeof(UBX_NAV_SAT_data_t));
+          packetUBXNAVSAT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVSAT->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storePacket(msg);
+        }
+      }
+    }
     else if (msg->id == UBX_NAV_RELPOSNED && ((msg->len == UBX_NAV_RELPOSNED_LEN) || (msg->len == UBX_NAV_RELPOSNED_LEN_F9)))
     {
       //Parse various byte fields into storage - but only if we have memory allocated for it
@@ -2396,6 +2506,33 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
 
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storePacket(msg);
+        }
+      }
+    }
+    else if (msg->id == UBX_NAV_AOPSTATUS && msg->len == UBX_NAV_AOPSTATUS_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVAOPSTATUS != NULL)
+      {
+        packetUBXNAVAOPSTATUS->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVAOPSTATUS->data.aopCfg.all = extractByte(msg, 4);
+        packetUBXNAVAOPSTATUS->data.status = extractByte(msg, 5);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVAOPSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVAOPSTATUS->callbackData->iTOW, &packetUBXNAVAOPSTATUS->data.iTOW, sizeof(UBX_NAV_AOPSTATUS_data_t));
+          packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.addToFileBuffer)
         {
           storePacket(msg);
         }
@@ -2711,6 +2848,99 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         if (packetUBXESFSTATUS->automaticFlags.flags.bits.addToFileBuffer)
         {
           storePacket(msg);
+        }
+      }
+    }
+    break;
+  case UBX_CLASS_MGA:
+    if (msg->id == UBX_MGA_ACK_DATA0 && msg->len == UBX_MGA_ACK_DATA0_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXMGAACK != NULL)
+      {
+        // Calculate how many ACKs are already stored in the ring buffer
+        uint8_t ackBufferContains;
+        if (packetUBXMGAACK->head >= packetUBXMGAACK->tail) // Check if wrap-around has occurred
+        {
+          // Wrap-around has not occurred so do a simple subtraction
+          ackBufferContains = packetUBXMGAACK->head - packetUBXMGAACK->tail;
+        }
+        else
+        {
+          // Wrap-around has occurred so do a simple subtraction but add in the buffer length (UBX_MGA_ACK_RINGBUFFER_LEN)
+          ackBufferContains = ((uint8_t)(((uint16_t)packetUBXMGAACK->head + (uint16_t)UBX_MGA_ACK_DATA0_RINGBUFFER_LEN) - (uint16_t)packetUBXMGAACK->tail));
+        }
+        // Have we got space to store this ACK?
+        if (ackBufferContains < (UBX_MGA_ACK_DATA0_RINGBUFFER_LEN - 1))
+        {
+          // Yes, we have, so store it
+          packetUBXMGAACK->data[packetUBXMGAACK->head].type = extractByte(msg, 0);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].version = extractByte(msg, 1);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].infoCode = extractByte(msg, 2);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgId = extractByte(msg, 3);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[0] = extractByte(msg, 4);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[1] = extractByte(msg, 5);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[2] = extractByte(msg, 6);
+          packetUBXMGAACK->data[packetUBXMGAACK->head].msgPayloadStart[3] = extractByte(msg, 7);
+          // Increment the head
+          packetUBXMGAACK->head++;
+          if (packetUBXMGAACK->head == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+            packetUBXMGAACK->head = 0;
+        }
+        else
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->println(F("processUBXpacket: packetUBXMGAACK is full. ACK will be lost!"));      
+          }
+        }
+      }
+    }
+    else if (msg->id == UBX_MGA_DBD && msg->len <= UBX_MGA_DBD_LEN) // Message length may be less than UBX_MGA_DBD_LEN. UBX_MGA_DBD_LEN is the maximum it will be.
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXMGADBD != NULL)
+      {
+        // Calculate how many DBDs are already stored in the ring buffer
+        uint8_t dbdBufferContains;
+        if (packetUBXMGADBD->head >= packetUBXMGADBD->tail) // Check if wrap-around has occurred
+        {
+          // Wrap-around has not occurred so do a simple subtraction
+          dbdBufferContains = packetUBXMGADBD->head - packetUBXMGADBD->tail;
+        }
+        else
+        {
+          // Wrap-around has occurred so do a simple subtraction but add in the buffer length (UBX_MGA_DBD_RINGBUFFER_LEN)
+          dbdBufferContains = ((uint8_t)(((uint16_t)packetUBXMGADBD->head + (uint16_t)UBX_MGA_DBD_RINGBUFFER_LEN) - (uint16_t)packetUBXMGADBD->tail));
+        }
+        // Have we got space to store this DBD?
+        if (dbdBufferContains < (UBX_MGA_DBD_RINGBUFFER_LEN - 1))
+        {
+          // Yes, we have, so store it
+          // We need to save the entire message - header, payload and checksum
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryHeader1 = UBX_SYNCH_1; 
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryHeader2 = UBX_SYNCH_2;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryClass = UBX_CLASS_MGA;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryID = UBX_MGA_DBD;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryLenLSB = (uint8_t)(msg->len & 0xFF); // We need to store the length of the DBD entry. The entry itself does not contain a length...
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryLenMSB = (uint8_t)((msg->len >> 8) & 0xFF);
+          for (uint16_t i = 0; i < msg->len; i++)
+          {
+            packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntry[i] = extractByte(msg, i);
+          }
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryChecksumA = msg->checksumA;
+          packetUBXMGADBD->data[packetUBXMGADBD->head].dbdEntryChecksumB = msg->checksumB;
+          // Increment the head
+          packetUBXMGADBD->head++;
+          if (packetUBXMGADBD->head == UBX_MGA_DBD_RINGBUFFER_LEN)
+            packetUBXMGADBD->head = 0;
+        }
+        else
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->println(F("processUBXpacket: packetUBXMGADBD is full. DBD data will be lost!"));      
+          }
         }
       }
     }
@@ -3691,6 +3921,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
+  if ((packetUBXNAVSAT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVSAT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVSAT->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXNAVSAT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for NAV SAT"));
+    packetUBXNAVSAT->callbackPointer(*packetUBXNAVSAT->callbackData); // Call the callback
+    packetUBXNAVSAT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
   if ((packetUBXNAVRELPOSNED != NULL) // If RAM has been allocated for message storage
     && (packetUBXNAVRELPOSNED->callbackData != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXNAVRELPOSNED->callbackPointer != NULL) // If the pointer to the callback has been defined
@@ -3700,6 +3941,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV RELPOSNED"));
     packetUBXNAVRELPOSNED->callbackPointer(*packetUBXNAVRELPOSNED->callbackData); // Call the callback
     packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXNAVAOPSTATUS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVAOPSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVAOPSTATUS->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for NAV AOPSTATUS"));
+    packetUBXNAVAOPSTATUS->callbackPointer(*packetUBXNAVAOPSTATUS->callbackData); // Call the callback
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
   if ((packetUBXRXMSFRBX != NULL) // If RAM has been allocated for message storage
@@ -3931,6 +4183,776 @@ bool SFE_UBLOX_GNSS::pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool s
   }
 }
 
+// Push MGA AssistNow data to the module.
+// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE).
+// Wait for maxWait millis after sending each packet (if mgaAck is NO).
+// Return how many bytes were pushed successfully.
+// If skipTime is true, any UBX-MGA-INI-TIME_UTC or UBX-MGA-INI-TIME_GNSS packets found in the data will be skipped,
+// allowing the user to override with their own time data with setUTCTimeAssistance.
+size_t SFE_UBLOX_GNSS::pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(0, false, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(0, false, dataBytes, numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(0, skipTime, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(0, skipTime, dataBytes, numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(size_t offset, bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(offset, skipTime, (const uint8_t *)dataBytes.c_str(), numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowData(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  return (pushAssistNowDataInternal(offset, skipTime, dataBytes, numDataBytes, mgaAck, maxWait));
+}
+size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  size_t dataPtr = offset; // Pointer into dataBytes
+
+  if ((offset >= numDataBytes) || (offset < 0)) // Sanity check. Return now if offset is invalid.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->print(F("pushAssistNowData: offset ("));
+      _debugSerial->print(offset);
+      _debugSerial->println(F(") is invalid! Aborting..."));
+    }
+#endif
+    return ((size_t)0);
+  }
+
+  if (numDataBytes < 0) // Sanity check. Return now if numDataBytes is negative.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("pushAssistNowData: numDataBytes is negative! Aborting..."));
+    }
+#endif
+    return ((size_t)0);
+  }
+
+  size_t packetsProcessed = 0; // Keep count of how many packets have been processed
+  size_t bytesPushed = 0; // Keep count 
+
+  bool checkForAcks = (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_YES); // If mgaAck is YES, always check for Acks
+
+  // If mgaAck is ENQUIRE, we need to check UBX-CFG-NAVX5 ackAiding to determine if UBX-MGA-ACK's are expected
+  if (mgaAck == SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE)
+  {
+    uint8_t ackAiding = getAckAiding(maxWait); // Enquire if we should expect Acks
+    if (ackAiding == 1)
+      checkForAcks = true;
+
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->print(F("pushAssistNowData: mgaAck is ENQUIRE. getAckAiding returned "));
+      _debugSerial->println(ackAiding);
+    }
+#endif
+  }
+
+  // If checkForAcks is true, then we need to set up storage for the UBX-MGA-ACK-DATA0 messages
+  if (checkForAcks)
+  {
+    if (packetUBXMGAACK == NULL) initPacketUBXMGAACK(); //Check that RAM has been allocated for the MGA_ACK data
+    if (packetUBXMGAACK == NULL) //Bail if the RAM allocation failed
+      return (0);
+  }
+  
+  while (dataPtr < numDataBytes) // Keep going until we have processed all the bytes
+  {
+    // Start by checking the validity of the packet being pointed to
+    bool dataIsOK = true;
+
+    dataIsOK &= (*(dataBytes + dataPtr + 0) == UBX_SYNCH_1); // Check for 0xB5
+    dataIsOK &= (*(dataBytes + dataPtr + 1) == UBX_SYNCH_2); // Check for 0x62
+    dataIsOK &= (*(dataBytes + dataPtr + 2) == UBX_CLASS_MGA); // Check for class UBX-MGA
+    
+    size_t packetLength = ((size_t)*(dataBytes + dataPtr + 4)) | (((size_t)*(dataBytes + dataPtr + 5)) << 8); // Extract the length
+
+    uint8_t checksumA = 0;
+    uint8_t checksumB = 0;
+    // Calculate the checksum bytes
+    // Keep going until the end of the packet is reached (payloadPtr == (dataPtr + packetLength))
+    // or we reach the end of the AssistNow data (payloadPtr == numDataBytes)
+    for (size_t payloadPtr = dataPtr + ((size_t)2); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < numDataBytes); payloadPtr++)
+    {
+      checksumA += *(dataBytes + payloadPtr);
+      checksumB += checksumA;
+    }
+    // Check the checksum bytes
+    dataIsOK &= (checksumA == *(dataBytes + dataPtr + packetLength + ((size_t)6)));
+    dataIsOK &= (checksumB == *(dataBytes + dataPtr + packetLength + ((size_t)7)));
+
+    dataIsOK &= ((dataPtr + packetLength + ((size_t)8)) <= numDataBytes); // Check we haven't overrun
+
+    // If the data is valid, push it
+    if (dataIsOK)
+    {
+      // Check if this is time assistance data which should be skipped
+      if ((skipTime) && ((*(dataBytes + dataPtr + 3) == UBX_MGA_INI_TIME_UTC) || (*(dataBytes + dataPtr + 3) == UBX_MGA_INI_TIME_GNSS)))
+      {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("pushAssistNowData: skipped INI_TIME ID 0x"));
+          if (*(dataBytes + dataPtr + 3) < 0x10)
+            _debugSerial->print(F("0"));
+          _debugSerial->println(*(dataBytes + dataPtr + 3), HEX);
+        }
+#endif
+      }
+      else
+      {
+        bool pushResult = pushRawData((uint8_t *)(dataBytes + dataPtr), packetLength + ((size_t)8)); // Push the data
+
+        if (pushResult)
+          bytesPushed += packetLength + ((size_t)8); // Increment bytesPushed if the push was successful
+
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("pushAssistNowData: packet ID 0x"));
+          if (*(dataBytes + dataPtr + 3) < 0x10)
+            _debugSerial->print(F("0"));
+          _debugSerial->print(*(dataBytes + dataPtr + 3), HEX);
+          _debugSerial->print(F(" length "));
+          _debugSerial->println(packetLength);
+        }
+
+        if (checkForAcks)
+        {
+          unsigned long startTime = millis();
+          bool keepGoing = true;
+          while (keepGoing && (millis() < (startTime + maxWait))) // Keep checking for the ACK until we time out
+          {
+            checkUblox();
+            if (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any ACK's?
+            {
+              bool dataAckd = true; // Check if we've received the correct ACK
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == *(dataBytes + dataPtr + 3)); // Check if the message ID matches
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == *(dataBytes + dataPtr + 6)); // Check if the first four data bytes match
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == *(dataBytes + dataPtr + 7));
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == *(dataBytes + dataPtr + 8));
+              dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == *(dataBytes + dataPtr + 9));
+
+              if (dataAckd) // Is this the ACK we are looking for?
+              {
+                if ((packetUBXMGAACK->data[packetUBXMGAACK->tail].type == (uint8_t)1) && (packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode == (uint8_t)SFE_UBLOX_MGA_ACK_INFOCODE_ACCEPTED))
+                {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+                  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+                  {
+                    _debugSerial->print(F("pushAssistNowData: packet was accepted after "));
+                    _debugSerial->print(millis() - startTime);
+                    _debugSerial->println(F(" ms"));
+                  }
+#endif
+                  packetsProcessed++;
+                }
+                else
+                {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+                  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+                  {
+                    _debugSerial->print(F("pushAssistNowData: packet was _not_ accepted. infoCode is "));
+                    _debugSerial->println(packetUBXMGAACK->data[packetUBXMGAACK->tail].infoCode);
+                  }
+#endif
+                }
+                keepGoing = false;
+              }
+              // Increment the tail
+              packetUBXMGAACK->tail++;
+              if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+                packetUBXMGAACK->tail = 0;
+            }
+          }
+          if (keepGoing) // If keepGoing is still true, we must have timed out
+          {
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+            {
+              _debugSerial->println(F("pushAssistNowData: packet ack timed out!"));
+            }
+          }
+        }
+        else
+        {
+          // We are not checking for Acks, so let's assume the send was successful?
+          packetsProcessed++;
+          // We are not checking for Acks, so delay for maxWait millis unless we've reached the end of the data
+          if ((dataPtr + packetLength + ((size_t)8)) < numDataBytes)
+          {
+            delay(maxWait);
+          }
+        }
+      }
+
+      dataPtr += packetLength + ((size_t)8); // Point to the next message
+    }
+    else
+    {
+ 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+      // The data was invalid. Send a debug message and then try to find the next 0xB5
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      {
+        _debugSerial->print(F("pushAssistNowData: bad data - ignored! dataPtr is "));
+        _debugSerial->println(dataPtr);
+      }
+#endif
+      
+      while ((dataPtr < numDataBytes) && (*(dataBytes + ++dataPtr) != UBX_SYNCH_1))
+      {
+        ; // Increment dataPtr until we are pointing at the next 0xB5 - or we reach the end of the data
+      }
+    }
+  }
+
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+  if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+  {
+    _debugSerial->print(F("pushAssistNowData: packetsProcessed: "));
+    _debugSerial->println(packetsProcessed);
+  }
+#endif
+
+  return (bytesPushed); // Return the number of valid bytes successfully pushed
+}
+
+// PRIVATE: Allocate RAM for packetUBXMGAACK and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXMGAACK()
+{
+  packetUBXMGAACK = new UBX_MGA_ACK_DATA0_t; //Allocate RAM for the main struct
+  if (packetUBXMGAACK == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXMGAACK: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXMGAACK->head = 0; // Initialize the ring buffer pointers
+  packetUBXMGAACK->tail = 0;
+  return (true);
+}
+
+// Provide initial time assistance
+bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  uint8_t iniTimeUTC[32]; // Create the UBX-MGA-INI-TIME_UTC message by hand
+  memset(iniTimeUTC, 0x00, 32); // Set all unused / reserved bytes and the checksum to zero
+
+  iniTimeUTC[0] = UBX_SYNCH_1; // Sync char 1
+  iniTimeUTC[1] = UBX_SYNCH_2; // Sync char 2
+  iniTimeUTC[2] = UBX_CLASS_MGA; // Class
+  iniTimeUTC[3] = UBX_MGA_INI_TIME_UTC; // ID
+  iniTimeUTC[4] = 24; // Length LSB
+  iniTimeUTC[5] = 0x00; // Length MSB
+  iniTimeUTC[6] = 0x10; // type
+  iniTimeUTC[7] = 0x00; // version
+  iniTimeUTC[8] = source; // ref (source)
+  iniTimeUTC[9] = 0x80; // leapSecs. Set to 0x80 = unknown
+  iniTimeUTC[10] = (uint8_t)(year & 0xFF); // year LSB
+  iniTimeUTC[11] = (uint8_t)(year >> 8); // year MSB
+  iniTimeUTC[12] = month; // month starting at 1
+  iniTimeUTC[13] = day; // day starting at 1
+  iniTimeUTC[14] = hour; // hour 0:23
+  iniTimeUTC[15] = minute; // minute 0:59
+  iniTimeUTC[16] = second; // seconds 0:59
+  iniTimeUTC[18] = (uint8_t)(nanos & 0xFF); // nanoseconds LSB
+  iniTimeUTC[19] = (uint8_t)((nanos >> 8) & 0xFF);
+  iniTimeUTC[20] = (uint8_t)((nanos >> 16) & 0xFF);
+  iniTimeUTC[21] = (uint8_t)(nanos >> 24); // nanoseconds MSB
+  iniTimeUTC[22] = (uint8_t)(tAccS & 0xFF); // seconds part of the accuracy LSB
+  iniTimeUTC[23] = (uint8_t)(tAccS >> 8); // seconds part of the accuracy MSB
+  iniTimeUTC[26] = (uint8_t)(tAccNs & 0xFF); // nanoseconds part of the accuracy LSB
+  iniTimeUTC[27] = (uint8_t)((tAccNs >> 8) & 0xFF);
+  iniTimeUTC[28] = (uint8_t)((tAccNs >> 16) & 0xFF);
+  iniTimeUTC[29] = (uint8_t)(tAccNs >> 24); // nanoseconds part of the accuracy MSB
+
+  for (uint8_t i = 2; i < 30; i++) // Calculate the checksum
+  {
+    iniTimeUTC[30] += iniTimeUTC[i];
+    iniTimeUTC[31] += iniTimeUTC[30];
+  }
+
+  // Return true if the one packet was pushed successfully
+  return (pushAssistNowDataInternal(0, false, iniTimeUTC, 32, mgaAck, maxWait) == 32);
+}
+
+// Provide initial position assistance
+// The units for ecefX/Y/Z and posAcc (stddev) are cm.
+bool SFE_UBLOX_GNSS::setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  uint8_t iniPosXYZ[28]; // Create the UBX-MGA-INI-POS_XYZ message by hand
+  memset(iniPosXYZ, 0x00, 28); // Set all unused / reserved bytes and the checksum to zero
+
+  iniPosXYZ[0] = UBX_SYNCH_1; // Sync char 1
+  iniPosXYZ[1] = UBX_SYNCH_2; // Sync char 2
+  iniPosXYZ[2] = UBX_CLASS_MGA; // Class
+  iniPosXYZ[3] = UBX_MGA_INI_POS_XYZ; // ID
+  iniPosXYZ[4] = 20; // Length LSB
+  iniPosXYZ[5] = 0x00; // Length MSB
+  iniPosXYZ[6] = 0x00; // type
+  iniPosXYZ[7] = 0x00; // version
+  
+  union // Use a union to convert from int32_t to uint32_t
+  {
+      int32_t signedLong;
+      uint32_t unsignedLong;
+  } signedUnsigned;
+
+  signedUnsigned.signedLong = ecefX;
+  iniPosXYZ[10] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosXYZ[11] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosXYZ[12] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosXYZ[13] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = ecefY;
+  iniPosXYZ[14] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosXYZ[15] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosXYZ[16] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosXYZ[17] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = ecefZ;
+  iniPosXYZ[18] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosXYZ[19] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosXYZ[20] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosXYZ[21] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  iniPosXYZ[22] = (uint8_t)(posAcc & 0xFF); // LSB
+  iniPosXYZ[23] = (uint8_t)((posAcc >> 8) & 0xFF);
+  iniPosXYZ[24] = (uint8_t)((posAcc >> 16) & 0xFF);
+  iniPosXYZ[25] = (uint8_t)(posAcc >> 24); // MSB
+
+  for (uint8_t i = 2; i < 26; i++) // Calculate the checksum
+  {
+    iniPosXYZ[26] += iniPosXYZ[i];
+    iniPosXYZ[27] += iniPosXYZ[26];
+  }
+
+  // Return true if the one packet was pushed successfully
+  return (pushAssistNowDataInternal(0, false, iniPosXYZ, 28, mgaAck, maxWait) == 28);
+}
+
+// The units for lat and lon are degrees * 1e-7 (WGS84)
+// The units for alt (WGS84) and posAcc (stddev) are cm.
+bool SFE_UBLOX_GNSS::setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+{
+  uint8_t iniPosLLH[28]; // Create the UBX-MGA-INI-POS_LLH message by hand
+  memset(iniPosLLH, 0x00, 28); // Set all unused / reserved bytes and the checksum to zero
+
+  iniPosLLH[0] = UBX_SYNCH_1; // Sync char 1
+  iniPosLLH[1] = UBX_SYNCH_2; // Sync char 2
+  iniPosLLH[2] = UBX_CLASS_MGA; // Class
+  iniPosLLH[3] = UBX_MGA_INI_POS_LLH; // ID
+  iniPosLLH[4] = 20; // Length LSB
+  iniPosLLH[5] = 0x00; // Length MSB
+  iniPosLLH[6] = 0x01; // type
+  iniPosLLH[7] = 0x00; // version
+  
+  union // Use a union to convert from int32_t to uint32_t
+  {
+      int32_t signedLong;
+      uint32_t unsignedLong;
+  } signedUnsigned;
+
+  signedUnsigned.signedLong = lat;
+  iniPosLLH[10] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosLLH[11] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosLLH[12] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosLLH[13] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = lon;
+  iniPosLLH[14] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosLLH[15] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosLLH[16] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosLLH[17] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  signedUnsigned.signedLong = alt;
+  iniPosLLH[18] = (uint8_t)(signedUnsigned.unsignedLong & 0xFF); // LSB
+  iniPosLLH[19] = (uint8_t)((signedUnsigned.unsignedLong >> 8) & 0xFF);
+  iniPosLLH[20] = (uint8_t)((signedUnsigned.unsignedLong >> 16) & 0xFF);
+  iniPosLLH[21] = (uint8_t)(signedUnsigned.unsignedLong >> 24); // MSB
+
+  iniPosLLH[22] = (uint8_t)(posAcc & 0xFF); // LSB
+  iniPosLLH[23] = (uint8_t)((posAcc >> 8) & 0xFF);
+  iniPosLLH[24] = (uint8_t)((posAcc >> 16) & 0xFF);
+  iniPosLLH[25] = (uint8_t)(posAcc >> 24); // MSB
+
+  for (uint8_t i = 2; i < 26; i++) // Calculate the checksum
+  {
+    iniPosLLH[26] += iniPosLLH[i];
+    iniPosLLH[27] += iniPosLLH[26];
+  }
+
+  // Return true if the one packet was pushed successfully
+  return (pushAssistNowDataInternal(0, false, iniPosLLH, 28, mgaAck, maxWait) == 28);
+}
+
+// Find the start of the AssistNow Offline (UBX_MGA_ANO) data for the chosen day
+// The daysIntoFture parameter makes it easy to get the data for (e.g.) tomorrow based on today's date
+// Returns numDataBytes if unsuccessful
+// TO DO: enhance this so it will find the nearest data for the chosen day - instead of an exact match
+size_t SFE_UBLOX_GNSS::findMGAANOForDate(const String &dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture)
+{
+  return (findMGAANOForDateInternal((const uint8_t *)dataBytes.c_str(), numDataBytes, year, month, day, daysIntoFuture));
+}
+size_t SFE_UBLOX_GNSS::findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture)
+{
+  return (findMGAANOForDateInternal(dataBytes, numDataBytes, year, month, day, daysIntoFuture));
+}
+size_t SFE_UBLOX_GNSS::findMGAANOForDateInternal(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture)
+{
+  size_t dataPtr = 0; // Pointer into dataBytes
+  bool dateFound = false; // Flag to indicate when the date has been found
+
+  // Calculate matchDay, matchMonth and matchYear
+  uint8_t matchDay = day;
+  uint8_t matchMonth = month;
+  uint8_t matchYear = (uint8_t)(year - 2000);
+
+  // Add on daysIntoFuture
+  uint8_t daysIntoFutureCopy = daysIntoFuture;
+  while (daysIntoFutureCopy > 0)
+  {
+    matchDay++;
+    daysIntoFutureCopy--;
+    switch (matchMonth)
+    {
+      case 1:
+      case 3:
+      case 5:
+      case 7:
+      case 8:
+      case 10:
+      case 12:
+        if (matchDay == 32)
+        {
+          matchDay = 1;
+          matchMonth++;
+          if (matchMonth == 13)
+          {
+            matchMonth = 1;
+            matchYear++;
+          }
+        }
+        break;
+      case 4:
+      case 6:
+      case 9:
+      case 11:
+        if (matchDay == 31)
+        {
+          matchDay = 1;
+          matchMonth++;
+        }
+        break;
+      default: // February
+        if (((matchYear % 4) == 0) && (matchDay == 30))
+        {
+          matchDay = 1;
+          matchMonth++;
+        }
+        else if (((matchYear % 4) > 0) && (matchDay == 29))
+        {
+          matchDay = 1;
+          matchMonth++;
+        }
+        break;
+    }
+  }
+
+  while ((!dateFound) && (dataPtr < numDataBytes)) // Keep going until we have found the date or processed all the bytes
+  {
+    // Start by checking the validity of the packet being pointed to
+    bool dataIsOK = true;
+
+    dataIsOK &= (*(dataBytes + dataPtr + 0) == UBX_SYNCH_1); // Check for 0xB5
+    dataIsOK &= (*(dataBytes + dataPtr + 1) == UBX_SYNCH_2); // Check for 0x62
+    dataIsOK &= (*(dataBytes + dataPtr + 2) == UBX_CLASS_MGA); // Check for class UBX-MGA
+    
+    size_t packetLength = ((size_t)*(dataBytes + dataPtr + 4)) | (((size_t)*(dataBytes + dataPtr + 5)) << 8); // Extract the length
+
+    uint8_t checksumA = 0;
+    uint8_t checksumB = 0;
+    // Calculate the checksum bytes
+    // Keep going until the end of the packet is reached (payloadPtr == (dataPtr + packetLength))
+    // or we reach the end of the AssistNow data (payloadPtr == numDataBytes)
+    for (size_t payloadPtr = dataPtr + ((size_t)2); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < numDataBytes); payloadPtr++)
+    {
+      checksumA += *(dataBytes + payloadPtr);
+      checksumB += checksumA;
+    }
+    // Check the checksum bytes
+    dataIsOK &= (checksumA == *(dataBytes + dataPtr + packetLength + ((size_t)6)));
+    dataIsOK &= (checksumB == *(dataBytes + dataPtr + packetLength + ((size_t)7)));
+
+    dataIsOK &= ((dataPtr + packetLength + ((size_t)8)) <= numDataBytes); // Check we haven't overrun
+
+    // If the data is valid, check for a date match
+    if (dataIsOK)
+    {
+      if ((*(dataBytes + dataPtr + 3) == UBX_MGA_ANO)
+      &&  (*(dataBytes + dataPtr + 10) == matchYear)
+      &&  (*(dataBytes + dataPtr + 11) == matchMonth)
+      &&  (*(dataBytes + dataPtr + 12) == matchDay))
+      {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("findMGAANOForDate: found date match at location "));
+          _debugSerial->println(dataPtr);
+        }
+#endif
+        dateFound = true;
+      }
+      else
+      {
+        // The data is valid, but these are not the droids we are looking for...
+        dataPtr += packetLength + ((size_t)8); // Point to the next message
+      }
+    }
+    else
+    {
+ 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+      // The data was invalid. Send a debug message and then try to find the next 0xB5
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      {
+        _debugSerial->print(F("findMGAANOForDate: bad data - ignored! dataPtr is "));
+        _debugSerial->println(dataPtr);
+      }
+#endif
+      
+      while ((dataPtr < numDataBytes) && (*(dataBytes + ++dataPtr) != UBX_SYNCH_1))
+      {
+        ; // Increment dataPtr until we are pointing at the next 0xB5 - or we reach the end of the data
+      }
+    }
+  }
+
+  return (dataPtr);
+}
+
+// Read the whole navigation data base. The receiver will send all available data from its internal database.
+// Data is written to dataBytes. Set maxNumDataBytes to the (maximum) size of dataBytes.
+// If the database exceeds maxNumDataBytes, the excess bytes will be lost.
+// The function returns the number of database bytes written to dataBytes.
+// The return value will be equal to maxNumDataBytes if excess data was received.
+// The function will timeout after maxWait milliseconds - in case the final UBX-MGA-ACK was missed.
+size_t SFE_UBLOX_GNSS::readNavigationDatabase(uint8_t *dataBytes, size_t maxNumDataBytes, uint16_t maxWait)
+{
+  // Allocate RAM to store the MGA ACK message
+  if (packetUBXMGAACK == NULL) initPacketUBXMGAACK(); //Check that RAM has been allocated for the MGA_ACK data
+  if (packetUBXMGAACK == NULL) //Bail if the RAM allocation failed
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGAACK RAM allocation failed!"));
+    }
+#endif
+    return ((size_t)0);
+  }
+  if (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any data?
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGAACK contains unprocessed data. Clearing it."));
+    }
+#endif
+    packetUBXMGAACK->tail = packetUBXMGAACK->head; // Clear the buffer by setting the tail equal to the head
+  }
+
+  // Allocate RAM to store the MGA DBD messages
+  if (packetUBXMGADBD == NULL) initPacketUBXMGADBD(); //Check that RAM has been allocated for the MGA_DBD data
+  if (packetUBXMGADBD == NULL) //Bail if the RAM allocation failed
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGADBD RAM allocation failed!"));
+    }
+#endif
+    return ((size_t)0);
+  }
+  if (packetUBXMGADBD->head != packetUBXMGADBD->tail) // Does the MGA DBD ringbuffer contain any data?
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: packetUBXMGADBD contains unprocessed data. Clearing it."));
+    }
+#endif
+    packetUBXMGADBD->tail = packetUBXMGADBD->head; // Clear the buffer by setting the tail equal to the head
+  }
+
+  // Record what ackAiding is currently set to so we can restore it
+  uint8_t currentAckAiding = getAckAiding();
+  if (currentAckAiding == 255)
+    currentAckAiding = 0; // If the get failed, disable the ACKs when returning
+  // Enable ackAiding
+  setAckAiding(1);
+
+  // Record what i2cPollingWait is currently set to so we can restore it
+  uint8_t currentI2cPollingWait = i2cPollingWait;
+  // Set the I2C polling wait to 1ms
+  i2cPollingWait = 1;
+
+  // Construct the poll message:
+  uint8_t pollNaviDatabase[8]; // Create the UBX-MGA-DBD message by hand
+  memset(pollNaviDatabase, 0x00, 8); // Set all unused / reserved bytes and the checksum to zero
+
+  pollNaviDatabase[0] = UBX_SYNCH_1; // Sync char 1
+  pollNaviDatabase[1] = UBX_SYNCH_2; // Sync char 2
+  pollNaviDatabase[2] = UBX_CLASS_MGA; // Class
+  pollNaviDatabase[3] = UBX_MGA_DBD; // ID
+  pollNaviDatabase[4] = 0x00; // Length LSB
+  pollNaviDatabase[5] = 0x00; // Length MSB
+
+  for (uint8_t i = 2; i < 6; i++) // Calculate the checksum
+  {
+    pollNaviDatabase[6] += pollNaviDatabase[i];
+    pollNaviDatabase[7] += pollNaviDatabase[6];
+  }
+
+  // Push the poll message to the module.
+  // Do not Wait for an ACK - the DBD data will start arriving immediately.
+  size_t pushResult = pushAssistNowDataInternal(0, false, pollNaviDatabase, (size_t)8, SFE_UBLOX_MGA_ASSIST_ACK_NO, 0);
+
+  // Check pushResult == 8
+  if (pushResult != 8)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("readNavigationDatabase: pushAssistNowDataInternal failed!"));
+    }
+#endif
+    i2cPollingWait = currentI2cPollingWait; // Restore i2cPollingWait
+    setAckAiding(currentAckAiding); // Restore Ack Aiding
+    return ((size_t)0);
+  }
+
+  // Now keep checking for the arrival of UBX-MGA-DBD packets and write them to dataBytes
+  bool keepGoing = true;
+  unsigned long startTime = millis();
+  uint32_t databaseEntriesRX = 0; // Keep track of how many database entries are received
+  size_t numBytesReceived = 0; // Keep track of how many bytes are received
+
+  while (keepGoing && (millis() < (startTime + maxWait)))
+  {
+    checkUblox();
+
+    while (packetUBXMGADBD->head != packetUBXMGADBD->tail) // Does the MGA DBD ringbuffer contain any data?
+    {
+      // The data will be valid - process will have already checked it. So we can simply copy the data into dataBuffer.
+      // We do not need to check if there is room to store the entire database entry. pushAssistNowData will check the data before pushing it.
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryHeader1;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryHeader2;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryClass;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryID;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenLSB;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenMSB;
+      size_t msgLen = (((size_t)packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenMSB) * 256) + ((size_t)packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryLenLSB);
+      for (size_t i = 0; i < msgLen; i++)
+      {
+        if (numBytesReceived < maxNumDataBytes)
+          *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntry[i];
+      }
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryChecksumA;
+      if (numBytesReceived < maxNumDataBytes)
+        *(dataBytes + (numBytesReceived++)) = packetUBXMGADBD->data[packetUBXMGADBD->tail].dbdEntryChecksumB;
+
+      // Increment the tail
+      packetUBXMGADBD->tail++;
+      if (packetUBXMGADBD->tail == UBX_MGA_DBD_RINGBUFFER_LEN)
+        packetUBXMGADBD->tail = 0;
+
+      databaseEntriesRX++; // Increment the number of entries received
+    }
+
+    // The final MGA-ACK is sent at the end of the DBD packets. So, we need to check the ACK buffer _after_ the DBD buffer.
+    while (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any data?
+    {
+      // Check if we've received the correct ACK
+      bool dataAckd = true;
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == UBX_MGA_DBD); // Check if the message ID matches
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == (uint8_t)(databaseEntriesRX & 0xFF)); // Check if the ACK contents match databaseEntriesRX
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == (uint8_t)((databaseEntriesRX >> 8) & 0xFF));
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == (uint8_t)((databaseEntriesRX >> 16) & 0xFF));
+      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == (uint8_t)((databaseEntriesRX >> 24) & 0xFF));
+
+      if (dataAckd) // Is the ACK valid?
+      {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("readNavigationDatabase: ACK received. databaseEntriesRX is "));
+          _debugSerial->print(databaseEntriesRX);
+          _debugSerial->print(F(". numBytesReceived is "));
+          _debugSerial->print(numBytesReceived);
+          _debugSerial->print(F(". DBD read complete after "));
+          _debugSerial->print(millis() - startTime);
+          _debugSerial->println(F(" ms"));
+        }
+#endif
+        keepGoing = false;
+      }
+      // Increment the tail
+      packetUBXMGAACK->tail++;
+      if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
+        packetUBXMGAACK->tail = 0;
+    }
+  }
+
+  if (keepGoing) // If keepGoing is still true, we must have timed out
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("readNavigationDatabase: DBD RX timed out!"));
+    }
+  }
+
+  i2cPollingWait = currentI2cPollingWait; // Restore i2cPollingWait
+  setAckAiding(currentAckAiding); // Restore Ack Aiding
+
+  return (numBytesReceived);
+}
+
+// PRIVATE: Allocate RAM for packetUBXMGADBD and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXMGADBD()
+{
+  packetUBXMGADBD = new UBX_MGA_DBD_t; //Allocate RAM for the main struct
+  if (packetUBXMGADBD == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXMGADBD: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXMGADBD->head = 0; // Initialize the ring buffer pointers
+  packetUBXMGADBD->tail = 0;
+  return (true);
+}
+
 // Support for data logging
 
 //Set the file buffer size. This must be called _before_ .begin
@@ -4103,7 +5125,7 @@ bool SFE_UBLOX_GNSS::storePacket(ubxPacket *msg)
   }
 
   //Store the two sync chars
-  uint8_t sync_chars[] = {0xB5, 0x62};
+  uint8_t sync_chars[] = {UBX_SYNCH_1, UBX_SYNCH_2};
   writeToFileBuffer(sync_chars, 2);
 
   //Store the Class & ID
@@ -5383,6 +6405,86 @@ bool SFE_UBLOX_GNSS::setTimePulseParameters(UBX_CFG_TP5_data_t *data, uint16_t m
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+//UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
+uint8_t SFE_UBLOX_GNSS::getAckAiding(uint16_t maxWait) // Get the ackAiding byte - returns 255 if the sendCommand fails
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (255);
+
+  // Extract the ackAiding byte
+  // There are three versions of UBX-CFG-NAVX5 but ackAiding is always in byte 17
+  return (extractByte(&packetCfg, 17));
+}
+bool SFE_UBLOX_GNSS::setAckAiding(uint8_t ackAiding, uint16_t maxWait) // Set the ackAiding byte
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Set the ackAiding byte
+  // There are three versions of UBX-CFG-NAVX5 but ackAiding is always in byte 17
+  payloadCfg[17] = ackAiding;
+
+  // There are three versions of UBX-CFG-NAVX5 but the ackAid flag is always in bit 10 of mask1
+  payloadCfg[2] = 0x00; // Clear the LS byte of mask1
+  payloadCfg[3] = 0x04; // Set _only_ the ackAid flag = bit 10 of mask1 = bit 2 of the MS byte
+  payloadCfg[4] = 0x00; // Clear the LS byte of mask2, just in case
+  payloadCfg[5] = 0x00; // Clear the LS byte of mask2, just in case
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//AssistNow Autonomous support
+//UBX-CFG-NAVX5 - get the AssistNow Autonomous configuration (aopCfg) - returns 255 if the sendCommand fails
+uint8_t SFE_UBLOX_GNSS::getAopCfg(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (255);
+
+  // Extract the aopCfg byte
+  // There are three versions of UBX-CFG-NAVX5 but aopCfg is always in byte 27
+  return (extractByte(&packetCfg, 27));
+}
+// Set the aopCfg byte and the aopOrdMaxErr word
+bool SFE_UBLOX_GNSS::setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Set the aopCfg byte
+  // There are three versions of UBX-CFG-NAVX5 but aopCfg is always in byte 27 and aopOrbMaxErr is always in bytes 30 & 31
+  payloadCfg[27] = aopCfg;
+  payloadCfg[30] = (uint8_t)(aopOrbMaxErr & 0xFF); // aopOrbMaxErr LSB
+  payloadCfg[31] = (uint8_t)(aopOrbMaxErr >> 8); // aopOrbMaxErr MSB
+
+  // There are three versions of UBX-CFG-NAVX5 but the aop flag is always in bit 14 of mask1
+  payloadCfg[2] = 0x00; // Clear the LS byte of mask1
+  payloadCfg[3] = 0x40; // Set _only_ the aop flag = bit 14 of mask1 = bit 6 of the MS byte
+  payloadCfg[4] = 0x00; // Clear the LS byte of mask2, just in case
+  payloadCfg[5] = 0x00; // Clear the LS byte of mask2, just in case
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 // CONFIGURATION INTERFACE (protocol v27 and above)
 
 //Form 32-bit key from group/id/size
@@ -6439,11 +7541,11 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVATT()
   return (true);
 }
 
-//Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
+//Mark all the ATT data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GNSS::flushNAVATT()
 {
   if (packetUBXNAVATT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
-  packetUBXNAVATT->moduleQueried.moduleQueried.all = 0; //Mark all DOPs as stale (read before)
+  packetUBXNAVATT->moduleQueried.moduleQueried.all = 0; //Mark all ATT data as stale (read before)
 }
 
 //Log this data in file buffer
@@ -7686,6 +8788,164 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVSVIN()
   return (true);
 }
 
+// ***** NAV SAT automatic support
+
+//Signal information
+//Returns true if commands was successful
+bool SFE_UBLOX_GNSS::getNAVSAT(uint16_t maxWait)
+{
+  if (packetUBXNAVSAT == NULL) initPacketUBXNAVSAT(); //Check that RAM has been allocated for the NAVSAT data
+  if (packetUBXNAVSAT == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVSAT->automaticFlags.flags.bits.automatic && packetUBXNAVSAT->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_SAT);
+    return packetUBXNAVSAT->moduleQueried;
+  }
+  else if (packetUBXNAVSAT->automaticFlags.flags.bits.automatic && !packetUBXNAVSAT->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    return (false);
+  }
+  else
+  {
+    //The GPS is not automatically reporting NAVSAT so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_SAT;
+    packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+    {
+      return (true);
+    }
+
+    return (false);
+  }
+}
+
+//Enable or disable automatic NAVSAT message generation by the GNSS. This changes the way getNAVSAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVSAT(bool enable, uint16_t maxWait)
+{
+  return setAutoNAVSATrate(enable ? 1 : 0, true, maxWait);
+}
+
+//Enable or disable automatic NAVSAT message generation by the GNSS. This changes the way getNAVSAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVSAT(bool enable, bool implicitUpdate, uint16_t maxWait)
+{
+  return setAutoNAVSATrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getNAVSAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVSATrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
+{
+  if (packetUBXNAVSAT == NULL) initPacketUBXNAVSAT(); //Check that RAM has been allocated for the data
+  if (packetUBXNAVSAT == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  if (rate > 127) rate = 127;
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_SAT;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
+
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    packetUBXNAVSAT->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXNAVSAT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  packetUBXNAVSAT->moduleQueried = false; // Mark data as stale
+  return ok;
+}
+
+//Enable automatic navigation message generation by the GNSS.
+bool SFE_UBLOX_GNSS::setAutoNAVSATcallback(void (*callbackPointer)(UBX_NAV_SAT_data_t), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVSAT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVSAT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVSAT->callbackData = new UBX_NAV_SAT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVSAT->callbackData == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVSATcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  packetUBXNAVSAT->callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HNR attitude is send cyclically already
+//set config to suitable parameters
+bool SFE_UBLOX_GNSS::assumeAutoNAVSAT(bool enabled, bool implicitUpdate)
+{
+  if (packetUBXNAVSAT == NULL) initPacketUBXNAVSAT(); //Check that RAM has been allocated for the NAVSAT data
+  if (packetUBXNAVSAT == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  bool changes = packetUBXNAVSAT->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVSAT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    packetUBXNAVSAT->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVSAT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVSAT and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXNAVSAT()
+{
+  packetUBXNAVSAT = new UBX_NAV_SAT_t ; //Allocate RAM for the main struct
+  if (packetUBXNAVSAT == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVSAT: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXNAVSAT->automaticFlags.flags.all = 0;
+  packetUBXNAVSAT->callbackPointer = NULL;
+  packetUBXNAVSAT->callbackData = NULL;
+  packetUBXNAVSAT->moduleQueried = false;
+  return (true);
+}
+
+//Mark all the data as read/stale
+void SFE_UBLOX_GNSS::flushNAVSAT()
+{
+  if (packetUBXNAVSAT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVSAT->moduleQueried = false; //Mark all datums as stale (read before)
+}
+
+//Log this data in file buffer
+void SFE_UBLOX_GNSS::logNAVSAT(bool enabled)
+{
+  if (packetUBXNAVSAT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVSAT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
+
 // ***** NAV RELPOSNED automatic support
 
 //Relative Positioning Information in NED frame
@@ -7845,6 +9105,182 @@ void SFE_UBLOX_GNSS::logNAVRELPOSNED(bool enabled)
 {
   if (packetUBXNAVRELPOSNED == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
   packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
+
+// ***** AOPSTATUS automatic support
+
+bool SFE_UBLOX_GNSS::getAOPSTATUS(uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the AOPSTATUS data
+  if (packetUBXNAVAOPSTATUS == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic && packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getAOPSTATUS: Autoreporting"));
+    // }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_AOPSTATUS);
+    return packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all;
+  }
+  else if (packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic && !packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getAOPSTATUS: Exit immediately"));
+    // }
+    return (false);
+  }
+  else
+  {
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getAOPSTATUS: Polling"));
+    // }
+
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_AOPSTATUS;
+    packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+    {
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getAOPSTATUS: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
+      return (true);
+    }
+
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getAOPSTATUS retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
+    return (false);
+  }
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getAOPSTATUS
+//works.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUS(bool enable, uint16_t maxWait)
+{
+  return setAutoAOPSTATUSrate(enable ? 1 : 0, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getAOPSTATUS
+//works.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUS(bool enable, bool implicitUpdate, uint16_t maxWait)
+{
+  return setAutoAOPSTATUSrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getAOPSTATUS
+//works.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUSrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the data
+  if (packetUBXNAVAOPSTATUS == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_AOPSTATUS;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
+
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all = false;
+  return ok;
+}
+
+//Enable automatic navigation message generation by the GNSS.
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoAOPSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVAOPSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVAOPSTATUS->callbackData = new UBX_NAV_AOPSTATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVAOPSTATUS->callbackData == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoAOPSTATUScallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  packetUBXNAVAOPSTATUS->callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and AOPSTATUS is send cyclically already
+//set config to suitable parameters
+bool SFE_UBLOX_GNSS::assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the data
+  if (packetUBXNAVAOPSTATUS == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  bool changes = packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXNAVAOPSTATUS()
+{
+  packetUBXNAVAOPSTATUS = new UBX_NAV_AOPSTATUS_t; //Allocate RAM for the main struct
+  if (packetUBXNAVAOPSTATUS == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVAOPSTATUS: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXNAVAOPSTATUS->automaticFlags.flags.all = 0;
+  packetUBXNAVAOPSTATUS->callbackPointer = NULL;
+  packetUBXNAVAOPSTATUS->callbackData = NULL;
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0;
+  return (true);
+}
+
+//Mark all the AOPSTATUS data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GNSS::flushAOPSTATUS()
+{
+  if (packetUBXNAVAOPSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0; //Mark all AOPSTATUSs as stale (read before)
+}
+
+//Log this data in file buffer
+void SFE_UBLOX_GNSS::logAOPSTATUS(bool enabled)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** RXM SFRBX automatic support
@@ -9884,12 +11320,15 @@ uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
 //Max is 40Hz(?!)
 bool SFE_UBLOX_GNSS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 {
+  if (navFreq == 0) // Return now if navFreq is zero
+    return (false);
+
   if (navFreq > 40)
     navFreq = 40; // Limit navFreq to 40Hz so i2cPollingWait is set correctly
 
   //Adjust the I2C polling timeout based on update rate
   //Do this even if the sendCommand fails
-  i2cPollingWaitNAV = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWaitNAV = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data. Max is 250. Min is 6.
   i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   //Query the module
@@ -9940,7 +11379,10 @@ bool SFE_UBLOX_GNSS::setMeasurementRate(uint16_t rate, uint16_t maxWait)
     rate = 25;
 
   //Adjust the I2C polling timeout based on update rate
-  i2cPollingWaitNAV = rate / 4; //This is the number of ms to wait between checks for new I2C data
+  if (rate >= 1000)
+    i2cPollingWaitNAV = 250;
+  else
+    i2cPollingWaitNAV = rate / 4; //This is the number of ms to wait between checks for new I2C data
   i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   //Query the module
@@ -11113,6 +12555,34 @@ float SFE_UBLOX_GNSS::getRelPosAccD(uint16_t maxWait) // Returned as m
   return (((float)packetUBXNAVRELPOSNED->data.accD) / 10000.0); // Convert to m
 }
 
+// ***** AOPSTATUS Helper Functions
+
+uint8_t SFE_UBLOX_GNSS::getAOPSTATUSuseAOP(uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the AOPSTATUS data
+  if (packetUBXNAVAOPSTATUS == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.useAOP == false)
+    getAOPSTATUS(maxWait);
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.useAOP = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all = false;
+  return (packetUBXNAVAOPSTATUS->data.aopCfg.bits.useAOP);
+}
+
+uint8_t SFE_UBLOX_GNSS::getAOPSTATUSstatus(uint16_t maxWait)
+{
+  if (packetUBXNAVAOPSTATUS == NULL) initPacketUBXNAVAOPSTATUS(); //Check that RAM has been allocated for the AOPSTATUS data
+  if (packetUBXNAVAOPSTATUS == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.status == false)
+    getAOPSTATUS(maxWait);
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.status = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.bits.all = false;
+  return (packetUBXNAVAOPSTATUS->data.status);
+}
+
 // ***** ESF Helper Functions
 
 float SFE_UBLOX_GNSS::getESFroll(uint16_t maxWait) // Returned as degrees
@@ -11228,12 +12698,15 @@ bool SFE_UBLOX_GNSS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sensor
 // Returns true if the setHNRNavigationRate is successful
 bool SFE_UBLOX_GNSS::setHNRNavigationRate(uint8_t rate, uint16_t maxWait)
 {
+  if (rate == 0) // Return now if rate is zero
+    return (false);
+
   if (rate > 40)
     rate = 40; // Limit rate to 40Hz so i2cPollingWait is set correctly
 
   //Adjust the I2C polling timeout based on update rate
   //Do this even if the sendCommand is not ACK'd
-  i2cPollingWaitHNR = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWaitHNR = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data. Max 250. Min 6.
   i2cPollingWait = i2cPollingWaitNAV < i2cPollingWaitHNR ? i2cPollingWaitNAV : i2cPollingWaitHNR; // Set i2cPollingWait to the lower of NAV and HNR
 
   packetCfg.cls = UBX_CLASS_CFG;

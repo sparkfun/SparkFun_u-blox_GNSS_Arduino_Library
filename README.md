@@ -53,6 +53,10 @@ Migrating to v2.0 is easy. There are two small changes all users will need to ma
 
 If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages, you will need to make more small changes to your code. Please see the [dead reckoning examples](./examples/Dead_Reckoning) for more details. There is more detail available in [Theory.md](./Theory.md#migrating-your-code-to-v20) if you need it.
 
+## AssistNow<sup>TM</sup>
+
+v2.1.0 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
+
 ## Memory Usage
 
 The u-blox GNSS library has grown considerably over the years and v2.0.8 came very close to completely filling the program memory on platforms like the ATmega328 (Arduino Uno).

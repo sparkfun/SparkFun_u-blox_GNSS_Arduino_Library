@@ -200,7 +200,7 @@ const uint8_t UBX_CFG_BATCH = 0x93;		//Get/set data batching configuration.
 const uint8_t UBX_CFG_CFG = 0x09;		//Clear, Save, and Load Configurations. Used to save current configuration
 const uint8_t UBX_CFG_DAT = 0x06;		//Set User-defined Datum or The currently defined Datum
 const uint8_t UBX_CFG_DGNSS = 0x70;		//DGNSS configuration
-const uint8_t UBX_CFG_ESFALG = 0x56;		//ESF alignment
+const uint8_t UBX_CFG_ESFALG = 0x56;	//ESF alignment
 const uint8_t UBX_CFG_ESFA = 0x4C;		//ESF accelerometer
 const uint8_t UBX_CFG_ESFG = 0x4D;		//ESF gyro
 const uint8_t UBX_CFG_GEOFENCE = 0x69;	//Geofencing configuration. Used to configure a geofence
@@ -295,6 +295,7 @@ const uint8_t UBX_LOG_STRING = 0x04;		   //Store arbitrary string on on-board fl
 //Class: MGA
 //The following are used to configure MGA UBX messages (Multiple GNSS Assistance Messages).  Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 34)
 const uint8_t UBX_MGA_ACK_DATA0 = 0x60;		 //Multiple GNSS Acknowledge message
+const uint8_t UBX_MGA_ANO = 0x20;			 //Multiple GNSS AssistNow Offline assistance - NOT SUPPORTED BY THE ZED-F9P! "The ZED-F9P supports AssistNow Online only."
 const uint8_t UBX_MGA_BDS_EPH = 0x03;		 //BDS Ephemeris Assistance
 const uint8_t UBX_MGA_BDS_ALM = 0x03;		 //BDS Almanac Assistance
 const uint8_t UBX_MGA_BDS_HEALTH = 0x03;	 //BDS Health Assistance
@@ -368,6 +369,7 @@ const uint8_t UBX_NAV_TIMELS = 0x26;	//Leap second event information
 const uint8_t UBX_NAV_TIMEUTC = 0x21;	//UTC Time Solution
 const uint8_t UBX_NAV_VELECEF = 0x11;	//Velocity Solution in ECEF
 const uint8_t UBX_NAV_VELNED = 0x12;	//Velocity Solution in NED
+const uint8_t UBX_NAV_AOPSTATUS = 0x60; //AssistNow Autonomous status
 
 //Class: RXM
 //The following are used to configure the RXM UBX messages (receiver manager messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
@@ -495,6 +497,27 @@ enum sfe_ublox_ls_src_e
 	SFE_UBLOX_LS_SRC_CONFIGURED,
 	SFE_UBLOX_LS_SRC_UNKNOWN = 255
 };
+
+typedef enum
+{
+	SFE_UBLOX_MGA_ASSIST_ACK_NO,		// Do not expect UBX-MGA-ACK's. If the module outputs them, they will be ignored
+	SFE_UBLOX_MGA_ASSIST_ACK_YES,		// Expect and check for UBX-MGA-ACK's
+	SFE_UBLOX_MGA_ASSIST_ACK_ENQUIRE	// Check UBX-CFG-NAVX5 ackAiding to determine if UBX-MGA-ACK's are expected
+}  sfe_ublox_mga_assist_ack_e;
+
+// The infoCode byte included in UBX-MGA-ACK-DATA0
+enum sfe_ublox_mga_ack_infocode_e
+{
+	SFE_UBLOX_MGA_ACK_INFOCODE_ACCEPTED,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NO_TIME,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_SUPPORTED,
+	SFE_UBLOX_MGA_ACK_INFOCODE_SIZE_MISMATCH,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_STORED,
+	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_READY,
+	SFE_UBLOX_MGA_ACK_INFOCODE_TYPE_UNKNOWN
+};
+
+//-=-=-=-=-
 
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
@@ -683,6 +706,50 @@ public:
 	// Default to using a restart between transmissions. But processors like ESP32 seem to need a stop (#30). Set stop to true to use a stop instead.
 	bool pushRawData(uint8_t *dataBytes, size_t numDataBytes, bool stop = false);
 
+	// Push MGA AssistNow data to the module.
+	// Check for UBX-MGA-ACK responses if required (if mgaAck is YES or ENQUIRE).
+	// Wait for maxWait millis after sending each packet (if mgaAck is NO).
+	// Return how many bytes were pushed successfully.
+	// If skipTime is true, any UBX-MGA-INI-TIME_UTC or UBX-MGA-INI-TIME_GNSS packets found in the data will be skipped,
+	// allowing the user to override with their own time data with setUTCTimeAssistance.
+	// offset allows a sub-set of the data to be sent - starting from offset.
+	#define defaultMGAdelay 7 // Default to waiting for 7ms between each MGA message
+	size_t pushAssistNowData(const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(size_t offset, bool skipTime, const String &dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	size_t pushAssistNowData(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+
+	// Provide initial time assistance
+	#define defaultMGAINITIMEtAccS 2 // Default to setting the seconds time accuracy to 2 seconds
+	#define defaultMGAINITIMEtAccNs 0 // Default to setting the nanoseconds time accuracy to zero
+	#define defaultMGAINITIMEsource 0 // Set default source to none, i.e. on receipt of message (will be inaccurate!)
+	bool setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos = 0, uint16_t tAccS = defaultMGAINITIMEtAccS, uint32_t tAccNs = defaultMGAINITIMEtAccNs, uint8_t source = defaultMGAINITIMEsource, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+
+	// Provide initial position assistance
+	// The units for ecefX/Y/Z and posAcc (stddev) are cm.
+	bool setPositionAssistanceXYZ(int32_t ecefX, int32_t ecefY, int32_t ecefZ, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+	// The units for lat and lon are degrees * 1e-7 (WGS84)
+	// The units for alt (WGS84) and posAcc (stddev) are cm.
+	bool setPositionAssistanceLLH(int32_t lat, int32_t lon, int32_t alt, uint32_t posAcc, sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO, uint16_t maxWait = defaultMGAdelay);
+
+	// Find the start of the AssistNow Offline (UBX_MGA_ANO) data for the chosen day
+	// The daysIntoFture parameter makes it easy to get the data for (e.g.) tomorrow based on today's date
+	// Returns numDataBytes if unsuccessful
+	// TO DO: enhance this so it will find the nearest data for the chosen day - instead of an exact match
+	size_t findMGAANOForDate(const String &dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture = 0);
+	size_t findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture = 0);
+
+	// Read the whole navigation data base. The receiver will send all available data from its internal database.
+	// Data is written to dataBytes. Set maxNumDataBytes to the (maximum) size of dataBytes.
+	// If the database exceeds maxNumDataBytes, the excess bytes will be lost.
+	// The function returns the number of database bytes written to dataBytes.
+	// The return value will be equal to maxNumDataBytes if excess data was received.
+	// The function will timeout after maxWait milliseconds - in case the final UBX-MGA-ACK was missed.
+	#define defaultNavDBDMaxWait 3100
+	size_t readNavigationDatabase(uint8_t *dataBytes, size_t maxNumDataBytes, uint16_t maxWait = defaultNavDBDMaxWait);
+
 	// Support for data logging
 	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
 	uint16_t getFileBufferSize(void); // Return the size of the file buffer
@@ -785,6 +852,15 @@ public:
 	bool getTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the time pulse parameters using UBX_CFG_TP5
 	bool setTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Set the time pulse parameters using UBX_CFG_TP5
 
+	//UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
+	uint8_t getAckAiding(uint16_t maxWait = defaultMaxWait); // Get the ackAiding byte - returns 255 if the sendCommand fails
+	bool setAckAiding(uint8_t ackAiding, uint16_t maxWait = defaultMaxWait); // Set the ackAiding byte
+
+	//AssistNow Autonomous support
+	//UBX-CFG-NAVX5 - get/set the aopCfg byte and set the aopOrdMaxErr word. If aopOrbMaxErr is 0 (default), the max orbit error is reset to the firmware default.
+	uint8_t getAopCfg(uint16_t maxWait = defaultMaxWait); // Get the AssistNow Autonomous configuration (aopCfg) - returns 255 if the sendCommand fails
+	bool setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr = 0, uint16_t maxWait = defaultMaxWait); // Set the aopCfg byte and the aopOrdMaxErr word
+
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.
@@ -811,14 +887,14 @@ public:
 	uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = 250);									 //Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 	uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = 250);									 //Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 
-// getPVT will only return data once in each navigation cycle. By default, that is once per second.
-// Therefore we should set defaultMaxWait to slightly longer than that.
-// If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
-// then you should use a shorter maxWait. 300msec would be about right: getPVT(300)
-
 	// get and set functions for all of the "automatic" message processing
 
 	// Navigation (NAV)
+
+	// getPVT will only return data once in each navigation cycle. By default, that is once per second.
+	// Therefore we should set defaultMaxWait to slightly longer than that.
+	// If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
+	// then you should use a shorter maxWait. 300msec would be about right: getPVT(300)
 
 	bool getNAVPOSECEF(uint16_t maxWait = defaultMaxWait); // NAV POSECEF
 	bool setAutoNAVPOSECEF(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic POSECEF reports at the navigation frequency
@@ -926,6 +1002,15 @@ public:
 	// Add "auto" support for NAV TIMELS - to avoid needing 'global' storage
 	bool getLeapSecondEvent(uint16_t maxWait); //Reads leap second event info
 
+	bool getNAVSAT(uint16_t maxWait = defaultMaxWait); //Query module for latest AssistNow Autonomous status and load global vars:. If autoNAVSAT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new NAVSAT is available.
+	bool setAutoNAVSAT(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic NAVSAT reports at the navigation frequency
+	bool setAutoNAVSAT(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic NAVSAT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	bool setAutoNAVSATrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic NAVSAT reports
+	bool setAutoNAVSATcallback(void (*callbackPointer)(UBX_NAV_SAT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic NAVSAT reports at the navigation frequency. Data is accessed from the callback.
+	bool assumeAutoNAVSAT(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and NAVSAT is send cyclically already
+	void flushNAVSAT(); //Mark all the NAVSAT data as read/stale
+	void logNAVSAT(bool enabled = true); // Log data to file buffer
+
 	bool getRELPOSNED(uint16_t maxWait = defaultMaxWait); //Get Relative Positioning Information of the NED frame
 	bool setAutoRELPOSNED(bool enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED reports
 	bool setAutoRELPOSNED(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -934,6 +1019,15 @@ public:
 	bool assumeAutoRELPOSNED(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and RELPOSNED is send cyclically already
 	void flushNAVRELPOSNED(); //Mark all the data as read/stale
 	void logNAVRELPOSNED(bool enabled = true); // Log data to file buffer
+
+	bool getAOPSTATUS(uint16_t maxWait = defaultMaxWait); //Query module for latest AssistNow Autonomous status and load global vars:. If autoAOPSTATUS is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new AOPSTATUS is available.
+	bool setAutoAOPSTATUS(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic AOPSTATUS reports at the navigation frequency
+	bool setAutoAOPSTATUS(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic AOPSTATUS reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	bool setAutoAOPSTATUSrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic AOPSTATUS reports
+	bool setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic AOPSTATUS reports at the navigation frequency. Data is accessed from the callback.
+	bool assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and AOPSTATUS is send cyclically already
+	void flushAOPSTATUS(); //Mark all the AOPSTATUS data as read/stale
+	void logAOPSTATUS(bool enabled = true); // Log data to file buffer
 
 	// Receiver Manager Messages (RXM)
 
@@ -1178,6 +1272,11 @@ public:
 	float getRelPosAccE(uint16_t maxWait = defaultMaxWait); // Returned as m
 	float getRelPosAccD(uint16_t maxWait = defaultMaxWait); // Returned as m
 
+	// Helper functions for AOPSTATUS
+
+	uint8_t getAOPSTATUSuseAOP(uint16_t maxWait = defaultMaxWait); // Returns the UBX-NAV-AOPSTATUS useAOP flag. Don't confuse this with getAopCfg - which returns the aopCfg byte from UBX-CFG-NAVX5
+	uint8_t getAOPSTATUSstatus(uint16_t maxWait = defaultMaxWait); // Returns the UBX-NAV-AOPSTATUS status field. A host application can determine the optimal time to shut down the receiver by monitoring the status field for a steady 0.
+
 	// Helper functions for ESF
 
 	float getESFroll(uint16_t maxWait = defaultMaxWait); // Returned as degrees
@@ -1223,7 +1322,9 @@ public:
 	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_SAT_t *packetUBXNAVSAT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_AOPSTATUS_t *packetUBXNAVAOPSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1241,6 +1342,9 @@ public:
 	UBX_HNR_PVT_t *packetUBXHNRPVT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_HNR_ATT_t *packetUBXHNRATT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_HNR_INS_t *packetUBXHNRINS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+
+	UBX_MGA_ACK_DATA0_t *packetUBXMGAACK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_MGA_DBD_t *packetUBXMGADBD = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -1271,7 +1375,9 @@ private:
 
 	//Functions
 	bool checkUbloxInternal(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Checks module with user selected commType
-	void addToChecksum(uint8_t incoming);																		 //Given an incoming byte, adjust rollingChecksumA/B
+	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B
+	size_t pushAssistNowDataInternal(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait);
+	size_t findMGAANOForDateInternal(const uint8_t *dataBytes, size_t numDataBytes, uint16_t year, uint8_t month, uint8_t day, uint8_t daysIntoFuture);
 
 	//Return true if this "automatic" message has storage allocated for it
 	bool checkAutomatic(uint8_t Class, uint8_t ID);
@@ -1300,7 +1406,9 @@ private:
 	bool initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
 	bool initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	bool initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
+	bool initPacketUBXNAVSAT(); // Allocate RAM for packetUBXNAVSAT and initialize it
 	bool initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
+	bool initPacketUBXNAVAOPSTATUS(); // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
 	bool initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
 	bool initPacketUBXRXMRAWX(); // Allocate RAM for packetUBXRXMRAWX and initialize it
 	bool initPacketUBXCFGRATE(); // Allocate RAM for packetUBXCFGRATE and initialize it
@@ -1313,6 +1421,8 @@ private:
 	bool initPacketUBXHNRATT(); // Allocate RAM for packetUBXHNRATT and initialize it
 	bool initPacketUBXHNRINS(); // Allocate RAM for packetUBXHNRINS and initialize it
 	bool initPacketUBXHNRPVT(); // Allocate RAM for packetUBXHNRPVT and initialize it
+	bool initPacketUBXMGAACK(); // Allocate RAM for packetUBXMGAACK and initialize it
+	bool initPacketUBXMGADBD(); // Allocate RAM for packetUBXMGADBD and initialize it
 
 	//Variables
 	TwoWire *_i2cPort;				//The generic connection to user's chosen I2C hardware
