@@ -194,7 +194,7 @@ We have included full 'auto' support for UBX-NAV-AOPSTATUS, so you can have the 
 * <b>void flushAOPSTATUS();</b>
 * <b>void logAOPSTATUS(bool enabled);</b>
 
-You can also monitor the AssistNow Autonomous satellite information via the UBX-NAV-SAT message. Again, we have included full 'auto' support for UBX-NAV-SAT. UBX-NAV-SAT contains useful information for each individual satellite which the module has aquired: carrier to noise ratio (signal strength); elevation; azimuth; pseudorange residual; quality indication, health; ephemeris available; almanac available; **AssistNow Offline data availability**; and more. The data can be analyzed using a callback. Please see the AssistNowAutonomous examples for more details.
+You can also monitor the AssistNow Autonomous satellite information via the UBX-NAV-SAT message. Again, we have included full 'auto' support for UBX-NAV-SAT. UBX-NAV-SAT contains useful information for each individual satellite which the module has acquired: carrier to noise ratio (signal strength); elevation; azimuth; pseudorange residual; quality indication, health; ephemeris available; almanac available; **AssistNow Offline data availability**; and more. The data can be analyzed using a callback. Please see the AssistNowAutonomous examples for more details.
 
 * <b>bool getNAVSAT(uint16_t maxWait);</b>
 * <b>bool setAutoNAVSAT(bool enabled, uint16_t maxWait);</b>
