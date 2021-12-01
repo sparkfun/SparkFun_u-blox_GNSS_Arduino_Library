@@ -15,6 +15,8 @@
   Update secrets.h with your:
   - WiFi credentials
 
+  Note: this example will not work on the ZED-F9P. "The ZED-F9P supports AssistNow Online only."
+
   Note: this example works best if you have the GNSS RAM battery-backup disabled.
   All SparkFun boards have battery-backup for the RAM which will means the database is retained if you disconnect the power.
   The module will use the database data from the battery-backed RAM when you turn the power back on.
@@ -24,7 +26,6 @@
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   SparkFun Thing Plus - ESP32 WROOM:        https://www.sparkfun.com/products/15663
-  ZED-F9P RTK2:                             https://www.sparkfun.com/products/16481
   SparkFun GPS Breakout - ZOE-M8Q (Qwiic):  https://www.sparkfun.com/products/15193
 
   Hardware Connections:

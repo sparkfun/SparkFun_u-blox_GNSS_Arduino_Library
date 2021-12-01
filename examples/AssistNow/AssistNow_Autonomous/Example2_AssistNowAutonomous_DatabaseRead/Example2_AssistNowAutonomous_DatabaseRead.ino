@@ -10,10 +10,11 @@
   Note: this example will only work on boards which have plenty of RAM available.
         The database can be several kBytes in length.
 
+  Note: this example will not work on the ZED-F9P. "The ZED-F9P supports AssistNow Online only."
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   SparkFun Thing Plus - ESP32 WROOM:        https://www.sparkfun.com/products/15663
-  ZED-F9P RTK2:                             https://www.sparkfun.com/products/16481
   SparkFun GPS Breakout - ZOE-M8Q (Qwiic):  https://www.sparkfun.com/products/15193
 
   Hardware Connections:

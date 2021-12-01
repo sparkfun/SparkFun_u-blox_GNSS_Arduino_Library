@@ -37,6 +37,8 @@ AssistNow Autonomous offers augmentation for up to 6 days.
 
 Please see the [AssistNow_Autonomous](./AssistNow_Autonomous) examples for more details.
 
+**Note: AssistNow Autonomous does not work on the ZED-F9P. "The ZED-F9P supports AssistNow Online only."**
+
 The new functions we've added to the library to support AssistNow Autonomous are described [Support for AssistNow Autonomous below](#Support-for-AssistNow-Autonomous).
 
 ## AssistNow Service Token
