@@ -1,7 +1,7 @@
 name: Compile Sketch
 
 on:
-  - push
+  # - push
   - pull_request
 
 
@@ -110,6 +110,7 @@ jobs:
             - examples/Example19_DynamicModel
             - examples/Example20_SendCustomCommand
           enable-warnings-report: true
+          enable-deltas-report: true
           # verbose: true
 
     # outputs:
