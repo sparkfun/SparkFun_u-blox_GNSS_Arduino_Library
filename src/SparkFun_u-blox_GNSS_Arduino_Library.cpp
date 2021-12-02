@@ -3164,7 +3164,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 //Returns false if sensor fails to respond to I2C traffic
 sfe_ublox_status_e SFE_UBLOX_GNSS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait)
 {
-  //uint16_t ignoreMe = maxWait; ignoreMe += 0; // Do something with maxWait just to avoid the pesky compiler warnings!
+  uint16_t ignoreMe = maxWait; ignoreMe += 0; // Do something with maxWait just to avoid the pesky compiler warnings!
   
   // From the integration guide:
   // "The receiver does not provide any write access except for writing UBX and NMEA messages to the
