@@ -98,7 +98,7 @@ jobs:
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
             - source-url: https://github.com/${{github.repository}}.git
-            - source-path: /tree/AssistNow
+            - source-path: ${{github.ref[11:]}}
           sketch-paths: |
             - examples/Example10_AltitudeMSL
             - examples/Example11_ResetModule/Example1_FactoryDefaultviaI2C
