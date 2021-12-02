@@ -1,7 +1,7 @@
 name: Compile Sketch
 
 on:
-  # - push
+  - push
   - pull_request
 
 
@@ -88,13 +88,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Branch name
+        run: echo running on branch ${GITHUB_REF##*/}
+
       - name: Compile Sketch
         uses: arduino/compile-sketches@v1
         with:
           platforms: ${{ matrix.board.platforms }}
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
-            - source-url: https://github.com/${{github.repository}}.git
+            - source-url: https://github.com/${{github.repository}}/tree/${GITHUB_REF##*/}.git
           sketch-paths: |
             - examples/Example10_AltitudeMSL
             - examples/Example11_ResetModule/Example1_FactoryDefaultviaI2C
