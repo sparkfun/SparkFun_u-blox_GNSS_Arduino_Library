@@ -2413,10 +2413,11 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVSAT->data.header.version = extractByte(msg, 4);
         packetUBXNAVSAT->data.header.numSvs = extractByte(msg, 5);
 
-        for (uint8_t i = 0; (i < UBX_NAV_SAT_MAX_BLOCKS) && (i < packetUBXNAVSAT->data.header.numSvs)
-          && ((((uint16_t)i) * 12) < (msg->len - 8)); i++)
+        // The NAV SAT message could contain data for 255 SVs max. (numSvs is uint8_t. UBX_NAV_SAT_MAX_BLOCKS is 255)
+        for (uint16_t i = 0; (i < UBX_NAV_SAT_MAX_BLOCKS) && (i < ((uint16_t)packetUBXNAVSAT->data.header.numSvs))
+          && ((i * 12) < (msg->len - 8)); i++)
         {
-          uint16_t offset = (((uint16_t)i) * 12) + 8;
+          uint16_t offset = (i * 12) + 8;
           packetUBXNAVSAT->data.blocks[i].gnssId = extractByte(msg, offset + 0);
           packetUBXNAVSAT->data.blocks[i].svId = extractByte(msg, offset + 1);
           packetUBXNAVSAT->data.blocks[i].cno = extractByte(msg, offset + 2);
@@ -4217,7 +4218,7 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
 {
   size_t dataPtr = offset; // Pointer into dataBytes
 
-  if ((offset >= numDataBytes) || (offset < 0)) // Sanity check. Return now if offset is invalid.
+  if (offset >= numDataBytes) // Sanity check. Return now if offset is invalid.
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -4225,17 +4226,6 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
       _debugSerial->print(F("pushAssistNowData: offset ("));
       _debugSerial->print(offset);
       _debugSerial->println(F(") is invalid! Aborting..."));
-    }
-#endif
-    return ((size_t)0);
-  }
-
-  if (numDataBytes < 0) // Sanity check. Return now if numDataBytes is negative.
-  {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
-    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-    {
-      _debugSerial->println(F("pushAssistNowData: numDataBytes is negative! Aborting..."));
     }
 #endif
     return ((size_t)0);
@@ -4894,14 +4884,15 @@ size_t SFE_UBLOX_GNSS::readNavigationDatabase(uint8_t *dataBytes, size_t maxNumD
     while (packetUBXMGAACK->head != packetUBXMGAACK->tail) // Does the MGA ACK ringbuffer contain any data?
     {
       // Check if we've received the correct ACK
+      bool idMatch = (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == UBX_MGA_DBD); // Check if the message ID matches
+
       bool dataAckd = true;
-      dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgId == UBX_MGA_DBD); // Check if the message ID matches
       dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[0] == (uint8_t)(databaseEntriesRX & 0xFF)); // Check if the ACK contents match databaseEntriesRX
       dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[1] == (uint8_t)((databaseEntriesRX >> 8) & 0xFF));
       dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[2] == (uint8_t)((databaseEntriesRX >> 16) & 0xFF));
       dataAckd &= (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[3] == (uint8_t)((databaseEntriesRX >> 24) & 0xFF));
 
-      if (dataAckd) // Is the ACK valid?
+      if (idMatch && dataAckd) // Is the ACK valid?
       {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
         if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -4917,6 +4908,25 @@ size_t SFE_UBLOX_GNSS::readNavigationDatabase(uint8_t *dataBytes, size_t maxNumD
 #endif
         keepGoing = false;
       }
+      else if (idMatch)
+      {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        {
+          _debugSerial->print(F("readNavigationDatabase: unexpected ACK received. databaseEntriesRX is 0x"));
+          _debugSerial->print(databaseEntriesRX, HEX);
+          _debugSerial->print(F(". msgPayloadStart is 0x"));
+          for (uint8_t i = 4; i > 0; i--)
+          {
+            if (packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[i - 1] < 0x10)
+              _debugSerial->print(F("0"));
+            _debugSerial->print(packetUBXMGAACK->data[packetUBXMGAACK->tail].msgPayloadStart[i - 1], HEX);
+          }
+          _debugSerial->println();
+        }
+#endif
+      }
+
       // Increment the tail
       packetUBXMGAACK->tail++;
       if (packetUBXMGAACK->tail == UBX_MGA_ACK_DATA0_RINGBUFFER_LEN)
