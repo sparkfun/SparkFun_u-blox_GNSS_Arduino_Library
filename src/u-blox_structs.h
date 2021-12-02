@@ -917,7 +917,7 @@ typedef struct
 } UBX_NAV_TIMELS_t;
 
 // UBX-NAV-SAT (0x01 0x35): Satellite Information
-const uint16_t UBX_NAV_SAT_MAX_BLOCKS = 256; // TO DO: confirm if this is large enough for all modules
+const uint16_t UBX_NAV_SAT_MAX_BLOCKS = 255; // numSvs is 8-bit
 const uint16_t UBX_NAV_SAT_MAX_LEN = 8 + (12 * UBX_NAV_SAT_MAX_BLOCKS);
 
 typedef struct
@@ -1817,7 +1817,12 @@ typedef struct
   uint8_t dbdEntryChecksumB;
 } UBX_MGA_DBD_data_t;
 
-#define UBX_MGA_DBD_RINGBUFFER_LEN 256 // Provide storage for MGA DBD packets. TO DO: confirm if 256 is large enough!
+#if defined(ARDUINO_AVR_UNO)
+#define UBX_MGA_DBD_RINGBUFFER_LEN 3 // Fix to let the code compile on the UNO. (The UNO does not have enough RAM to store the database.)
+#else
+#define UBX_MGA_DBD_RINGBUFFER_LEN 250 // Provide storage for MGA DBD packets. TO DO: confirm if 250 is large enough for all modules!
+#endif
+
 typedef struct
 {
 	uint8_t head;
