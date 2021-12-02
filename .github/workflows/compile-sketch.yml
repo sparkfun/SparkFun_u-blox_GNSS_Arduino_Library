@@ -97,7 +97,8 @@ jobs:
           platforms: ${{ matrix.board.platforms }}
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
-            - source-url: https://github.com/${{github.repository}}/tree/AssistNow.git
+            # - source-url: https://github.com/${{github.repository}}.git
+            - source-path: /tree/AssistNow
           sketch-paths: |
             - examples/Example10_AltitudeMSL
             - examples/Example11_ResetModule/Example1_FactoryDefaultviaI2C
