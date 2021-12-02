@@ -87,7 +87,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
+        
       - name: Branch name
         run: echo running on branch ${GITHUB_REF##*/}
 
@@ -97,7 +97,7 @@ jobs:
           platforms: ${{ matrix.board.platforms }}
           fqbn: ${{ matrix.board.fqbn }}
           libraries: |
-            - source-url: https://github.com/${{github.repository}}/tree/${{GITHUB_REF##*/}}.git
+            - source-url: https://github.com/tree/AssistNow.git
           sketch-paths: |
             - examples/Example10_AltitudeMSL
             - examples/Example11_ResetModule/Example1_FactoryDefaultviaI2C
@@ -106,7 +106,6 @@ jobs:
             - examples/Example14_DebugOutput
             - examples/Example15_GetDateTime
             - examples/Example16_Nanosecond_MaxOutput
-            - examples/Example16_PartialSecond_MaxOutput
             - examples/Example18_PowerSaveMode
             - examples/Example19_DynamicModel
             - examples/Example20_SendCustomCommand
