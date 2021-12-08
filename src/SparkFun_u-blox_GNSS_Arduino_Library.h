@@ -60,7 +60,7 @@
 //#define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages to save memory
 
 //The code just about fills the program memory on the ATmega328P (Arduino Uno), so let's delete the minor debug messages anyway
-#if !defined(SFE_UBLOX_REDUCED_PROG_MEM) && defined(ARDUINO_AVR_UNO)
+#if !defined(SFE_UBLOX_REDUCED_PROG_MEM) && defined(ARDUINO_ARCH_AVR)
 #define SFE_UBLOX_REDUCED_PROG_MEM
 #endif
 

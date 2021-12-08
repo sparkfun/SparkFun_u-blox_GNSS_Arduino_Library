@@ -1817,8 +1817,8 @@ typedef struct
   uint8_t dbdEntryChecksumB;
 } UBX_MGA_DBD_data_t;
 
-#if defined(ARDUINO_AVR_UNO)
-#define UBX_MGA_DBD_RINGBUFFER_LEN 3 // Fix to let the code compile on the UNO. (The UNO does not have enough RAM to store the database.)
+#if defined(ARDUINO_ARCH_AVR)
+#define UBX_MGA_DBD_RINGBUFFER_LEN 190 // Fix to let the code compile on AVR platforms - including the UNO.
 #else
 #define UBX_MGA_DBD_RINGBUFFER_LEN 250 // Provide storage for MGA DBD packets. TO DO: confirm if 250 is large enough for all modules!
 #endif
