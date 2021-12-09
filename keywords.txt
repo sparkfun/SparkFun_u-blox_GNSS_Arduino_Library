@@ -121,6 +121,7 @@ setNMEAOutputPort	KEYWORD2
 
 factoryReset	KEYWORD2
 hardReset	KEYWORD2
+softwareResetGNSSOnly	KEYWORD2
 factoryDefault	KEYWORD2
 
 saveConfiguration	KEYWORD2

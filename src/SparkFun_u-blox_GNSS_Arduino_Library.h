@@ -599,11 +599,11 @@ public:
 	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
 	//By default use the default I2C address, and use Wire port
-	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = defaultMaxWait); //Returns true if module is detected
+	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = defaultMaxWait, bool softReset = false); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
-	bool begin(Stream &serialPort, uint16_t maxWait = defaultMaxWait); //Returns true if module is detected
+	bool begin(Stream &serialPort, uint16_t maxWait = defaultMaxWait, bool softReset = false); //Returns true if module is detected
 	//SPI - supply instance of SPIClass, chip select pin and SPI speed (in Hz)
-	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait = defaultMaxWait);
+	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait = defaultMaxWait, bool softReset = false);
 
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
@@ -780,7 +780,8 @@ public:
 
 	void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
 	void hardReset();	 //Perform a reset leading to a cold start (zero info start-up)
-	bool factoryDefault(uint16_t maxWait = defaultMaxWait);							 //Reset module to factory defaults
+	void softwareResetGNSSOnly(); //Controlled Software Reset (GNSS only) only restarts the GNSS tasks, without reinitializing the full system or reloading any stored configuration.
+	bool factoryDefault(uint16_t maxWait = defaultMaxWait); //Reset module to factory defaults
 
 	//Save configuration to BBR / Flash
 
