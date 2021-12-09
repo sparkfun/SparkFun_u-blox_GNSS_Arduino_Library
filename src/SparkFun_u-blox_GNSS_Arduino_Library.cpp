@@ -438,7 +438,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
 }
 
 //Initialize the I2C port
-bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress)
+bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress, uint16_t maxWait)
 {
   commType = COMM_TYPE_I2C;
   _i2cPort = &wirePort; //Grab which port the user wants us to use
@@ -461,19 +461,19 @@ bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress)
   createFileBuffer();
 
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
-  bool connected = isConnected();
+  bool connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+    connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+    connected = isConnected(maxWait);
 
   return (connected);
 }
 
 //Initialize the Serial port
-bool SFE_UBLOX_GNSS::begin(Stream &serialPort)
+bool SFE_UBLOX_GNSS::begin(Stream &serialPort, uint16_t maxWait)
 {
   commType = COMM_TYPE_SERIAL;
   _serialPort = &serialPort; //Grab which port the user wants us to use
@@ -486,19 +486,19 @@ bool SFE_UBLOX_GNSS::begin(Stream &serialPort)
   createFileBuffer();
 
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
-  bool connected = isConnected();
+  bool connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+    connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+    connected = isConnected(maxWait);
 
   return (connected);
 }
 
 // Initialize for SPI
-bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed)
+bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait)
 {
   commType = COMM_TYPE_SPI;
   _spiPort = &spiPort;
@@ -539,13 +539,13 @@ bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed)
   }
 
   // Call isConnected up to three times
-  bool connected = isConnected();
+  bool connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+    connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+    connected = isConnected(maxWait);
 
   return (connected);
 }

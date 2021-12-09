@@ -599,11 +599,11 @@ public:
 	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
 	//By default use the default I2C address, and use Wire port
-	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
+	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = 1100); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
-	bool begin(Stream &serialPort); //Returns true if module is detected
+	bool begin(Stream &serialPort, uint16_t maxWait = 1100); //Returns true if module is detected
 	//SPI - supply instance of SPIClass, chip select pin and SPI speed (in Hz)
-	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed);
+	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait = 1100);
 
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
