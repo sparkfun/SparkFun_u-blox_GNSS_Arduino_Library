@@ -598,12 +598,13 @@ public:
 	//New in v2.0: allow the payload size for packetCfg to be changed
 	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
+	//Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
 	//By default use the default I2C address, and use Wire port
-	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = defaultMaxWait, bool softReset = false); //Returns true if module is detected
+	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
-	bool begin(Stream &serialPort, uint16_t maxWait = defaultMaxWait, bool softReset = false); //Returns true if module is detected
+	bool begin(Stream &serialPort, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false); //Returns true if module is detected
 	//SPI - supply instance of SPIClass, chip select pin and SPI speed (in Hz)
-	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait = defaultMaxWait, bool softReset = false);
+	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false);
 
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
