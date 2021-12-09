@@ -1498,6 +1498,7 @@ private:
 	uint8_t nmeaAddressField[6];		// NMEA Address Field - includes the start character (*)
 	bool logThisNMEA();				// Return true if we should log this NMEA message
 	bool processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
+	bool isNMEAHeaderValid();		// Return true if the six byte NMEA header appears valid. Used to set _signsOfLife
 
 	uint16_t rtcmLen = 0;
 
@@ -1526,6 +1527,10 @@ private:
 	// Storage just in case the user tries to push a single byte using pushRawBytes
 	bool _pushSingleByte = false;
 	uint8_t _pushThisSingleByte;
+
+	// .begin will return true if the assumeSuccess parameter is true and if _signsOfLife is true
+	// _signsOfLife is set to true when: a valid UBX message is seen; a valig NMEA header is seen.
+	bool _signsOfLife;
 
 };
 

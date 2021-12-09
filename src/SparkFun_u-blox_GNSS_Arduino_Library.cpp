@@ -442,6 +442,7 @@ bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress, uint16_t ma
 {
   commType = COMM_TYPE_I2C;
   _i2cPort = &wirePort; //Grab which port the user wants us to use
+  _signsOfLife = false; //Clear the _signsOfLife flag. It will be set true if valid traffic is seen.
 
   //We expect caller to begin their I2C port, with the speed of their choice external to the library
   //But if they forget, we start the hardware here.
@@ -485,7 +486,7 @@ bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress, uint16_t ma
     connected = isConnected(maxWait);
   }
 
-  if ((!connected ) && assumeSuccess) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
+  if ((!connected ) && assumeSuccess && _signsOfLife) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -504,6 +505,7 @@ bool SFE_UBLOX_GNSS::begin(Stream &serialPort, uint16_t maxWait, bool assumeSucc
 {
   commType = COMM_TYPE_SERIAL;
   _serialPort = &serialPort; //Grab which port the user wants us to use
+  _signsOfLife = false; //Clear the _signsOfLife flag. It will be set true if valid traffic is seen.
 
   //New in v2.0: allocate memory for the packetCfg payload here - if required. (The user may have called setPacketCfgPayloadSize already)
   if (packetCfgPayloadSize == 0)
@@ -537,7 +539,7 @@ bool SFE_UBLOX_GNSS::begin(Stream &serialPort, uint16_t maxWait, bool assumeSucc
     connected = isConnected(maxWait);
   }
 
-  if ((!connected ) && assumeSuccess) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
+  if ((!connected ) && assumeSuccess && _signsOfLife) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -558,6 +560,7 @@ bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, 
   _spiPort = &spiPort;
   _csPin = csPin;
   _spiSpeed = spiSpeed;
+  _signsOfLife = false; //Clear the _signsOfLife flag. It will be set true if valid traffic is seen.
 
   // Initialize the chip select pin
   pinMode(_csPin, OUTPUT);
@@ -617,7 +620,7 @@ bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, 
     connected = isConnected(maxWait);
   }
 
-  if ((!connected ) && assumeSuccess) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
+  if ((!connected ) && assumeSuccess && _signsOfLife) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -1637,6 +1640,11 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if (nmeaByteCounter == 5)
     {
+      if (!_signsOfLife) // If _signsOfLife is not already true, set _signsOfLife to true if the NMEA header is valid
+      {
+        _signsOfLife = isNMEAHeaderValid();
+      }
+
       // We've just received the end of the address field. Check if it is selected for logging
       if (logThisNMEA())
       {
@@ -1707,6 +1715,38 @@ bool SFE_UBLOX_GNSS::logThisNMEA()
   if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'W') && (_logNMEA.bits.UBX_NMEA_VLW == 1)) return (true);
   if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'G') && (_logNMEA.bits.UBX_NMEA_VTG == 1)) return (true);
   if ((nmeaAddressField[3] == 'Z') && (nmeaAddressField[4] == 'D') && (nmeaAddressField[5] == 'A') && (_logNMEA.bits.UBX_NMEA_ZDA == 1)) return (true);
+  return (false);
+}
+
+// PRIVATE: Return true if the NMEA header is valid
+bool SFE_UBLOX_GNSS::isNMEAHeaderValid()
+{
+  if (nmeaAddressField[0] != '*') return (false);
+  if (nmeaAddressField[1] != 'G') return (false);
+  if ((nmeaAddressField[3] == 'D') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'M')) return (true);
+  if (nmeaAddressField[3] == 'G')
+  {
+    if ((nmeaAddressField[4] == 'A') && (nmeaAddressField[5] == 'Q')) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'Q')) return (true);
+    if ((nmeaAddressField[4] == 'B') && (nmeaAddressField[5] == 'S')) return (true);
+    if ((nmeaAddressField[4] == 'G') && (nmeaAddressField[5] == 'A')) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'L')) return (true);
+    if ((nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'Q')) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'Q')) return (true);
+    if ((nmeaAddressField[4] == 'N') && (nmeaAddressField[5] == 'S')) return (true);
+    if ((nmeaAddressField[4] == 'P') && (nmeaAddressField[5] == 'Q')) return (true);
+    if ((nmeaAddressField[4] == 'Q') && (nmeaAddressField[5] == 'Q')) return (true);
+    if ((nmeaAddressField[4] == 'R') && (nmeaAddressField[5] == 'S')) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'A')) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'T')) return (true);
+    if ((nmeaAddressField[4] == 'S') && (nmeaAddressField[5] == 'V')) return (true);
+  }
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'M')) return (true);
+  if ((nmeaAddressField[3] == 'R') && (nmeaAddressField[4] == 'M') && (nmeaAddressField[5] == 'C')) return (true);
+  if ((nmeaAddressField[3] == 'T') && (nmeaAddressField[4] == 'X') && (nmeaAddressField[5] == 'T')) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'L') && (nmeaAddressField[5] == 'W')) return (true);
+  if ((nmeaAddressField[3] == 'V') && (nmeaAddressField[4] == 'T') && (nmeaAddressField[5] == 'G')) return (true);
+  if ((nmeaAddressField[3] == 'Z') && (nmeaAddressField[4] == 'D') && (nmeaAddressField[5] == 'A')) return (true);
   return (false);
 }
 
@@ -1887,6 +1927,7 @@ void SFE_UBLOX_GNSS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_
     if ((incomingUBX->checksumA == rollingChecksumA) && (incomingUBX->checksumB == rollingChecksumB))
     {
       incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_VALID; // Flag the packet as valid
+      _signsOfLife = true; //The checksum is valid, so set the _signsOfLife flag
 
       // Let's check if the class and ID match the requestedClass and requestedID
       // Remember - this could be a data packet or an ACK packet
