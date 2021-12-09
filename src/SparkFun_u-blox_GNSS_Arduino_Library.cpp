@@ -438,7 +438,7 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
 }
 
 //Initialize the I2C port
-bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress)
+bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress, uint16_t maxWait, bool assumeSuccess)
 {
   commType = COMM_TYPE_I2C;
   _i2cPort = &wirePort; //Grab which port the user wants us to use
@@ -461,19 +461,46 @@ bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress)
   createFileBuffer();
 
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
-  bool connected = isConnected();
+  bool connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: isConnected - second attempt"));
+    }
+#endif
+    connected = isConnected(maxWait);
+  }
 
   if (!connected)
-    connected = isConnected();
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: isConnected - third attempt"));
+    }
+#endif
+    connected = isConnected(maxWait);
+  }
+
+  if ((!connected ) && assumeSuccess) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: third attempt failed. Assuming success..."));
+    }
+#endif
+    return (true);
+  }
 
   return (connected);
 }
 
 //Initialize the Serial port
-bool SFE_UBLOX_GNSS::begin(Stream &serialPort)
+bool SFE_UBLOX_GNSS::begin(Stream &serialPort, uint16_t maxWait, bool assumeSuccess)
 {
   commType = COMM_TYPE_SERIAL;
   _serialPort = &serialPort; //Grab which port the user wants us to use
@@ -486,19 +513,46 @@ bool SFE_UBLOX_GNSS::begin(Stream &serialPort)
   createFileBuffer();
 
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
-  bool connected = isConnected();
+  bool connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: isConnected - second attempt"));
+    }
+#endif
+    connected = isConnected(maxWait);
+  }
 
   if (!connected)
-    connected = isConnected();
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: isConnected - third attempt"));
+    }
+#endif
+    connected = isConnected(maxWait);
+  }
+
+  if ((!connected ) && assumeSuccess) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: third attempt failed. Assuming success..."));
+    }
+#endif
+    return (true);
+  }
 
   return (connected);
 }
 
 // Initialize for SPI
-bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed)
+bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait, bool assumeSuccess)
 {
   commType = COMM_TYPE_SPI;
   _spiPort = &spiPort;
@@ -538,14 +592,41 @@ bool SFE_UBLOX_GNSS::begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed)
     }
   }
 
-  // Call isConnected up to three times
-  bool connected = isConnected();
+  // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
+  bool connected = isConnected(maxWait);
 
   if (!connected)
-    connected = isConnected();
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: isConnected - second attempt"));
+    }
+#endif
+    connected = isConnected(maxWait);
+  }
 
   if (!connected)
-    connected = isConnected();
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: isConnected - third attempt"));
+    }
+#endif
+    connected = isConnected(maxWait);
+  }
+
+  if ((!connected ) && assumeSuccess) // Advanced users can assume success if required. Useful if the port is outputting messages at high navigation rate.
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("begin: third attempt failed. Assuming success..."));
+    }
+#endif
+    return (true);
+  }
 
   return (connected);
 }
@@ -5413,6 +5494,20 @@ void SFE_UBLOX_GNSS::hardReset()
   sendCommand(&packetCfg, 0); // don't expect ACK
 }
 
+void SFE_UBLOX_GNSS::softwareResetGNSSOnly()
+{
+  // Issue controlled software reset (GNSS only)
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RST;
+  packetCfg.len = 4;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = 0;          // hot start
+  payloadCfg[1] = 0;          // hot start
+  payloadCfg[2] = 0x02;       // 0x02 = Controlled software reset (GNSS only)
+  payloadCfg[3] = 0;          // reserved
+  sendCommand(&packetCfg, 0); // don't expect ACK
+}
+
 //Reset module to factory defaults
 //This still works but it is the old way of configuring ublox modules. See getVal and setVal for the new methods
 bool SFE_UBLOX_GNSS::factoryDefault(uint16_t maxWait)
@@ -9628,9 +9723,7 @@ bool SFE_UBLOX_GNSS::getNavigationFrequencyInternal(uint16_t maxWait)
     return (true);
 
   if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
-  {
     return (true);
-  }
 
   return (false);
 }

@@ -598,12 +598,13 @@ public:
 	//New in v2.0: allow the payload size for packetCfg to be changed
 	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
+	//Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
 	//By default use the default I2C address, and use Wire port
-	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
+	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
-	bool begin(Stream &serialPort); //Returns true if module is detected
+	bool begin(Stream &serialPort, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false); //Returns true if module is detected
 	//SPI - supply instance of SPIClass, chip select pin and SPI speed (in Hz)
-	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed);
+	bool begin(SPIClass &spiPort, uint8_t csPin, uint32_t spiSpeed, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false);
 
 	void end(void); //Stop all automatic message processing. Free all used RAM
 
@@ -633,7 +634,7 @@ public:
 	int8_t getMaxNMEAByteCount(void);
 
 	//Returns true if device answers on _gpsI2Caddress address or via Serial
-	bool isConnected(uint16_t maxWait = 1100);
+	bool isConnected(uint16_t maxWait = defaultMaxWait);
 
 	// Enable debug messages using the chosen Serial port (Stream)
 	// Boards like the RedBoard Turbo use SerialUSB (not Serial).
@@ -780,7 +781,8 @@ public:
 
 	void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
 	void hardReset();	 //Perform a reset leading to a cold start (zero info start-up)
-	bool factoryDefault(uint16_t maxWait = defaultMaxWait);							 //Reset module to factory defaults
+	void softwareResetGNSSOnly(); //Controlled Software Reset (GNSS only) only restarts the GNSS tasks, without reinitializing the full system or reloading any stored configuration.
+	bool factoryDefault(uint16_t maxWait = defaultMaxWait); //Reset module to factory defaults
 
 	//Save configuration to BBR / Flash
 
@@ -826,7 +828,7 @@ public:
 	bool powerSaveMode(bool power_save = true, uint16_t maxWait = defaultMaxWait);
 	uint8_t getPowerSaveMode(uint16_t maxWait = defaultMaxWait); // Returns 255 if the sendCommand fails
 	bool powerOff(uint32_t durationInMs, uint16_t maxWait = defaultMaxWait);
-	bool powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources = VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0, bool forceWhileUsb = true, uint16_t maxWait = 1100);
+	bool powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources = VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0, bool forceWhileUsb = true, uint16_t maxWait = defaultMaxWait);
 
 	//Change the dynamic platform model using UBX-CFG-NAV5
 	bool setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = defaultMaxWait);
@@ -1235,7 +1237,7 @@ public:
 
 	// Helper functions for HPPOSECEF
 
-	uint32_t getPositionAccuracy(uint16_t maxWait = 1100); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
+	uint32_t getPositionAccuracy(uint16_t maxWait = defaultMaxWait); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 
 	// Helper functions for HPPOSLLH
 
@@ -1291,8 +1293,8 @@ public:
 
 	// Helper functions for HNR
 
-	bool setHNRNavigationRate(uint8_t rate, uint16_t maxWait = 1100); // Returns true if the setHNRNavigationRate is successful
-	uint8_t getHNRNavigationRate(uint16_t maxWait = 1100); // Returns 0 if the getHNRNavigationRate fails
+	bool setHNRNavigationRate(uint8_t rate, uint16_t maxWait = defaultMaxWait); // Returns true if the setHNRNavigationRate is successful
+	uint8_t getHNRNavigationRate(uint16_t maxWait = defaultMaxWait); // Returns 0 if the getHNRNavigationRate fails
 	float getHNRroll(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 	float getHNRpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 	float getHNRheading(uint16_t maxWait = defaultMaxWait); // Returned as degrees
