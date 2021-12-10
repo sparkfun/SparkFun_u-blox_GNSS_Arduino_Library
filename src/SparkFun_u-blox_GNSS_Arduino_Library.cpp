@@ -514,6 +514,30 @@ bool SFE_UBLOX_GNSS::begin(Stream &serialPort, uint16_t maxWait, bool assumeSucc
   //New in v2.0: allocate memory for the file buffer - if required. (The user should have called setFileBufferSize already)
   createFileBuffer();
 
+  //Get rid of any stale serial data already in the processor's RX buffer
+  while (_serialPort->available())
+    _serialPort->read();
+
+  //If assumeSuccess is true, the user must really want begin to succeed. So, let's empty the module's serial transmit buffer too!
+  //Keep discarding new serial data until we see a gap of 2ms - hopefully indicating that the module's TX buffer is empty.
+  if (assumeSuccess)
+  {
+    unsigned long startTime = millis();
+    unsigned long lastActivity = startTime;
+    bool keepGoing = true;
+    while (keepGoing && (millis() < (startTime + (unsigned long)maxWait)))
+    {
+      while (_serialPort->available()) // Discard any new data
+      {
+        _serialPort->read();
+        lastActivity = millis();
+      }
+
+      if (millis() > (lastActivity + (unsigned long)2)) // Check if we have seen no new data for at least 2ms
+        keepGoing = false;
+    }
+  }
+
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
   bool connected = isConnected(maxWait);
 
@@ -3642,7 +3666,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
   packetAuto.classAndIDmatch = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
 
   unsigned long startTime = millis();
-  while (millis() - startTime < maxTime)
+  while (millis() < (startTime + (unsigned long)maxTime))
   {
     if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
@@ -3781,7 +3805,7 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::waitForACKResponse(ubxPacket *outgoingUBX, ui
     } //checkUbloxInternal == true
 
     delay(1); // Allow an RTOS to get an elbow in (#11)
-  } //while (millis() - startTime < maxTime)
+  } //while (millis() < (startTime + (unsigned long)maxTime))
 
   // We have timed out...
   // If the outgoingUBX->classAndIDmatch is VALID then we can take a gamble and return DATA_RECEIVED

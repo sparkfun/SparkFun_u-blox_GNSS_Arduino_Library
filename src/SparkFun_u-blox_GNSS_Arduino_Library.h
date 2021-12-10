@@ -599,6 +599,7 @@ public:
 	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
 	//Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
+	//Begin will then return true if "signs of life" have been seen: reception of _any_ valid UBX packet or _any_ valid NMEA header.
 	//By default use the default I2C address, and use Wire port
 	bool begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42, uint16_t maxWait = defaultMaxWait, bool assumeSuccess = false); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
