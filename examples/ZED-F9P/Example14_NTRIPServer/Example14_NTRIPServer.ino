@@ -1,7 +1,5 @@
 /*
-  Note: compiles OK with v2.0 but is currently untested
-  
-  Use ESP32 WiFi to push RTCM data to RTK2Go (caster) as a Server
+  Use ESP32 WiFi to push RTCM data to RTK2Go (Caster) as a Server
   By: SparkFun Electronics / Nathan Seidle
   Date: December 14th, 2020
   License: MIT. See license file for more information but you can
@@ -33,25 +31,20 @@
 
 #include <WiFi.h>
 #include "secrets.h"
-WiFiClient client;
+WiFiClient ntripCaster;
 
-#include <Wire.h> //Needed for I2C to GNSS
+#include <Wire.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
 
-//Basic Connection settings to RTK2Go NTRIP Caster - See secrets for mount specific credentials
+//Global Variables
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-const uint16_t casterPort = 2101;
-const char * casterHost = "rtk2go.com";
-const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
-
-long lastSentRTCM_ms = 0; //Time of last data pushed to socket
+long lastSentRTCM_ms = 0;           //Time of last data pushed to socket
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
 uint32_t serverBytesSent = 0; //Just a running total
+long lastReport_ms = 0;       //Time of last report of bytes sent
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-long lastReport_ms = 0; //Time of last report of bytes sent
 
 void setup()
 {
@@ -73,7 +66,8 @@ void setup()
 
   Serial.print("Connecting to local WiFi");
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -98,7 +92,8 @@ void setup()
   if (response == false)
   {
     Serial.println(F("Failed to disable NMEA. Freezing..."));
-    while (1);
+    while (1)
+      ;
   }
   else
     Serial.println(F("NMEA disabled"));
@@ -114,7 +109,8 @@ void setup()
   if (response == false)
   {
     Serial.println(F("Failed to enable RTCM. Freezing..."));
-    while (1);
+    while (1)
+      ;
   }
   else
     Serial.println(F("RTCM sentences enabled"));
@@ -129,63 +125,70 @@ void setup()
   if (response == false)
   {
     Serial.println(F("Failed to enter static position. Freezing..."));
-    while (1);
+    while (1)
+      ;
   }
   else
     Serial.println(F("Static position set"));
 
-  //You could instead do a survey-in but it takes much longer to start generating RTCM data. See Example4_BaseWithLCD
+  //Alternatively to setting a static position, you could do a survey-in
+  //but it takes much longer to start generating RTCM data. See Example4_BaseWithLCD
   //myGNSS.enableSurveyMode(60, 5.000); //Enable Survey in, 60 seconds, 5.0m
 
   if (myGNSS.saveConfiguration() == false) //Save the current settings to flash and BBR
-    Serial.println(F("Module failed to save."));
+    Serial.println(F("Module failed to save"));
 
   Serial.println(F("Module configuration complete"));
 }
 
 void loop()
 {
-  if (Serial.available()) beginServing();
+  if (Serial.available())
+    beginServing();
 
-  Serial.println(F("Press any key to start serving."));
+  Serial.println(F("Press any key to start serving"));
 
   delay(1000);
 }
 
 void beginServing()
 {
-  Serial.println("Xmit to RTK2Go. Press any key to stop");
+  Serial.println("Begin transmitting to caster. Press any key to stop");
   delay(10); //Wait for any serial to arrive
-  while (Serial.available()) Serial.read(); //Flush
+  while (Serial.available())
+    Serial.read(); //Flush
 
   while (Serial.available() == 0)
   {
     //Connect if we are not already
-    if (client.connected() == false)
+    if (ntripCaster.connected() == false)
     {
       Serial.printf("Opening socket to %s\n", casterHost);
 
-      if (client.connect(casterHost, casterPort) == true) //Attempt connection
+      if (ntripCaster.connect(casterHost, casterPort) == true) //Attempt connection
       {
         Serial.printf("Connected to %s:%d\n", casterHost, casterPort);
 
-        const int SERVER_BUFFER_SIZE  = 512;
-        char serverBuffer[SERVER_BUFFER_SIZE];
+        const int SERVER_BUFFER_SIZE = 512;
+        char serverRequest[SERVER_BUFFER_SIZE];
 
-        snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
-                 mntpnt_pw, mntpnt, ntrip_server_name, "App Version 1.0");
+        snprintf(serverRequest,
+                 SERVER_BUFFER_SIZE,
+                 "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun u-blox Server v1.0\r\n\r\n",
+                 mountPointPW, mountPoint);
 
-        Serial.printf("Sending credentials:\n%s\n", serverBuffer);
-        client.write(serverBuffer, strlen(serverBuffer));
+        Serial.println(F("Sending server request:"));
+        Serial.println(serverRequest);
+        ntripCaster.write(serverRequest, strlen(serverRequest));
 
         //Wait for response
         unsigned long timeout = millis();
-        while (client.available() == 0)
+        while (ntripCaster.available() == 0)
         {
           if (millis() - timeout > 5000)
           {
-            Serial.println(">>> Client Timeout !");
-            client.stop();
+            Serial.println("Caster timed out!");
+            ntripCaster.stop();
             return;
           }
           delay(10);
@@ -195,30 +198,34 @@ void beginServing()
         bool connectionSuccess = false;
         char response[512];
         int responseSpot = 0;
-        while (client.available())
+        while (ntripCaster.available())
         {
-          response[responseSpot++] = client.read();
+          response[responseSpot++] = ntripCaster.read();
           if (strstr(response, "200") > 0) //Look for 'ICY 200 OK'
             connectionSuccess = true;
-          if (responseSpot == 512 - 1) break;
+          if (responseSpot == 512 - 1)
+            break;
         }
         response[responseSpot] = '\0';
 
         if (connectionSuccess == false)
         {
-          Serial.printf("Failed to connect to RTK2Go: %s", response);
+          Serial.printf("Failed to connect to Caster: %s", response);
+          return;
         }
       } //End attempt to connect
       else
       {
         Serial.println("Connection to host failed");
+        return;
       }
     } //End connected == false
 
-    if (client.connected() == true)
+    if (ntripCaster.connected() == true)
     {
       delay(10);
-      while (Serial.available()) Serial.read(); //Flush any endlines or carriage returns
+      while (Serial.available())
+        Serial.read(); //Flush any endlines or carriage returns
 
       lastReport_ms = millis();
       lastSentRTCM_ms = millis();
@@ -226,7 +233,8 @@ void beginServing()
       //This is the main sending loop. We scan for new ublox data but processRTCM() is where the data actually gets sent out.
       while (1)
       {
-        if (Serial.available()) break;
+        if (Serial.available())
+          break;
 
         myGNSS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
@@ -236,7 +244,7 @@ void beginServing()
         if (millis() - lastSentRTCM_ms > maxTimeBeforeHangup_ms)
         {
           Serial.println("RTCM timeout. Disconnecting...");
-          client.stop();
+          ntripCaster.stop();
           return;
         }
 
@@ -256,10 +264,11 @@ void beginServing()
 
   Serial.println("User pressed a key");
   Serial.println("Disconnecting...");
-  client.stop();
+  ntripCaster.stop();
 
   delay(10);
-  while (Serial.available()) Serial.read(); //Flush any endlines or carriage returns
+  while (Serial.available())
+    Serial.read(); //Flush any endlines or carriage returns
 }
 
 //This function gets called from the SparkFun u-blox Arduino Library.
@@ -267,9 +276,9 @@ void beginServing()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  if (client.connected() == true)
+  if (ntripCaster.connected() == true)
   {
-    client.write(incoming); //Send this byte to socket
+    ntripCaster.write(incoming); //Send this byte to socket
     serverBytesSent++;
     lastSentRTCM_ms = millis();
   }
