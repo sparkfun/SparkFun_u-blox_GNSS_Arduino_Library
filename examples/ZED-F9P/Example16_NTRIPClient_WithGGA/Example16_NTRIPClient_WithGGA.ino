@@ -15,16 +15,16 @@
 
   You will need to have a valid mountpoint available. To see available mountpoints go here: http://rtk2go.com:2101/
 
-  This is a proof of concept to show how to connect to a caster via HTTP. 
+  This is a proof of concept to show how to connect to a caster via HTTP.
 
   For more information about NTRIP Clients and the differences between Rev1 and Rev2 of the protocol
   please see: https://www.use-snip.com/kb/knowledge-base/ntrip-rev1-versus-rev2-formats/
 
-  "In broad protocol terms, the NTRIP client must first connect (get an HTTP “OK” reply) and only then 
-  should it send the sentence.  NTRIP protocol revision 2 (which does not have very broad industry 
+  "In broad protocol terms, the NTRIP client must first connect (get an HTTP “OK” reply) and only then
+  should it send the sentence.  NTRIP protocol revision 2 (which does not have very broad industry
   acceptance at this time) does allow sending the sentence in the original header."
   https://www.use-snip.com/kb/knowledge-base/subtle-issues-with-using-ntrip-client-nmea-183-strings/
-  
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/16481
@@ -52,10 +52,10 @@ SFE_UBLOX_GNSS myGNSS;
 
 //Global variables
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-long lastReceivedRTCM_ms = 0; //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+long lastReceivedRTCM_ms = 0;       //5 RTCM messages take approximately ~300ms to arrive at 115200bps
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
-bool transmitLocation = true; //By default we will transmit the units location via GGA sentence.
+bool transmitLocation = true;        //By default we will transmit the units location via GGA sentence.
 int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
 long lastTransmittedGGA_ms = 0;
 
@@ -76,7 +76,7 @@ void setup()
 
   Wire.begin(); //Start I2C
 
-  while(myGNSS.begin() == false) //Connect to the Ublox module using Wire port
+  while (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     delay(2000);
@@ -84,7 +84,7 @@ void setup()
   }
   Serial.println(F("u-blox module connected"));
 
-  myGNSS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA); //Set the I2C port to output both NMEA and UBX messages
+  myGNSS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA);                                //Set the I2C port to output both NMEA and UBX messages
   myGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Be sure RTCM3 input is enabled. UBX + RTCM3 is not a valid state.
 
   myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); //Verify the GGA sentence is enabled
@@ -93,7 +93,8 @@ void setup()
 
   Serial.print(F("Connecting to local WiFi"));
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(F("."));
   }
@@ -102,7 +103,8 @@ void setup()
   Serial.print(F("WiFi connected with IP: "));
   Serial.println(WiFi.localIP());
 
-  while (Serial.available()) Serial.read();
+  while (Serial.available())
+    Serial.read();
 }
 
 void loop()
@@ -110,7 +112,8 @@ void loop()
   if (Serial.available())
   {
     beginClient();
-    while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+    while (Serial.available())
+      Serial.read(); //Empty buffer of any newline chars
   }
 
   Serial.println(F("Press any key to start NTRIP Client."));
@@ -126,12 +129,13 @@ void beginClient()
 
   Serial.println(F("Subscribing to Caster. Press key to stop"));
   delay(10); //Wait for any serial to arrive
-  while (Serial.available()) Serial.read(); //Flush
+  while (Serial.available())
+    Serial.read(); //Flush
 
   while (Serial.available() == 0)
   {
     myGNSS.checkUblox();
-    
+
     //Connect if we are not already. Limit to 5s between attempts.
     if (ntripClient.connected() == false)
     {
@@ -181,13 +185,14 @@ void beginClient()
           String strEncodedCredentials = b.encode(userCredentials);
           char encodedCredentials[strEncodedCredentials.length() + 1];
           strEncodedCredentials.toCharArray(encodedCredentials, sizeof(encodedCredentials)); //Convert String to char array
-          snprintf(credentials, sizeof(credentials), "Authorization: Basic %s\r\n", encodedCredentials);
 #else
           //Encode with nfriendly library
           int encodedLen = base64_enc_len(strlen(userCredentials));
-          char encodedCredentials[encodedLen]; //Create array large enough to house encoded data
+          char encodedCredentials[encodedLen];                                         //Create array large enough to house encoded data
           base64_encode(encodedCredentials, userCredentials, strlen(userCredentials)); //Note: Input array is consumed
 #endif
+
+          snprintf(credentials, sizeof(credentials), "Authorization: Basic %s\r\n", encodedCredentials);
         }
         strncat(serverRequest, credentials, SERVER_BUFFER_SIZE);
         strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE);
@@ -221,7 +226,8 @@ void beginClient()
         int responseSpot = 0;
         while (ntripClient.available())
         {
-          if (responseSpot == sizeof(response) - 1) break;
+          if (responseSpot == sizeof(response) - 1)
+            break;
 
           response[responseSpot++] = ntripClient.read();
           if (strstr(response, "200") > 0) //Look for '200 OK'
@@ -248,10 +254,10 @@ void beginClient()
           Serial.print(F("Connected to "));
           Serial.println(casterHost);
           lastReceivedRTCM_ms = millis(); //Reset timeout
-          ggaTransmitComplete = true; //Reset to start polling for new GGA data
+          ggaTransmitComplete = true;     //Reset to start polling for new GGA data
         }
       } //End attempt to connect
-    } //End connected == false
+    }   //End connected == false
 
     if (ntripClient.connected() == true)
     {
@@ -263,7 +269,8 @@ void beginClient()
       {
         //Serial.write(ntripClient.read()); //Pipe to serial port is fine but beware, it's a lot of binary data
         rtcmData[rtcmCount++] = ntripClient.read();
-        if (rtcmCount == sizeof(rtcmData)) break;
+        if (rtcmCount == sizeof(rtcmData))
+          break;
       }
 
       if (rtcmCount > 0)
@@ -278,12 +285,7 @@ void beginClient()
     }
 
     //Provide the caster with our current position as needed
-    if (ntripClient.connected() == true
-        && transmitLocation == true
-        && (millis() - lastTransmittedGGA_ms) > timeBetweenGGAUpdate_ms
-        && ggaSentenceComplete == true
-        && ggaTransmitComplete == false
-       )
+    if (ntripClient.connected() == true && transmitLocation == true && (millis() - lastTransmittedGGA_ms) > timeBetweenGGAUpdate_ms && ggaSentenceComplete == true && ggaTransmitComplete == false)
     {
       Serial.print(F("Pushing GGA to server: "));
       Serial.println(ggaSentence);
@@ -315,7 +317,8 @@ void beginClient()
       int responseSpot = 0;
       while (ntripClient.available())
       {
-        if (responseSpot == sizeof(response) - 1) break;
+        if (responseSpot == sizeof(response) - 1)
+          break;
 
         response[responseSpot++] = ntripClient.read();
         if (strstr(response, "200") > 0) //Look for '200 OK'
