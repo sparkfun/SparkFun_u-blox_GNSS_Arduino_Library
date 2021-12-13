@@ -135,8 +135,10 @@ void setup()
   //but it takes much longer to start generating RTCM data. See Example4_BaseWithLCD
   //myGNSS.enableSurveyMode(60, 5.000); //Enable Survey in, 60 seconds, 5.0m
 
-  if (myGNSS.saveConfiguration() == false) //Save the current settings to flash and BBR
-    Serial.println(F("Module failed to save"));
+  //If you were setting up a full GNSS station, you would want to save these settings.
+  //Because setting an incorrect static position will disable the ability to get a lock, we will skip saving during this example
+  //if (myGNSS.saveConfiguration() == false) //Save the current settings to flash and BBR
+  //  Serial.println(F("Module failed to save"));
 
   Serial.println(F("Module configuration complete"));
 }
