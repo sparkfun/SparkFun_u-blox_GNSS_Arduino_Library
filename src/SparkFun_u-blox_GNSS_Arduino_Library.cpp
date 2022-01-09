@@ -4363,20 +4363,6 @@ size_t SFE_UBLOX_GNSS::pushAssistNowData(size_t offset, bool skipTime, const uin
 size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, const uint8_t *dataBytes, size_t numDataBytes, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
   size_t dataPtr = offset; // Pointer into dataBytes
-
-  if (offset >= numDataBytes) // Sanity check. Return now if offset is invalid.
-  {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
-    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-    {
-      _debugSerial->print(F("pushAssistNowData: offset ("));
-      _debugSerial->print(offset);
-      _debugSerial->println(F(") is invalid! Aborting..."));
-    }
-#endif
-    return ((size_t)0);
-  }
-
   size_t packetsProcessed = 0; // Keep count of how many packets have been processed
   size_t bytesPushed = 0; // Keep count 
 
@@ -4406,7 +4392,7 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
       return (0);
   }
   
-  while (dataPtr < numDataBytes) // Keep going until we have processed all the bytes
+  while (dataPtr < (offset + numDataBytes)) // Keep going until we have processed all the bytes
   {
     // Start by checking the validity of the packet being pointed to
     bool dataIsOK = true;
@@ -4421,8 +4407,8 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
     uint8_t checksumB = 0;
     // Calculate the checksum bytes
     // Keep going until the end of the packet is reached (payloadPtr == (dataPtr + packetLength))
-    // or we reach the end of the AssistNow data (payloadPtr == numDataBytes)
-    for (size_t payloadPtr = dataPtr + ((size_t)2); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < numDataBytes); payloadPtr++)
+    // or we reach the end of the AssistNow data (payloadPtr == offset + numDataBytes)
+    for (size_t payloadPtr = dataPtr + ((size_t)2); (payloadPtr < (dataPtr + packetLength + ((size_t)6))) && (payloadPtr < (offset + numDataBytes)); payloadPtr++)
     {
       checksumA += *(dataBytes + payloadPtr);
       checksumB += checksumA;
@@ -4431,7 +4417,7 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
     dataIsOK &= (checksumA == *(dataBytes + dataPtr + packetLength + ((size_t)6)));
     dataIsOK &= (checksumB == *(dataBytes + dataPtr + packetLength + ((size_t)7)));
 
-    dataIsOK &= ((dataPtr + packetLength + ((size_t)8)) <= numDataBytes); // Check we haven't overrun
+    dataIsOK &= ((dataPtr + packetLength + ((size_t)8)) <= (offset + numDataBytes)); // Check we haven't overrun
 
     // If the data is valid, push it
     if (dataIsOK)
@@ -4527,7 +4513,7 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
           // We are not checking for Acks, so let's assume the send was successful?
           packetsProcessed++;
           // We are not checking for Acks, so delay for maxWait millis unless we've reached the end of the data
-          if ((dataPtr + packetLength + ((size_t)8)) < numDataBytes)
+          if ((dataPtr + packetLength + ((size_t)8)) < (offset + numDataBytes))
           {
             delay(maxWait);
           }
@@ -4548,7 +4534,7 @@ size_t SFE_UBLOX_GNSS::pushAssistNowDataInternal(size_t offset, bool skipTime, c
       }
 #endif
       
-      while ((dataPtr < numDataBytes) && (*(dataBytes + ++dataPtr) != UBX_SYNCH_1))
+      while ((dataPtr < (offset + numDataBytes)) && (*(dataBytes + ++dataPtr) != UBX_SYNCH_1))
       {
         ; // Increment dataPtr until we are pointing at the next 0xB5 - or we reach the end of the data
       }
@@ -4582,7 +4568,10 @@ bool SFE_UBLOX_GNSS::initPacketUBXMGAACK()
 }
 
 // Provide initial time assistance
-bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos, uint16_t tAccS, uint32_t tAccNs, uint8_t source, sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setUTCTimeAssistance(uint16_t year, uint8_t month, uint8_t day,
+                                          uint8_t hour, uint8_t minute, uint8_t second, uint32_t nanos,
+                                          uint16_t tAccS, uint32_t tAccNs, uint8_t source,
+                                          sfe_ublox_mga_assist_ack_e mgaAck, uint16_t maxWait)
 {
   uint8_t iniTimeUTC[32]; // Create the UBX-MGA-INI-TIME_UTC message by hand
   memset(iniTimeUTC, 0x00, 32); // Set all unused / reserved bytes and the checksum to zero
