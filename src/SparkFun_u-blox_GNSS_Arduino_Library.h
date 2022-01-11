@@ -438,6 +438,7 @@ const uint8_t COM_PORT_SPI = 4;
 const uint8_t COM_TYPE_UBX = (1 << 0);
 const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
+const uint8_t COM_TYPE_SPARTN = (1 << 6);
 
 // Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
 const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001;	 // ioPort - communications port settings (causes IO system reset!)
@@ -770,17 +771,17 @@ public:
 
 	//Port configurations
 	bool getPortSettings(uint8_t portID, uint16_t maxWait = defaultMaxWait);					   //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
-	bool setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait);  //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+	bool setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait);  //Configure a given port to input UBX, NMEA, RTCM3, SPARTN or a combination thereof
 
 	bool setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = defaultMaxWait);			   //Changes the I2C address of the u-blox module
 	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the u-blox module, uartPort should be COM_PORT_UART1/2
 
-	bool setI2COutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setUART1Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setUART2Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setUSBOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setSPIOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
+	bool setI2COutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure I2C port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setUART1Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART1 port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setUART2Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART2 port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setUSBOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure USB port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setSPIOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure SPI port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
 	void setNMEAOutputPort(Stream &nmeaOutputPort);												//Sets the internal variable for the port to direct NMEA characters to
 
 	//Reset to defaults
