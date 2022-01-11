@@ -4134,6 +4134,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
+  if ((packetUBXNAVPVAT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVPVAT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVPVAT->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    //if (_printDebug == true)
+    //  _debugSerial->println(F("checkCallbacks: calling callback for NAV PVAT"));
+    packetUBXNAVPVAT->callbackPointer(*packetUBXNAVPVAT->callbackData); // Call the callback
+    packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
   if ((packetUBXNAVCLOCK != NULL) // If RAM has been allocated for message storage
     && (packetUBXNAVCLOCK->callbackData != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXNAVCLOCK->callbackPointer != NULL) // If the pointer to the callback has been defined
