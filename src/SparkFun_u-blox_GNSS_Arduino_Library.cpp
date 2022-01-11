@@ -12773,6 +12773,60 @@ uint32_t SFE_UBLOX_GNSS::getVerticalAccuracy(uint16_t maxWait)
   return (packetUBXNAVHPPOSLLH->data.vAcc);
 }
 
+// ***** PVAT Helper Functions
+
+int32_t SFE_UBLOX_GNSS::getVehicleRoll(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehRoll == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehRoll = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.vehRoll);
+}
+
+int32_t SFE_UBLOX_GNSS::getVehiclePitch(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehPitch == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehPitch = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.vehPitch);
+}
+
+int32_t SFE_UBLOX_GNSS::getVehicleHeading(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehHeading == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehHeading = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.vehHeading);
+}
+
+int32_t SFE_UBLOX_GNSS::getMotionHeading(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.motHeading == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.motHeading = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.motHeading);
+}
+
 // ***** SVIN Helper Functions
 
 bool SFE_UBLOX_GNSS::getSurveyInActive(uint16_t maxWait)
