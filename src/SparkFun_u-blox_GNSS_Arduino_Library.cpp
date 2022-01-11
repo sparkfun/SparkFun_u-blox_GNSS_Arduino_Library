@@ -2535,7 +2535,6 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVPVAT->data.errEllipseMajor = extractLong(msg, 100);
         packetUBXNAVPVAT->data.errEllipseMinor = extractLong(msg, 104);
 
-
         //Mark all datums as fresh (not read before)
         packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0xFFFFFFFF;
         packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0xFFFFFFFF;
