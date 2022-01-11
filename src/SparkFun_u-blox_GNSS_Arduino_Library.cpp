@@ -8810,7 +8810,6 @@ bool SFE_UBLOX_GNSS::getNAVPVAT(uint16_t maxWait)
     packetCfg.id = UBX_NAV_PVAT;
     packetCfg.len = 0;
     packetCfg.startingSpot = 0;
-    //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+packetCfgPayloadSize = 84 bytes Note:now hard-coded in processUBX
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
