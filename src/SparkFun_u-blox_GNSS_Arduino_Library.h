@@ -379,7 +379,8 @@ const uint8_t UBX_RXM_PMREQ = 0x41; //Requests a Power Management task (two diff
 const uint8_t UBX_RXM_RAWX = 0x15;	//Multi-GNSS Raw Measurement Data
 const uint8_t UBX_RXM_RLM = 0x59;	//Galileo SAR Short-RLM report (two different packet sizes)
 const uint8_t UBX_RXM_RTCM = 0x32;	//RTCM input status
-const uint8_t UBX_RXM_SFRBX = 0x13; //Boradcast Navigation Data Subframe
+const uint8_t UBX_RXM_SFRBX = 0x13; //Broadcast Navigation Data Subframe
+const uint8_t UBX_RXM_SPARTN = 0x33; //SPARTN input status
 
 //Class: SEC
 //The following are used to configure the SEC UBX messages (security feature messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
