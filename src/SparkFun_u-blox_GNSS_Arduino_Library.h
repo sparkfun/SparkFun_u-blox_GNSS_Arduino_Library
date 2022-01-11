@@ -355,6 +355,7 @@ const uint8_t UBX_NAV_ORB = 0x34;		//GNSS Orbit Database Info
 const uint8_t UBX_NAV_POSECEF = 0x01;	//Position Solution in ECEF
 const uint8_t UBX_NAV_POSLLH = 0x02;	//Geodetic Position Solution
 const uint8_t UBX_NAV_PVT = 0x07;		//All the things! Position, velocity, time, PDOP, height, h/v accuracies, number of satellites. Navigation Position Velocity Time Solution.
+const uint8_t UBX_NAV_PVAT = 0x17;		//Navigation position velocity attitude time solution (ZED-F9R only)
 const uint8_t UBX_NAV_RELPOSNED = 0x3C; //Relative Positioning Information in NED frame
 const uint8_t UBX_NAV_RESETODO = 0x10;	//Reset odometer
 const uint8_t UBX_NAV_SAT = 0x35;		//Satellite Information
@@ -983,7 +984,7 @@ public:
 	void flushNAVHPPOSECEF(); //Mark all the data as read/stale
 	void logNAVHPPOSECEF(bool enabled = true); // Log data to file buffer
 
-	bool getHPPOSLLH(uint16_t maxWait = defaultMaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new HPPOSLLH is available.
+	bool getHPPOSLLH(uint16_t maxWait = defaultMaxWait); // NAV HPPOSLLH
 	bool setAutoHPPOSLLH(bool enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency
 	bool setAutoHPPOSLLH(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	bool setAutoHPPOSLLHrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic HPPOSLLH reports
@@ -991,6 +992,15 @@ public:
 	bool assumeAutoHPPOSLLH(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
 	void flushHPPOSLLH(); //Mark all the HPPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
 	void logNAVHPPOSLLH(bool enabled = true); // Log data to file buffer
+
+	bool getNAVPVAT(uint16_t maxWait = defaultMaxWait);	// NAV PVAT
+	bool setAutoNAVPVAT(bool enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVAT reports at the navigation frequency
+	bool setAutoNAVPVAT(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVAT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	bool setAutoNAVPVATrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic PVAT reports
+	bool setAutoNAVPVATcallback(void (*callbackPointer)(UBX_NAV_PVAT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic PVAT reports at the navigation frequency. Data is accessed from the callback.
+	bool assumeAutoNAVPVAT(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and PVAT is send cyclically already
+	void flushNAVPVAT(); //Mark all the PVAT data as read/stale
+	void logNAVPVAT(bool enabled = true); // Log data to file buffer
 
 	bool getNAVCLOCK(uint16_t maxWait = defaultMaxWait); // NAV CLOCK
 	bool setAutoNAVCLOCK(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic clock reports at the navigation frequency
@@ -1256,6 +1266,13 @@ public:
 	uint32_t getHorizontalAccuracy(uint16_t maxWait = defaultMaxWait);
 	uint32_t getVerticalAccuracy(uint16_t maxWait = defaultMaxWait);
 
+	// Helper functions for PVAT
+
+	int32_t getVehicleRoll(uint16_t maxWait = defaultMaxWait); // Returns vehicle roll in degrees * 10^-5
+	int32_t getVehiclePitch(uint16_t maxWait = defaultMaxWait); // Returns vehicle pitch in degrees * 10^-5
+	int32_t getVehicleHeading(uint16_t maxWait = defaultMaxWait); // Returns vehicle heading in degrees * 10^-5
+	int32_t getMotionHeading(uint16_t maxWait = defaultMaxWait); // Returns the motion heading in degrees * 10^-5
+
 	// Helper functions for SVIN
 
 	bool getSurveyInActive(uint16_t maxWait = defaultMaxWait);
@@ -1324,6 +1341,7 @@ public:
 	UBX_NAV_VELNED_t *packetUBXNAVVELNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_HPPOSLLH_t *packetUBXNAVHPPOSLLH = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_PVAT_t *packetUBXNAVPVAT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1408,6 +1426,7 @@ private:
 	bool initPacketUBXNAVVELNED(); // Allocate RAM for packetUBXNAVVELNED and initialize it
 	bool initPacketUBXNAVHPPOSECEF(); // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
 	bool initPacketUBXNAVHPPOSLLH(); // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
+	bool initPacketUBXNAVPVAT(); // Allocate RAM for packetUBXNAVPVAT and initialize it
 	bool initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
 	bool initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	bool initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
