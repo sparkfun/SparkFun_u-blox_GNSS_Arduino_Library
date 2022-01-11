@@ -214,6 +214,16 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXNAVHPPOSLLH = NULL; // Redundant?
   }
 
+  if (packetUBXNAVPVAT != NULL)
+  {
+    if (packetUBXNAVPVAT->callbackData != NULL)
+    {
+      delete packetUBXNAVPVAT->callbackData;
+    }
+    delete packetUBXNAVPVAT;
+    packetUBXNAVPVAT = NULL; // Redundant?
+  }
+
   if (packetUBXNAVCLOCK != NULL)
   {
     if (packetUBXNAVCLOCK->callbackData != NULL)
