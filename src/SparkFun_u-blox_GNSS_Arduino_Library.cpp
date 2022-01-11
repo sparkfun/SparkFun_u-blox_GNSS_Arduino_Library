@@ -1155,6 +1155,9 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_HPPOSLLH:
           if (packetUBXNAVHPPOSLLH != NULL) result = true;
         break;
+        case UBX_NAV_PVAT:
+          if (packetUBXNAVPVAT != NULL) result = true;
+        break;
         case UBX_NAV_CLOCK:
           if (packetUBXNAVCLOCK != NULL) result = true;
         break;
