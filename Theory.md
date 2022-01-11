@@ -49,6 +49,7 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-DOP (0x01 0x04): Dilution of precision
 - UBX-NAV-ATT (0x01 0x05): Attitude solution (**only with ADR or UDR products**)
 - UBX-NAV-PVT (0x01 0x07): Navigation position velocity time solution
+- UBX-NAV-PVAT (0x01 0x17): Navigation position velocity attitude time solution (**only with ADR or UDR products**)
 - UBX-NAV-ODO (0x01 0x09): Odometer solution
 - UBX-NAV-VELECEF (0x01 0x11): Velocity solution in ECEF
 - UBX-NAV-VELNED (0x01 0x12): Velocity solution in NED frame
@@ -69,6 +70,8 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-HNR-PVT (0x28 0x00): High rate output of PVT solution (**only with ADR or UDR products**)
 - UBX-HNR-ATT (0x28 0x01): Attitude solution (**only with ADR or UDR products**)
 - UBX-HNR-INS (0x28 0x02): Vehicle dynamics information (**only with ADR or UDR products**)
+
+Please see [Adding_New_Messages.md](./Adding_New_Messages.md) for details on how to add "auto" support for new messages.
 
 Notes:
 - UBX-NAV-POSLLH is not supported as UBX-NAV-PVT contains the same information
