@@ -469,7 +469,9 @@ enum dynModel // Possible values for the dynamic platform model, which provide m
 	DYN_MODEL_AIRBORNE2g,	  //Airborne <2g acceleration. Recommended for typical airborne environments. No 2D position fixes supported.
 	DYN_MODEL_AIRBORNE4g,	  //Airborne <4g acceleration. Only recommended for extremely dynamic environments. No 2D position fixes supported.
 	DYN_MODEL_WRIST,		  // Not supported in protocol versions less than 18. Only recommended for wrist worn applications. Receiver will filter out arm motion.
-	DYN_MODEL_BIKE,			  // Supported in protocol versions 19.2
+	DYN_MODEL_BIKE,			  // Supported in protocol versions 19.2. (not available in all products)
+	DYN_MODEL_MOWER,		  // Added in HPS 1.21 (not available in all products)
+	DYN_MODEL_ESCOOTER,		  // Added in HPS 1.21 (not available in all products)
 	DYN_MODEL_UNKNOWN = 255 // getDynamicModel will return 255 if sendCommand fails
 };
 
