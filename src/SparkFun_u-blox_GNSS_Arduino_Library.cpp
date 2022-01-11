@@ -2491,6 +2491,70 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         }
       }
     }
+    else if (msg->id == UBX_NAV_PVAT && msg->len == UBX_NAV_PVAT_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVPVAT != NULL)
+      {
+        packetUBXNAVPVAT->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVPVAT->data.version = extractByte(msg, 4);
+        packetUBXNAVPVAT->data.valid.all = extractByte(msg, 5);
+        packetUBXNAVPVAT->data.year = extractInt(msg, 6);
+        packetUBXNAVPVAT->data.month = extractByte(msg, 8);
+        packetUBXNAVPVAT->data.day = extractByte(msg, 9);
+        packetUBXNAVPVAT->data.hour = extractByte(msg, 10);
+        packetUBXNAVPVAT->data.min = extractByte(msg, 11);
+        packetUBXNAVPVAT->data.sec = extractByte(msg, 12);
+        packetUBXNAVPVAT->data.tAcc = extractLong(msg, 16);
+        packetUBXNAVPVAT->data.nano = extractSignedLong(msg, 20); //Includes milliseconds
+        packetUBXNAVPVAT->data.fixType = extractByte(msg, 24);
+        packetUBXNAVPVAT->data.flags.all = extractByte(msg, 25);
+        packetUBXNAVPVAT->data.flags2.all = extractByte(msg, 26);
+        packetUBXNAVPVAT->data.numSV = extractByte(msg, 27);
+        packetUBXNAVPVAT->data.lon = extractSignedLong(msg, 28);
+        packetUBXNAVPVAT->data.lat = extractSignedLong(msg, 32);
+        packetUBXNAVPVAT->data.height = extractSignedLong(msg, 36);
+        packetUBXNAVPVAT->data.hMSL = extractSignedLong(msg, 40);
+        packetUBXNAVPVAT->data.hAcc = extractLong(msg, 44);
+        packetUBXNAVPVAT->data.vAcc = extractLong(msg, 48);
+        packetUBXNAVPVAT->data.velN = extractSignedLong(msg, 52);
+        packetUBXNAVPVAT->data.velE = extractSignedLong(msg, 56);
+        packetUBXNAVPVAT->data.velD = extractSignedLong(msg, 60);
+        packetUBXNAVPVAT->data.gSpeed = extractSignedLong(msg, 64);
+        packetUBXNAVPVAT->data.sAcc = extractLong(msg, 68);
+        packetUBXNAVPVAT->data.vehRoll = extractSignedLong(msg, 72);
+        packetUBXNAVPVAT->data.vehPitch = extractSignedLong(msg, 76);
+        packetUBXNAVPVAT->data.vehHeading = extractSignedLong(msg, 80);
+        packetUBXNAVPVAT->data.motHeading = extractSignedLong(msg, 84);
+        packetUBXNAVPVAT->data.accRoll = extractInt(msg, 88);
+        packetUBXNAVPVAT->data.accPitch = extractInt(msg, 90);
+        packetUBXNAVPVAT->data.accHeading = extractInt(msg, 92);
+        packetUBXNAVPVAT->data.magDec = extractSignedInt(msg, 94);
+        packetUBXNAVPVAT->data.magAcc = extractInt(msg, 96);
+        packetUBXNAVPVAT->data.errEllipseOrient = extractInt(msg, 98);
+        packetUBXNAVPVAT->data.errEllipseMajor = extractLong(msg, 100);
+        packetUBXNAVPVAT->data.errEllipseMinor = extractLong(msg, 104);
+
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0xFFFFFFFF;
+        packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVPVAT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVPVAT->callbackData->iTOW, &packetUBXNAVPVAT->data.iTOW, sizeof(UBX_NAV_PVAT_data_t));
+          packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVPVAT->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storePacket(msg);
+        }
+      }
+    }
     else if (msg->id == UBX_NAV_CLOCK && msg->len == UBX_NAV_CLOCK_LEN)
     {
       //Parse various byte fields into storage - but only if we have memory allocated for it
