@@ -8785,6 +8785,166 @@ void SFE_UBLOX_GNSS::logNAVHPPOSLLH(bool enabled)
   packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
+// ***** PVAT automatic support
+
+//Get the latest Position/Velocity/Time solution and fill all global variables
+bool SFE_UBLOX_GNSS::getNAVPVAT(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVPVAT->automaticFlags.flags.bits.automatic && packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate)
+  {
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVAT);
+    return packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all;
+  }
+  else if (packetUBXNAVPVAT->automaticFlags.flags.bits.automatic && !packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    return (false);
+  }
+  else
+  {
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_PVAT;
+    packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
+    //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+packetCfgPayloadSize = 84 bytes Note:now hard-coded in processUBX
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+    {
+      return (true);
+    }
+
+    return (false);
+  }
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVAT(bool enable, uint16_t maxWait)
+{
+  return setAutoNAVPVATrate(enable ? 1 : 0, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVAT(bool enable, bool implicitUpdate, uint16_t maxWait)
+{
+  return setAutoNAVPVATrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVATrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  if (rate > 127) rate = 127;
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_PVAT;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
+
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    packetUBXNAVPVAT->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return ok;
+}
+
+//Enable automatic navigation message generation by the GNSS. This changes the way getPVAT works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVATcallback(void (*callbackPointer)(UBX_NAV_PVAT_data_t), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVPVAT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAutoPVAT failed
+
+  if (packetUBXNAVPVAT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPVAT->callbackData = new UBX_NAV_PVAT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPVAT->callbackData == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVPVATcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  packetUBXNAVPVAT->callbackPointer = callbackPointer; // RAM has been allocated so now update the pointer
+
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and PVAT is send cyclically already
+//set config to suitable parameters
+bool SFE_UBLOX_GNSS::assumeAutoNAVPVAT(bool enabled, bool implicitUpdate)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  bool changes = packetUBXNAVPVAT->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
+  if (changes)
+  {
+      packetUBXNAVPVAT->automaticFlags.flags.bits.automatic = enabled;
+      packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVPVAT and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXNAVPVAT()
+{
+  packetUBXNAVPVAT = new UBX_NAV_PVAT_t; //Allocate RAM for the main struct
+  if (packetUBXNAVPVAT == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVPVAT: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXNAVPVAT->automaticFlags.flags.all = 0;
+  packetUBXNAVPVAT->callbackPointer = NULL;
+  packetUBXNAVPVAT->callbackData = NULL;
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0;
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0;
+  return (true);
+}
+
+//Mark all the PVAT data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GNSS::flushNAVPVAT()
+{
+  if (packetUBXNAVPVAT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0; //Mark all datums as stale (read before)
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0;
+}
+
+//Log this data in file buffer
+void SFE_UBLOX_GNSS::logNAVPVAT(bool enabled)
+{
+  if (packetUBXNAVPVAT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPVAT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
+
 // ***** NAV CLOCK automatic support
 
 bool SFE_UBLOX_GNSS::getNAVCLOCK(uint16_t maxWait)
