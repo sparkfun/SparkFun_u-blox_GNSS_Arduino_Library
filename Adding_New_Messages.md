@@ -1,7 +1,6 @@
 ## How to add new messages to the SparkFun u-blox GNSS Arduino Library
 
-Based on [this issue](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/issues/97), here is a summary of how to add new messages to the SparkFun u-blox GNSS Arduino Library
-- with full "auto" support (for callbacks, logging, etc.).
+Based on [this issue](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/issues/97), here is a summary of how to add new messages to the SparkFun u-blox GNSS Arduino Library with full "auto" support (for callbacks, logging, etc.).
 
 Looking at the issue, we see that the library is not supporting the UBX-NAV-PVAT (Navigation Position Velocity Attitude Time solution).
 PVAT is a new message added in version 1.21 of the HPS (High Precision Fusion) firmware and version 33.21 of the F9 Interface Description.
@@ -9,7 +8,7 @@ This makes us wonder if more new messages have been added which should also be i
 
 ### Step 1: Check the Interface Description for new keys
 
-* Download the latest [interface description](https://www.u-blox.com/sites/default/files/ZED-F9R_ProductSummary_UBX-19048775.pdf) from the [u-blox website](https://www.u-blox.com/en/product/zed-f9r-module#tab-documentation-resources)
+* Download the latest [interface description](https://www.u-blox.com/sites/default/files/F9-HPS-1.21_InterfaceDescription_UBX-21019746.pdf) from the [u-blox website](https://www.u-blox.com/en/product/zed-f9r-module#tab-documentation-resources)
 * Open the interface description in Adobe Acrobat Reader DC (the free version)
 * Do a ```File \ Save as Text...```
 * Save the file in ```Text (Accessible) (*.txt)``` format
