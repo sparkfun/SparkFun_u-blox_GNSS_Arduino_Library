@@ -406,6 +406,26 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXHNRPVT = NULL; // Redundant?
   }
 
+  if (storageNMEAGPGGA != NULL)
+  {
+    if (storageNMEAGPGGA->callbackCopy != NULL)
+    {
+      delete storageNMEAGPGGA->callbackCopy;
+    }
+    delete storageNMEAGPGGA;
+    storageNMEAGPGGA = NULL; // Redundant?
+  }
+
+  if (storageNMEAGNGGA != NULL)
+  {
+    if (storageNMEAGNGGA->callbackCopy != NULL)
+    {
+      delete storageNMEAGNGGA->callbackCopy;
+    }
+    delete storageNMEAGNGGA;
+    storageNMEAGNGGA = NULL; // Redundant?
+  }
+
 }
 
 //Allow the user to change packetCfgPayloadSize. Handy if you want to process big messages like RAWX
@@ -1682,6 +1702,15 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         _signsOfLife = isNMEAHeaderValid();
       }
 
+      // Check if we have automatic storage for this message
+      if (isThisNMEAauto())
+      {
+        uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+        uint8_t *nmeaPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        *lengthPtr = 6; // Set the working copy length
+        memcpy(nmeaPtr, &nmeaAddressField[0], 6); // Copy the start character and address field into the working copy
+      }
+
       // We've just received the end of the address field. Check if it is selected for logging
       if (logThisNMEA())
       {
@@ -1701,6 +1730,24 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if ((nmeaByteCounter > 5) || (nmeaByteCounter < 0)) // Should we add incoming to the file buffer and/or pass it to processNMEA?
     {
+      if (isThisNMEAauto())
+      {
+        uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+        uint8_t *nmeaPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        uint8_t nmeaMaxLength = getNMEAMaxLength();
+        if (*lengthPtr < nmeaMaxLength)
+        {
+          *(nmeaPtr + *lengthPtr) = incoming; // Store the character
+          *lengthPtr = *lengthPtr + 1; // Increment the length
+          if (*lengthPtr == nmeaMaxLength)
+          {
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+            {
+              _debugSerial->println(F("process: NMEA buffer is full!"));
+            }
+          }
+        }
+      }
       if (logThisNMEA())
         storeFileBytes(&incoming, 1); // Add incoming to the file buffer
       if (processThisNMEA())
@@ -1716,7 +1763,85 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
       currentSentence = NONE; //Something went wrong. Reset.
 
     if (nmeaByteCounter == 0) // Check if we are done
+    {
+      if (isThisNMEAauto())
+      {
+        uint8_t *workingLengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+        uint8_t *workingNMEAPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        uint8_t nmeaMaxLength = getNMEAMaxLength();
+        // Check the checksum: the checksum is the exclusive-OR of all characters between the $ and the *
+        uint8_t nmeaChecksum = 0;
+        uint8_t charsChecked = 1; // Start after the $
+        uint8_t thisChar = '\0';
+        while ((charsChecked < (nmeaMaxLength - 1))
+                && (charsChecked < ((*workingLengthPtr) - 4))
+                && (thisChar != '*'))
+        {
+          thisChar = *(workingNMEAPtr + charsChecked); // Get a char from the working copy
+          if (thisChar != '*') // Ex-or the char into the checksum - but not if it is the '*'
+            nmeaChecksum ^= thisChar;
+          charsChecked++; // Increment the counter
+        }
+        if (thisChar == '*') // Make sure we found the *
+        {
+          uint8_t expectedChecksum1 = (nmeaChecksum >> 4) + '0';
+          if (expectedChecksum1 >= ':') // Handle Hex correctly
+            expectedChecksum1 += 'A' - ':';
+          uint8_t expectedChecksum2 = (nmeaChecksum & 0x0F) + '0';
+          if (expectedChecksum2 >= ':') // Handle Hex correctly
+            expectedChecksum2 += 'A' - ':';
+          if ((expectedChecksum1 == *(workingNMEAPtr + charsChecked))
+              && (expectedChecksum2 == *(workingNMEAPtr + charsChecked + 1)))
+          {
+            uint8_t *completeLengthPtr = getNMEACompleteLengthPtr(); // Get a pointer to the complete copy length
+            uint8_t *completeNMEAPtr = getNMEACompleteNMEAPtr(); // Get a pointer to the complete copy NMEA data
+            memset(completeNMEAPtr, 0, nmeaMaxLength); // Clear the previous complete copy
+            memcpy(completeNMEAPtr, workingNMEAPtr, *workingLengthPtr); // Copy the working copy into the complete copy
+            *completeLengthPtr = *workingLengthPtr; // Update the length
+            nmeaAutomaticFlags *flagsPtr = getNMEAFlagsPtr(); // Get a pointer to the flags
+            nmeaAutomaticFlags flagsCopy = *flagsPtr;
+            flagsCopy.flags.bits.completeCopyValid = 1; // Set the complete copy valid flag
+            flagsCopy.flags.bits.completeCopyRead = 0; // Clear the complete copy read/stale flag
+            *flagsPtr = flagsCopy; // Update the flags
+            // Callback
+            if (doesThisNMEAHaveCallback()) // Do we need to copy the data into the callback copy?
+            {
+              if (flagsCopy.flags.bits.callbackCopyValid == 0) // Has the callback copy valid flag been cleared (by checkCallbacks)
+              {
+                uint8_t *callbackLengthPtr = getNMEACallbackLengthPtr(); // Get a pointer to the callback copy length
+                uint8_t *callbackNMEAPtr = getNMEACallbackNMEAPtr(); // Get a pointer to the callback copy NMEA data
+                memset(callbackNMEAPtr, 0, nmeaMaxLength); // Clear the previous callback copy
+                memcpy(callbackNMEAPtr, workingNMEAPtr, *workingLengthPtr); // Copy the working copy into the callback copy
+                *callbackLengthPtr = *workingLengthPtr; // Update the length
+                flagsCopy.flags.bits.callbackCopyValid = 1; // Set the callback copy valid flag
+                *flagsPtr = flagsCopy; // Update the flags
+              }
+            }
+          }
+          else
+          {
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+            {
+              _debugSerial->print(F("process: NMEA checksum fail (2)! Expected "));
+              _debugSerial->write(expectedChecksum1);
+              _debugSerial->write(expectedChecksum2);
+              _debugSerial->print(F(" Got "));
+              _debugSerial->write(*(workingNMEAPtr + charsChecked));
+              _debugSerial->write(*(workingNMEAPtr + charsChecked + 1));
+              _debugSerial->println();
+            }
+          }
+        }
+        else
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->println(F("process: NMEA checksum fail (1)!"));
+          }
+        }
+      }
       currentSentence = NONE; // All done!
+    }
   }
   else if (currentSentence == RTCM)
   {
@@ -1826,6 +1951,194 @@ void SFE_UBLOX_GNSS::processNMEA(char incoming)
   //If user has assigned an output port then pipe the characters there
   if (_nmeaOutputPort != NULL)
     _nmeaOutputPort->write(incoming); //Echo this byte to the serial port
+}
+
+// Check if the NMEA message (in nmeaAddressField) is "auto" (i.e. has RAM allocated for it)
+bool SFE_UBLOX_GNSS::isThisNMEAauto()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGPGGA != NULL)
+      return true;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGNGGA != NULL)
+      return true;
+  }
+
+  return false;
+}
+
+// Do we need to copy the data into the callback copy?
+bool SFE_UBLOX_GNSS::doesThisNMEAHaveCallback()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGPGGA != NULL)
+      if (storageNMEAGPGGA->callbackCopy != NULL)
+        if (storageNMEAGPGGA->callbackPointer != NULL)
+          return true;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGNGGA != NULL)
+      if (storageNMEAGNGGA->callbackCopy != NULL)
+        if (storageNMEAGNGGA->callbackPointer != NULL)
+          return true;
+  }
+
+  return false;
+}
+
+// Get a pointer to the working copy length
+uint8_t * SFE_UBLOX_GNSS::getNMEAWorkingLengthPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->workingCopy.length;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->workingCopy.length;
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the working copy NMEA data
+uint8_t * SFE_UBLOX_GNSS::getNMEAWorkingNMEAPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->workingCopy.nmea[0];
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->workingCopy.nmea[0];
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the complete copy length
+uint8_t * SFE_UBLOX_GNSS::getNMEACompleteLengthPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->completeCopy.length;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->completeCopy.length;
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the complete copy NMEA data
+uint8_t * SFE_UBLOX_GNSS::getNMEACompleteNMEAPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->completeCopy.nmea[0];
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->completeCopy.nmea[0];
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the callback copy length
+uint8_t * SFE_UBLOX_GNSS::getNMEACallbackLengthPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->callbackCopy->length;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->callbackCopy->length;
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the callback copy NMEA data
+uint8_t * SFE_UBLOX_GNSS::getNMEACallbackNMEAPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->callbackCopy->nmea[0];
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->callbackCopy->nmea[0];
+  }
+
+  return NULL;
+}
+
+// Get the maximum length of this NMEA message
+uint8_t SFE_UBLOX_GNSS::getNMEAMaxLength()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return NMEA_GGA_MAX_LENGTH;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return NMEA_GGA_MAX_LENGTH;
+  }
+
+  return 0;
+}
+
+// Get a pointer to the automatic NMEA flags
+nmeaAutomaticFlags * SFE_UBLOX_GNSS::getNMEAFlagsPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->automaticFlags;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->automaticFlags;
+  }
+
+  return NULL;
 }
 
 //We need to be able to identify an RTCM packet and then the length
@@ -4307,6 +4620,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     //   _debugSerial->println(F("checkCallbacks: calling callback for HNR PVT"));
     packetUBXHNRPVT->callbackPointer(*packetUBXHNRPVT->callbackData); // Call the callback
     packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((storageNMEAGPGGA != NULL) // If RAM has been allocated for message storage
+    && (storageNMEAGPGGA->callbackCopy != NULL) // If RAM has been allocated for the copy of the data
+    && (storageNMEAGPGGA->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for GPGGA"));
+    storageNMEAGPGGA->callbackPointer(*storageNMEAGPGGA->callbackCopy); // Call the callback
+    storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
   }
 
   checkCallbacksReentrant = false;
@@ -11714,6 +12038,153 @@ void SFE_UBLOX_GNSS::setProcessNMEAMask(uint32_t messages)
 uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
 {
   return (_processNMEA.all);
+}
+
+// Initiate automatic storage of NMEA GPGGA messages
+
+// Get the most recent GPGGA message
+// Return 0 if the message has not been received from the module
+// Return 1 if the data is valid but has been read before
+// Return 2 if the data is valid and is fresh/unread
+uint8_t SFE_UBLOX_GNSS::getLatestNMEAGPGGA(NMEA_GGA_data_t *data)
+{
+  if (storageNMEAGPGGA == NULL) initStorageNMEAGPGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGPGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  checkUbloxInternal(&packetCfg, 0, 0); // Call checkUbloxInternal to parse any incoming data. Use a fake UBX class and ID.
+
+  memcpy(data, &storageNMEAGPGGA->completeCopy, sizeof(NMEA_GGA_data_t)); // Copy the complete copy
+
+  uint8_t result = 0;
+  if (storageNMEAGPGGA->automaticFlags.flags.bits.completeCopyValid == 1) // Is the complete copy valid?
+  {
+    result = 1;
+    if (storageNMEAGPGGA->automaticFlags.flags.bits.completeCopyRead == 0) // Has the data already been read?
+    {
+      result = 2;
+      storageNMEAGPGGA->automaticFlags.flags.bits.completeCopyRead = 1; // Mark the data as read
+    }
+  }
+
+  return (result);
+}
+
+//Enable a callback on the arrival of a GPGGA message
+bool SFE_UBLOX_GNSS::setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t))
+{
+  if (storageNMEAGPGGA == NULL) initStorageNMEAGPGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGPGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (storageNMEAGPGGA->callbackCopy == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    storageNMEAGPGGA->callbackCopy = new NMEA_GGA_data_t;
+  }
+
+  if (storageNMEAGPGGA->callbackCopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setNMEAGPGGAcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGPGGA->callbackPointer = callbackPointer;
+  return (true);
+}
+
+// Private: allocate RAM for incoming NMEA GPGGA messages and initialize it
+bool SFE_UBLOX_GNSS::initStorageNMEAGPGGA()
+{
+  storageNMEAGPGGA = new NMEA_GPGGA_t; //Allocate RAM for the main struct
+  if (storageNMEAGPGGA == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initStorageNMEAGPGGA: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGPGGA->workingCopy.length = 0; // Clear the data length
+  memset(storageNMEAGPGGA->workingCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+  storageNMEAGPGGA->completeCopy.length = 0; // Clear the data length
+  memset(storageNMEAGPGGA->completeCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+
+  storageNMEAGPGGA->callbackPointer = NULL; // Clear the callback pointers
+  storageNMEAGPGGA->callbackCopy = NULL;
+
+  storageNMEAGPGGA->automaticFlags.flags.all = 0; // Mark the data as invalid/stale and unread
+
+  return (true);
+}
+
+uint8_t SFE_UBLOX_GNSS::getLatestNMEAGNGGA(NMEA_GGA_data_t *data)
+{
+  if (storageNMEAGNGGA == NULL) initStorageNMEAGNGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGNGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  checkUbloxInternal(&packetCfg, 0, 0); // Call checkUbloxInternal to parse any incoming data. Use a fake UBX class and ID.
+
+  memcpy(data, &storageNMEAGNGGA->completeCopy, sizeof(NMEA_GGA_data_t)); // Copy the complete copy
+
+  uint8_t result = 0;
+  if (storageNMEAGNGGA->automaticFlags.flags.bits.completeCopyValid == 1) // Is the complete copy valid?
+  {
+    result = 1;
+    if (storageNMEAGNGGA->automaticFlags.flags.bits.completeCopyRead == 0) // Has the data already been read?
+    {
+      result = 2;
+      storageNMEAGNGGA->automaticFlags.flags.bits.completeCopyRead = 1; // Mark the data as read
+    }
+  }
+
+  return (result);
+}
+
+bool SFE_UBLOX_GNSS::setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t))
+{
+  if (storageNMEAGNGGA == NULL) initStorageNMEAGNGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGNGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (storageNMEAGNGGA->callbackCopy == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    storageNMEAGNGGA->callbackCopy = new NMEA_GGA_data_t;
+  }
+
+  if (storageNMEAGNGGA->callbackCopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setNMEAGNGGAcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGNGGA->callbackPointer = callbackPointer;
+  return (true);
+}
+
+// Private: allocate RAM for incoming NMEA GNGGA messages and initialize it
+bool SFE_UBLOX_GNSS::initStorageNMEAGNGGA()
+{
+  storageNMEAGNGGA = new NMEA_GNGGA_t; //Allocate RAM for the main struct
+  if (storageNMEAGNGGA == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initStorageNMEAGNGGA: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGNGGA->workingCopy.length = 0; // Clear the data length
+  memset(storageNMEAGNGGA->workingCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+  storageNMEAGNGGA->completeCopy.length = 0; // Clear the data length
+  memset(storageNMEAGNGGA->completeCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+
+  storageNMEAGNGGA->callbackPointer = NULL; // Clear the callback pointers
+  storageNMEAGNGGA->callbackCopy = NULL;
+
+  storageNMEAGNGGA->automaticFlags.flags.all = 0; // Mark the data as invalid/stale and unread
+
+  return (true);
 }
 
 // ***** CFG RATE Helper Functions

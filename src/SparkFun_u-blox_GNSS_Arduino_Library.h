@@ -1323,6 +1323,13 @@ public:
 	float getHNRpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 	float getHNRheading(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 
+	// Support for "auto" storage of NMEA messages
+	
+	uint8_t getLatestNMEAGPGGA(NMEA_GGA_data_t *data); // Return the most recent GPGGA: 0 = no data, 1 = stale data, 2 = fresh data
+	bool setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GPGGA message
+	uint8_t getLatestNMEAGNGGA(NMEA_GGA_data_t *data); // Return the most recent GNGGA: 0 = no data, 1 = stale data, 2 = fresh data
+	bool setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GPGGA message
+
 	// Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
 	// From v2.0: These are public. The user can call these to extract data from custom packets
 	uint32_t extractLong(ubxPacket *msg, uint8_t spotToStart); //Combine four bytes from payload into long
@@ -1372,6 +1379,9 @@ public:
 
 	UBX_MGA_ACK_DATA0_t *packetUBXMGAACK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_MGA_DBD_t *packetUBXMGADBD = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+
+	NMEA_GPGGA_t *storageNMEAGPGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	NMEA_GNGGA_t *storageNMEAGNGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -1452,6 +1462,9 @@ private:
 	bool initPacketUBXMGAACK(); // Allocate RAM for packetUBXMGAACK and initialize it
 	bool initPacketUBXMGADBD(); // Allocate RAM for packetUBXMGADBD and initialize it
 
+	bool initStorageNMEAGPGGA(); // Allocate RAM for incoming NMEA GPGGA messages and initialize it
+	bool initStorageNMEAGNGGA(); // Allocate RAM for incoming NMEA GNGGA messages and initialize it
+
 	//Variables
 	TwoWire *_i2cPort;				//The generic connection to user's chosen I2C hardware
 	Stream *_serialPort;			//The generic connection to user's chosen Serial hardware
@@ -1525,6 +1538,17 @@ private:
 	bool logThisNMEA();				// Return true if we should log this NMEA message
 	bool processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
 	bool isNMEAHeaderValid();		// Return true if the six byte NMEA header appears valid. Used to set _signsOfLife
+
+	bool isThisNMEAauto(); // Check if the NMEA message (in nmeaAddressField) is "auto" (i.e. has RAM allocated for it)
+	bool doesThisNMEAHaveCallback(); // Do we need to copy the data into the callback copy?
+	uint8_t *getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+	uint8_t *getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+	uint8_t *getNMEACompleteLengthPtr(); // Get a pointer to the complete copy length
+	uint8_t *getNMEACompleteNMEAPtr(); // Get a pointer to the complete copy NMEA data
+	uint8_t *getNMEACallbackLengthPtr(); // Get a pointer to the callback copy length
+	uint8_t *getNMEACallbackNMEAPtr(); // Get a pointer to the callback copy NMEA data
+	uint8_t getNMEAMaxLength(); // Get the maximum length of this NMEA message
+	nmeaAutomaticFlags *getNMEAFlagsPtr(); // Get a pointer to the flags
 
 	uint16_t rtcmLen = 0;
 

@@ -2232,4 +2232,53 @@ typedef struct
   UBX_HNR_INS_data_t  *callbackData;
 } UBX_HNR_INS_t;
 
+// NMEA-specific structs
+
+//Additional flags and pointers that need to be stored with each message type
+struct nmeaAutomaticFlags
+{
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t completeCopyValid : 1; // Is the copy of the data struct used by the get function valid/fresh? 0 = invalid/stale, 1 = valid/fresh
+      uint8_t completeCopyRead : 1; // Has the complete copy been read? 0 = unread, 1 = read
+      uint8_t callbackCopyValid : 1; // Is the copy of the data struct used by the callback valid/fresh? 0 = invalid/stale, 1 = valid/fresh
+    } bits;
+  } flags;
+};
+
+// The max length for NMEA messages should be 82 bytes, but GGA messages can exceed that if they include the
+// extra decimal places for "High Precision".
+//
+// To be safe, let's allocate 90 bytes to store the message
+
+const uint8_t NMEA_GGA_MAX_LENGTH = 90;
+
+typedef struct
+{
+  uint8_t length; // The number of bytes in nmea
+  uint8_t nmea[NMEA_GGA_MAX_LENGTH];
+} NMEA_GGA_data_t;
+
+typedef struct
+{
+	nmeaAutomaticFlags automaticFlags;
+  NMEA_GGA_data_t workingCopy; // Incoming data is added to the working copy
+  NMEA_GGA_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_GGA_data_t);
+  NMEA_GGA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GPGGA_t;
+
+typedef struct
+{
+	nmeaAutomaticFlags automaticFlags;
+  NMEA_GGA_data_t workingCopy; // Incoming data is added to the working copy
+  NMEA_GGA_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_GGA_data_t);
+  NMEA_GGA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GNGGA_t;
+
+
 #endif
