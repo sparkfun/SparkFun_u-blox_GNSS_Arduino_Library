@@ -1769,6 +1769,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         uint8_t *workingLengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
         uint8_t *workingNMEAPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
         uint8_t nmeaMaxLength = getNMEAMaxLength();
+        
         // Check the checksum: the checksum is the exclusive-OR of all characters between the $ and the *
         uint8_t nmeaChecksum = 0;
         uint8_t charsChecked = 1; // Start after the $
