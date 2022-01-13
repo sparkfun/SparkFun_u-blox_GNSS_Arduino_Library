@@ -2250,11 +2250,11 @@ struct nmeaAutomaticFlags
 };
 
 // The max length for NMEA messages should be 82 bytes, but GGA messages can exceed that if they include the
-// extra decimal places for "High Precision".
+// extra decimal places for "High Precision Mode".
 //
-// To be safe, let's allocate 90 bytes to store the GGA message
+// To be safe, let's allocate 100 bytes to store the GGA message
 
-const uint8_t NMEA_GGA_MAX_LENGTH = 90;
+const uint8_t NMEA_GGA_MAX_LENGTH = 100;
 
 typedef struct
 {

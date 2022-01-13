@@ -522,6 +522,18 @@ enum sfe_ublox_mga_ack_infocode_e
 	SFE_UBLOX_MGA_ACK_INFOCODE_TYPE_UNKNOWN
 };
 
+// The mainTalkerId, set by UBX-CFG-NMEA setMainTalkerID
+enum sfe_ublox_talker_ids_e
+{
+	SFE_UBLOX_MAIN_TALKER_ID_DEFAULT,
+	SFE_UBLOX_MAIN_TALKER_ID_GP,
+	SFE_UBLOX_MAIN_TALKER_ID_GL,
+	SFE_UBLOX_MAIN_TALKER_ID_GN,
+	SFE_UBLOX_MAIN_TALKER_ID_GA,
+	SFE_UBLOX_MAIN_TALKER_ID_GB,
+	SFE_UBLOX_MAIN_TALKER_ID_GQ
+};
+
 //-=-=-=-=-
 
 #ifndef MAX_PAYLOAD_SIZE
@@ -1167,14 +1179,6 @@ public:
 	void flushHNRPVT(); //Mark all the data as read/stale
 	void logHNRPVT(bool enabled = true); // Log data to file buffer
 
-	// Helper functions for NMEA logging
-	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
-	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
-
-	// Helper functions to control which NMEA messages are passed to processNMEA
-	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
-	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
-
 	// Helper functions for CFG RATE
 
 	bool setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	//Set the number of nav solutions sent per second
@@ -1323,8 +1327,21 @@ public:
 	float getHNRpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 	float getHNRheading(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 
+	// Set the mainTalkerId used by NMEA messages - allows all NMEA messages except GSV to be prefixed with GP instead of GN
+	bool setMainTalkerID(sfe_ublox_talker_ids_e id = SFE_UBLOX_MAIN_TALKER_ID_DEFAULT, uint16_t maxWait = defaultMaxWait);
+
+	// Enable/Disable NMEA High Precision Mode - include extra decimal places in the Lat and Lon
+	bool setHighPrecisionMode(bool enable = true, uint16_t maxWait = defaultMaxWait);
+
+	// Helper functions for NMEA logging
+	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
+	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
+
+	// Helper functions to control which NMEA messages are passed to processNMEA
+	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
+	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
+
 	// Support for "auto" storage of NMEA messages
-	
 	uint8_t getLatestNMEAGPGGA(NMEA_GGA_data_t *data); // Return the most recent GPGGA: 0 = no data, 1 = stale data, 2 = fresh data
 	bool setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GPGGA message
 	uint8_t getLatestNMEAGNGGA(NMEA_GGA_data_t *data); // Return the most recent GNGGA: 0 = no data, 1 = stale data, 2 = fresh data

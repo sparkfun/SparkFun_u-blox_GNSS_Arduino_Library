@@ -1707,7 +1707,9 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
       {
         uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
         uint8_t *nmeaPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        uint8_t nmeaMaxLength = getNMEAMaxLength();
         *lengthPtr = 6; // Set the working copy length
+        memset(nmeaPtr, 0, nmeaMaxLength); // Clear the working copy
         memcpy(nmeaPtr, &nmeaAddressField[0], 6); // Copy the start character and address field into the working copy
       }
 
@@ -12019,6 +12021,54 @@ void SFE_UBLOX_GNSS::logHNRPVT(bool enabled)
 }
 
 // ***** Helper Functions for NMEA Logging / Processing
+
+// Set the mainTalkerId used by NMEA messages - allows all NMEA messages except GSV to be prefixed with GP instead of GN
+bool SFE_UBLOX_GNSS::setMainTalkerID(sfe_ublox_talker_ids_e id, uint16_t maxWait)
+{
+  //Get the current extended NMEA protocol configuration (V1)
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NMEA;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  payloadCfg[9] = (uint8_t)id;
+
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+// Enable/Disable NMEA High Precision Mode - include extra decimal places in the Lat and Lon
+bool SFE_UBLOX_GNSS::setHighPrecisionMode(bool enable, uint16_t maxWait)
+{
+  //Get the current extended NMEA protocol configuration (V1)
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NMEA;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  if (enable)
+  {
+    payloadCfg[3] |= (1 << 3); // Set the highPrec flag
+    payloadCfg[3] &= ~((1 << 0) | (1 << 2)); // Clear the compat and limit82 flags
+  }
+  else
+    payloadCfg[3] &= ~(1 << 3); // Clear the highPrec flag
+
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
 
 // Log selected NMEA messages to file buffer - if the messages are enabled and if the file buffer exists
 // User needs to call setFileBufferSize before .begin

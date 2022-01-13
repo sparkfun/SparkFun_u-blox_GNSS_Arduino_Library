@@ -14,6 +14,10 @@
     1 if the data is valid but is stale (you have read it before)
     2 if the data is valid and fresh
 
+  If the module is using multiple GNSS constellations, the GGA message will be prefixed with Talker ID "GN" instead of "GP".
+  The library includes a getLatestNMEAGNGGA function too.
+  This example shows how to use both functions - and how to change the Talker ID so the GNGGA messages become GPGGA.
+
   This example turns off all sentences except for GPGGA.
 
   Feel like supporting open source hardware?
@@ -59,7 +63,13 @@ void setup()
   myGNSS.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C);
   myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Leave only GGA enabled at current navigation rate
 
-  //myGNSS.saveConfiguration(); //Optional: Save these settings to NVM
+  // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+  myGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
+  //myGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_DEFAULT); // Uncomment this line to restore the default main talker ID
+
+  myGNSS.setHighPrecisionMode(true); // Enable High Precision Mode - include extra decimal places in the GGA messages
+
+  //myGNSS.saveConfiguration(VAL_CFG_SUBSEC_IOPORT | VAL_CFG_SUBSEC_MSGCONF); //Optional: Save only the ioPort and message settings to NVM
 
   Serial.println(F("Messages configured"));
 
@@ -81,19 +91,13 @@ void loop()
   {
     Serial.println(F("GPGGA data is available but is stale"));
   }
-  else if (result == 2)
+  else // if (result == 2)
   {
     // Data contains .length and .nmea
-    Serial.print(F("NMEA: Length: "));
+    Serial.print(F("Latest GPGGA: Length: "));
     Serial.print(data.length);
     Serial.print(F("\tData: "));
     Serial.println((const char *)data.nmea); // .nmea is printable (NULL-terminated)
-  }
-  else
-  {
-    Serial.print(F("result == "));
-    Serial.print(result);
-    Serial.println(F(". This should be impossible!"));
   }
 
   result = myGNSS.getLatestNMEAGNGGA(&data); // Get the latest GNGGA data (if any)
@@ -106,19 +110,13 @@ void loop()
   {
     Serial.println(F("GNGGA data is available but is stale"));
   }
-  else if (result == 2)
+  else // if (result == 2)
   {
     // Data contains .length and .nmea
-    Serial.print(F("NMEA: Length: "));
+    Serial.print(F("Latest GNGGA: Length: "));
     Serial.print(data.length);
     Serial.print(F("\tData: "));
     Serial.println((const char *)data.nmea); // .nmea is printable (NULL-terminated)
-  }
-  else
-  {
-    Serial.print(F("result == "));
-    Serial.print(result);
-    Serial.println(F(". This should be impossible!"));
   }
 
   delay(250);
