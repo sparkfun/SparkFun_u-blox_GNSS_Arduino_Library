@@ -1712,6 +1712,13 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         memset(nmeaPtr, 0, nmeaMaxLength); // Clear the working copy
         memcpy(nmeaPtr, &nmeaAddressField[0], 6); // Copy the start character and address field into the working copy
       }
+      else
+      {
+        // if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        // {
+        //   _debugSerial->println(F("process: non-auto NMEA message"));
+        // }
+      }
 
       // We've just received the end of the address field. Check if it is selected for logging
       if (logThisNMEA())
@@ -1804,7 +1811,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
             nmeaAutomaticFlags *flagsPtr = getNMEAFlagsPtr(); // Get a pointer to the flags
             nmeaAutomaticFlags flagsCopy = *flagsPtr;
             flagsCopy.flags.bits.completeCopyValid = 1; // Set the complete copy valid flag
-            flagsCopy.flags.bits.completeCopyRead = 0; // Clear the complete copy read/stale flag
+            flagsCopy.flags.bits.completeCopyRead = 0; // Clear the complete copy read flag
             *flagsPtr = flagsCopy; // Update the flags
             // Callback
             if (doesThisNMEAHaveCallback()) // Do we need to copy the data into the callback copy?
@@ -4628,12 +4635,23 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
   if ((storageNMEAGPGGA != NULL) // If RAM has been allocated for message storage
     && (storageNMEAGPGGA->callbackCopy != NULL) // If RAM has been allocated for the copy of the data
     && (storageNMEAGPGGA->callbackPointer != NULL) // If the pointer to the callback has been defined
-    && (storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+    && (storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid == 1)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for GPGGA"));
     storageNMEAGPGGA->callbackPointer(*storageNMEAGPGGA->callbackCopy); // Call the callback
     storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
+  }
+
+  if ((storageNMEAGNGGA != NULL) // If RAM has been allocated for message storage
+    && (storageNMEAGNGGA->callbackCopy != NULL) // If RAM has been allocated for the copy of the data
+    && (storageNMEAGNGGA->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (storageNMEAGNGGA->automaticFlags.flags.bits.callbackCopyValid == 1)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for GNGGA"));
+    storageNMEAGNGGA->callbackPointer(*storageNMEAGNGGA->callbackCopy); // Call the callback
+    storageNMEAGNGGA->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
   }
 
   checkCallbacksReentrant = false;

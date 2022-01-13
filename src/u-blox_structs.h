@@ -2242,7 +2242,7 @@ struct nmeaAutomaticFlags
     uint8_t all;
     struct
     {
-      uint8_t completeCopyValid : 1; // Is the copy of the data struct used by the get function valid/fresh? 0 = invalid/stale, 1 = valid/fresh
+      uint8_t completeCopyValid : 1; // Is the copy of the data struct used by the get function valid/fresh? 0 = invalid, 1 = valid
       uint8_t completeCopyRead : 1; // Has the complete copy been read? 0 = unread, 1 = read
       uint8_t callbackCopyValid : 1; // Is the copy of the data struct used by the callback valid/fresh? 0 = invalid/stale, 1 = valid/fresh
     } bits;
@@ -2279,6 +2279,5 @@ typedef struct
   void (*callbackPointer)(NMEA_GGA_data_t);
   NMEA_GGA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
 } NMEA_GNGGA_t;
-
 
 #endif

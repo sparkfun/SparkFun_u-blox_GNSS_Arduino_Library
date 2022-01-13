@@ -1,5 +1,5 @@
 /*
-  Get the GPGGA NMEA sentence using getLatestNMEAGPGGA
+  Get the latest GPGGA / GNGGA NMEA sentence using callbacks
   By: Paul Clark
   SparkFun Electronics
   Date: January 12th, 2021
@@ -7,16 +7,11 @@
   basically do whatever you want with this code.
 
   This example shows how to turn on/off the NMEA sentences being output over I2C.
-  It then demonstrates how to use the new getLatestNMEAGPGGA function to retrieve the latest GPGGA message.
-  getLatestNMEAGPGGA returns immediately - it is not blocking.
-  It returns:
-    0 if no data is available
-    1 if the data is valid but is stale (you have read it before)
-    2 if the data is valid and fresh
+  It then demonstrates how to get the latest GPGGA or GNGGA message autonomously using callbacks.
 
   If the module is using multiple GNSS constellations, the GGA message will be prefixed with Talker ID "GN" instead of "GP".
-  The library includes a getLatestNMEAGNGGA function too.
-  This example shows how to use both functions - and how to change the Talker ID so the GNGGA messages become GPGGA.
+  This example shows how to change the Talker ID so the GNGGA messages become GPGGA.
+  It also shows how to enable "high precision mode" to include extra decimal places in the GGA messages.
 
   This example turns off all sentences except for GGA.
 
@@ -37,6 +32,36 @@
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
 
+// Callback: printGPGGA will be called when new GPGGA NMEA data arrives
+// See u-blox_structs.h for the full definition of NMEA_GGA_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setNMEAGPGGAcallback
+//        /               _____  This _must_ be NMEA_GGA_data_t
+//        |              /           _____ You can use any name you like for the struct
+//        |              |          /
+//        |              |          |
+void printGPGGA(NMEA_GGA_data_t nmeaData)
+{
+    Serial.print(F("\r\nGPGGA: Length: "));
+    Serial.print(nmeaData.length);
+    Serial.print(F("\tData: "));
+    Serial.print((const char *)nmeaData.nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+}
+
+// Callback: printGNGGA will be called if new GNGGA NMEA data arrives
+// See u-blox_structs.h for the full definition of NMEA_GGA_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setNMEAGNGGAcallback
+//        /               _____  This _must_ be NMEA_GGA_data_t
+//        |              /           _____ You can use any name you like for the struct
+//        |              |          /
+//        |              |          |
+void printGNGGA(NMEA_GGA_data_t nmeaData)
+{
+    Serial.print(F("\r\nGNGGA: Length: "));
+    Serial.print(nmeaData.length);
+    Serial.print(F("\tData: "));
+    Serial.print((const char *)nmeaData.nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+}
+
 void setup()
 {
 
@@ -54,7 +79,7 @@ void setup()
       ;
   }
 
-  //Disable or enable various NMEA sentences over the I2C interface
+  // Disable or enable various NMEA sentences over the I2C interface
   myGNSS.setI2COutput(COM_TYPE_NMEA | COM_TYPE_UBX); // Turn on both UBX and NMEA sentences on I2C. (Turn off RTCM and SPARTN)
   myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C); // Several of these are on by default on ublox board so let's disable them
   myGNSS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C);
@@ -74,50 +99,19 @@ void setup()
   Serial.println(F("Messages configured"));
 
   //myGNSS.setNMEAOutputPort(Serial); // Uncomment this line to echo all NMEA data to Serial for debugging
+
+  // Set up the callback for GPGGA
+  myGNSS.setNMEAGPGGAcallback(&printGPGGA);
+
+  // Set up the callback for GNGGA
+  myGNSS.setNMEAGNGGAcallback(&printGNGGA);
 }
 
 void loop()
 {
-  // getLatestNMEAGPGGA calls checkUblox for us. We don't need to do it here
+  myGNSS.checkUblox(); // Check for the arrival of new data and process it.
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
-  NMEA_GGA_data_t data; // Storage for the GPGGA data
-  uint8_t result = myGNSS.getLatestNMEAGPGGA(&data); // Get the latest GPGGA data (if any)
-  
-  if (result == 0)
-  {
-    Serial.println(F("No GPGGA data available"));
-  }
-  else if (result == 1)
-  {
-    Serial.println(F("GPGGA data is available but is stale"));
-  }
-  else // if (result == 2)
-  {
-    // Data contains .length and .nmea
-    Serial.print(F("Latest GPGGA: Length: "));
-    Serial.print(data.length);
-    Serial.print(F("\tData: "));
-    Serial.println((const char *)data.nmea); // .nmea is printable (NULL-terminated)
-  }
-
-  result = myGNSS.getLatestNMEAGNGGA(&data); // Get the latest GNGGA data (if any)
-  
-  if (result == 0)
-  {
-    Serial.println(F("No GNGGA data available"));
-  }
-  else if (result == 1)
-  {
-    Serial.println(F("GNGGA data is available but is stale"));
-  }
-  else // if (result == 2)
-  {
-    // Data contains .length and .nmea
-    Serial.print(F("Latest GNGGA: Length: "));
-    Serial.print(data.length);
-    Serial.print(F("\tData: "));
-    Serial.println((const char *)data.nmea); // .nmea is printable (NULL-terminated)
-  }
-
-  delay(250);
+  Serial.print(".");
+  delay(50);
 }
