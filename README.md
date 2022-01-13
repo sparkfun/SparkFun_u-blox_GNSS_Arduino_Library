@@ -57,6 +57,18 @@ If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages,
 
 v2.1.0 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
 
+## Automatic support for correction services like RTK2go, Emlid Caster and Skylark (Swift Navigation)
+
+RTK NTRIP corrections services often require you to send them your location in NMEA GPGGA format. v2.2 of the library makes this simple by providing get functions and automatic callbacks
+for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback! No more polling, no more parsing!
+
+v2.2 also includes two new functions useful for correction services:
+
+* ```setMainTalkerID``` : lets you change the NMEA Talker ID (prefix) from "GN" to "GP" - just in case your correction service really does need GPGGA, not GNGGA
+* ```setHighPrecisionMode``` : adds extra decimal places in the GGA messages, increasing the resolution of latitude, longitude and altitude
+
+Please see the [new examples](./examples/Automatic_NMEA) for more details.
+
 ## Memory Usage
 
 The u-blox GNSS library has grown considerably over the years and v2.0.8 came very close to completely filling the program memory on platforms like the ATmega328 (Arduino Uno).

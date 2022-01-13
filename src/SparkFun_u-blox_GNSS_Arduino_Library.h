@@ -534,6 +534,13 @@ enum sfe_ublox_talker_ids_e
 	SFE_UBLOX_MAIN_TALKER_ID_GQ
 };
 
+// The DGNSS differential mode
+enum sfe_ublox_dgnss_mode_e
+{
+	SFE_UBLOX_DGNSS_MODE_FLOAT = 2, // No attempts are made to fix ambiguities
+	SFE_UBLOX_DGNSS_MODE_FIXED		// Ambiguities are fixed whenever possible
+};
+
 //-=-=-=-=-
 
 #ifndef MAX_PAYLOAD_SIZE
@@ -829,6 +836,7 @@ public:
 	// For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
 	bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = 250);
 	bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = 250);
+	bool setDGNSSConfiguration(sfe_ublox_dgnss_mode_e dgnssMode = SFE_UBLOX_DGNSS_MODE_FIXED, uint16_t maxWait = defaultMaxWait); // Set the DGNSS differential mode
 
 	//Read the module's protocol version
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = defaultMaxWait); //Returns the PROTVER XX.00 from UBX-MON-VER register

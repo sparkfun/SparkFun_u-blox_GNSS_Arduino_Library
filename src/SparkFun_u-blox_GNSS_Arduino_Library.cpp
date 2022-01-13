@@ -6235,6 +6235,23 @@ bool SFE_UBLOX_GNSS::setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, i
   return (setStaticPosition(ecefXOrLat, 0, ecefYOrLon, 0, ecefZOrAlt, 0, latlong, maxWait));
 }
 
+// Set the DGNSS differential mode
+bool SFE_UBLOX_GNSS::setDGNSSConfiguration(sfe_ublox_dgnss_mode_e dgnssMode, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_DGNSS;
+  packetCfg.len = 4;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = (uint8_t)dgnssMode;
+  payloadCfg[1] = 0; // reserved0
+  payloadCfg[2] = 0;
+  payloadCfg[3] = 0;
+
+  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+
 // Module Protocol Version
 
 //Get the current protocol version of the u-blox module we're communicating with

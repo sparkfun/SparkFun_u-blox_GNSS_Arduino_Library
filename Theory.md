@@ -49,12 +49,12 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-DOP (0x01 0x04): Dilution of precision
 - UBX-NAV-ATT (0x01 0x05): Attitude solution (**only with ADR or UDR products**)
 - UBX-NAV-PVT (0x01 0x07): Navigation position velocity time solution
-- UBX-NAV-PVAT (0x01 0x17): Navigation position velocity attitude time solution (**only with ADR or UDR products**)
 - UBX-NAV-ODO (0x01 0x09): Odometer solution
 - UBX-NAV-VELECEF (0x01 0x11): Velocity solution in ECEF
 - UBX-NAV-VELNED (0x01 0x12): Velocity solution in NED frame
 - UBX-NAV-HPPOSECEF (0x01 0x13): High precision position solution in ECEF
 - UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
+- UBX-NAV-PVAT (0x01 0x17): Navigation position velocity attitude time solution (**only with ADR or UDR products**)
 - UBX-NAV-CLOCK (0x01 0x22): Clock solution
 - UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
 - UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
