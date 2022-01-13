@@ -60,7 +60,7 @@ v2.1.0 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GN
 ## Automatic support for correction services like RTK2go, Emlid Caster and Skylark (Swift Navigation)
 
 RTK NTRIP corrections services often require you to send them your location in NMEA GPGGA format. v2.2 of the library makes this simple by providing get functions and automatic callbacks
-for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback! No more polling, no more parsing!
+for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback. No more polling, no more parsing!
 
 v2.2 also includes two new functions useful for correction services:
 
