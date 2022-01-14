@@ -21,12 +21,31 @@ u-blox makes some incredible GNSS receivers covering everything from low-cost, h
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun u-blox GNSS**.
 
-## v2.0
+## Automatic support for correction services like RTK2go, Emlid Caster and Skylark (Swift Navigation)
+
+RTK NTRIP corrections services often require you to send them your location in NMEA GPGGA format. v2.2 of the library makes this easy by providing get functions and automatic callbacks
+for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback. No more polling, no more parsing!
+
+v2.2 also includes two new functions useful for correction services:
+
+* ```setMainTalkerID``` : lets you change the NMEA Talker ID (prefix) from "GN" to "GP" - just in case your correction service really does need GPGGA, not GNGGA
+* ```setHighPrecisionMode``` : adds extra decimal places in the GGA messages, increasing the resolution of latitude, longitude and altitude
+
+Please see the new [Automatic_NMEA examples](./examples/Automatic_NMEA) for more details.
+
+We've also added a new [NTRIP Caster Client example](./examples/ZED-F9P/Example17_NTRIPClient_With_GGA_Callback) showing how to use these new features to full effect.
+
+## AssistNow<sup>TM</sup>
+
+v2.1.0 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
+
+## v2 vs. v1
 
 This library is the new and improved version of the very popular SparkFun u-blox GNSS Arduino Library. v2.0 contains some big changes and improvements:
 
 * Seamless support for "automatic" message delivery:
-  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**26 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
+  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**26 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity, attitude and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
+  * Don't see the message you really need? [Adding_New_Messages](./Adding_New_Messages.md) provides details on how to add "auto" support for your favourite message.
 * Dynamic memory allocation with clearly-defined data storage structs for each message:
   * There are no static 'global' variables to eat up your RAM. v2.0 automatically allocates memory for the automatic messages when they are enabled. You may find your total RAM use is lower with v2.0 than with v1.8.
   * Each "auto" message has a clearly-defined [data storage struct](./src/u-blox_structs.h) which follows the u-blox protocol specification precisely.
@@ -53,21 +72,7 @@ Migrating to v2.0 is easy. There are two small changes all users will need to ma
 
 If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages, you will need to make more small changes to your code. Please see the [dead reckoning examples](./examples/Dead_Reckoning) for more details. There is more detail available in [Theory.md](./Theory.md#migrating-your-code-to-v20) if you need it.
 
-## AssistNow<sup>TM</sup>
-
-v2.1.0 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
-
-## Automatic support for correction services like RTK2go, Emlid Caster and Skylark (Swift Navigation)
-
-RTK NTRIP corrections services often require you to send them your location in NMEA GPGGA format. v2.2 of the library makes this simple by providing get functions and automatic callbacks
-for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback. No more polling, no more parsing!
-
-v2.2 also includes two new functions useful for correction services:
-
-* ```setMainTalkerID``` : lets you change the NMEA Talker ID (prefix) from "GN" to "GP" - just in case your correction service really does need GPGGA, not GNGGA
-* ```setHighPrecisionMode``` : adds extra decimal places in the GGA messages, increasing the resolution of latitude, longitude and altitude
-
-Please see the [new examples](./examples/Automatic_NMEA) for more details.
+There is a [new example](./examples/Dead_Reckoning/Example8_getNAVPVAT) showing how to read the UBX-NAV-PVAT (Position, Velocity, Attitude, Time) with a single function call. UBX-NAV-PVAT has full "auto" callback and data-logging support too!
 
 ## Memory Usage
 

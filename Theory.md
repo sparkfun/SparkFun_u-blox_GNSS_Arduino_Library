@@ -71,7 +71,7 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-HNR-ATT (0x28 0x01): Attitude solution (**only with ADR or UDR products**)
 - UBX-HNR-INS (0x28 0x02): Vehicle dynamics information (**only with ADR or UDR products**)
 
-Please see [Adding_New_Messages.md](./Adding_New_Messages.md) for details on how to add "auto" support for new messages.
+Please see [Adding_New_Messages](./Adding_New_Messages.md) for details on how to add "auto" support for new messages.
 
 Notes:
 - UBX-NAV-POSLLH is not supported as UBX-NAV-PVT contains the same information
