@@ -355,6 +355,7 @@ const uint8_t UBX_NAV_ORB = 0x34;		//GNSS Orbit Database Info
 const uint8_t UBX_NAV_POSECEF = 0x01;	//Position Solution in ECEF
 const uint8_t UBX_NAV_POSLLH = 0x02;	//Geodetic Position Solution
 const uint8_t UBX_NAV_PVT = 0x07;		//All the things! Position, velocity, time, PDOP, height, h/v accuracies, number of satellites. Navigation Position Velocity Time Solution.
+const uint8_t UBX_NAV_PVAT = 0x17;		//Navigation position velocity attitude time solution (ZED-F9R only)
 const uint8_t UBX_NAV_RELPOSNED = 0x3C; //Relative Positioning Information in NED frame
 const uint8_t UBX_NAV_RESETODO = 0x10;	//Reset odometer
 const uint8_t UBX_NAV_SAT = 0x35;		//Satellite Information
@@ -378,7 +379,8 @@ const uint8_t UBX_RXM_PMREQ = 0x41; //Requests a Power Management task (two diff
 const uint8_t UBX_RXM_RAWX = 0x15;	//Multi-GNSS Raw Measurement Data
 const uint8_t UBX_RXM_RLM = 0x59;	//Galileo SAR Short-RLM report (two different packet sizes)
 const uint8_t UBX_RXM_RTCM = 0x32;	//RTCM input status
-const uint8_t UBX_RXM_SFRBX = 0x13; //Boradcast Navigation Data Subframe
+const uint8_t UBX_RXM_SFRBX = 0x13; //Broadcast Navigation Data Subframe
+const uint8_t UBX_RXM_SPARTN = 0x33; //SPARTN input status
 
 //Class: SEC
 //The following are used to configure the SEC UBX messages (security feature messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
@@ -437,6 +439,7 @@ const uint8_t COM_PORT_SPI = 4;
 const uint8_t COM_TYPE_UBX = (1 << 0);
 const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
+const uint8_t COM_TYPE_SPARTN = (1 << 6);
 
 // Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
 const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001;	 // ioPort - communications port settings (causes IO system reset!)
@@ -468,7 +471,9 @@ enum dynModel // Possible values for the dynamic platform model, which provide m
 	DYN_MODEL_AIRBORNE2g,	  //Airborne <2g acceleration. Recommended for typical airborne environments. No 2D position fixes supported.
 	DYN_MODEL_AIRBORNE4g,	  //Airborne <4g acceleration. Only recommended for extremely dynamic environments. No 2D position fixes supported.
 	DYN_MODEL_WRIST,		  // Not supported in protocol versions less than 18. Only recommended for wrist worn applications. Receiver will filter out arm motion.
-	DYN_MODEL_BIKE,			  // Supported in protocol versions 19.2
+	DYN_MODEL_BIKE,			  // Supported in protocol versions 19.2. (not available in all products)
+	DYN_MODEL_MOWER,		  // Added in HPS 1.21 (not available in all products)
+	DYN_MODEL_ESCOOTER,		  // Added in HPS 1.21 (not available in all products)
 	DYN_MODEL_UNKNOWN = 255 // getDynamicModel will return 255 if sendCommand fails
 };
 
@@ -515,6 +520,25 @@ enum sfe_ublox_mga_ack_infocode_e
 	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_STORED,
 	SFE_UBLOX_MGA_ACK_INFOCODE_NOT_READY,
 	SFE_UBLOX_MGA_ACK_INFOCODE_TYPE_UNKNOWN
+};
+
+// The mainTalkerId, set by UBX-CFG-NMEA setMainTalkerID
+enum sfe_ublox_talker_ids_e
+{
+	SFE_UBLOX_MAIN_TALKER_ID_DEFAULT,
+	SFE_UBLOX_MAIN_TALKER_ID_GP,
+	SFE_UBLOX_MAIN_TALKER_ID_GL,
+	SFE_UBLOX_MAIN_TALKER_ID_GN,
+	SFE_UBLOX_MAIN_TALKER_ID_GA,
+	SFE_UBLOX_MAIN_TALKER_ID_GB,
+	SFE_UBLOX_MAIN_TALKER_ID_GQ
+};
+
+// The DGNSS differential mode
+enum sfe_ublox_dgnss_mode_e
+{
+	SFE_UBLOX_DGNSS_MODE_FLOAT = 2, // No attempts are made to fix ambiguities
+	SFE_UBLOX_DGNSS_MODE_FIXED		// Ambiguities are fixed whenever possible
 };
 
 //-=-=-=-=-
@@ -767,17 +791,17 @@ public:
 
 	//Port configurations
 	bool getPortSettings(uint8_t portID, uint16_t maxWait = defaultMaxWait);					   //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
-	bool setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait);  //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+	bool setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait);  //Configure a given port to input UBX, NMEA, RTCM3, SPARTN or a combination thereof
 
 	bool setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = defaultMaxWait);			   //Changes the I2C address of the u-blox module
 	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the u-blox module, uartPort should be COM_PORT_UART1/2
 
-	bool setI2COutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setUART1Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setUART2Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setUSBOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
-	bool setSPIOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
+	bool setI2COutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure I2C port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setUART1Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART1 port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setUART2Output(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure UART2 port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setUSBOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure USB port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
+	bool setSPIOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);				//Configure SPI port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
 	void setNMEAOutputPort(Stream &nmeaOutputPort);												//Sets the internal variable for the port to direct NMEA characters to
 
 	//Reset to defaults
@@ -812,6 +836,7 @@ public:
 	// For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
 	bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = 250);
 	bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = 250);
+	bool setDGNSSConfiguration(sfe_ublox_dgnss_mode_e dgnssMode = SFE_UBLOX_DGNSS_MODE_FIXED, uint16_t maxWait = defaultMaxWait); // Set the DGNSS differential mode
 
 	//Read the module's protocol version
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = defaultMaxWait); //Returns the PROTVER XX.00 from UBX-MON-VER register
@@ -983,7 +1008,7 @@ public:
 	void flushNAVHPPOSECEF(); //Mark all the data as read/stale
 	void logNAVHPPOSECEF(bool enabled = true); // Log data to file buffer
 
-	bool getHPPOSLLH(uint16_t maxWait = defaultMaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new HPPOSLLH is available.
+	bool getHPPOSLLH(uint16_t maxWait = defaultMaxWait); // NAV HPPOSLLH
 	bool setAutoHPPOSLLH(bool enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency
 	bool setAutoHPPOSLLH(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	bool setAutoHPPOSLLHrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic HPPOSLLH reports
@@ -991,6 +1016,15 @@ public:
 	bool assumeAutoHPPOSLLH(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
 	void flushHPPOSLLH(); //Mark all the HPPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
 	void logNAVHPPOSLLH(bool enabled = true); // Log data to file buffer
+
+	bool getNAVPVAT(uint16_t maxWait = defaultMaxWait);	// NAV PVAT
+	bool setAutoNAVPVAT(bool enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVAT reports at the navigation frequency
+	bool setAutoNAVPVAT(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVAT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	bool setAutoNAVPVATrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait); //Set the rate for automatic PVAT reports
+	bool setAutoNAVPVATcallback(void (*callbackPointer)(UBX_NAV_PVAT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic PVAT reports at the navigation frequency. Data is accessed from the callback.
+	bool assumeAutoNAVPVAT(bool enabled, bool implicitUpdate = true); //In case no config access to the GPS is possible and PVAT is send cyclically already
+	void flushNAVPVAT(); //Mark all the PVAT data as read/stale
+	void logNAVPVAT(bool enabled = true); // Log data to file buffer
 
 	bool getNAVCLOCK(uint16_t maxWait = defaultMaxWait); // NAV CLOCK
 	bool setAutoNAVCLOCK(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic clock reports at the navigation frequency
@@ -1153,14 +1187,6 @@ public:
 	void flushHNRPVT(); //Mark all the data as read/stale
 	void logHNRPVT(bool enabled = true); // Log data to file buffer
 
-	// Helper functions for NMEA logging
-	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
-	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
-
-	// Helper functions to control which NMEA messages are passed to processNMEA
-	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
-	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
-
 	// Helper functions for CFG RATE
 
 	bool setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	//Set the number of nav solutions sent per second
@@ -1256,6 +1282,13 @@ public:
 	uint32_t getHorizontalAccuracy(uint16_t maxWait = defaultMaxWait);
 	uint32_t getVerticalAccuracy(uint16_t maxWait = defaultMaxWait);
 
+	// Helper functions for PVAT
+
+	int32_t getVehicleRoll(uint16_t maxWait = defaultMaxWait); // Returns vehicle roll in degrees * 10^-5
+	int32_t getVehiclePitch(uint16_t maxWait = defaultMaxWait); // Returns vehicle pitch in degrees * 10^-5
+	int32_t getVehicleHeading(uint16_t maxWait = defaultMaxWait); // Returns vehicle heading in degrees * 10^-5
+	int32_t getMotionHeading(uint16_t maxWait = defaultMaxWait); // Returns the motion heading in degrees * 10^-5
+
 	// Helper functions for SVIN
 
 	bool getSurveyInActive(uint16_t maxWait = defaultMaxWait);
@@ -1302,6 +1335,26 @@ public:
 	float getHNRpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 	float getHNRheading(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 
+	// Set the mainTalkerId used by NMEA messages - allows all NMEA messages except GSV to be prefixed with GP instead of GN
+	bool setMainTalkerID(sfe_ublox_talker_ids_e id = SFE_UBLOX_MAIN_TALKER_ID_DEFAULT, uint16_t maxWait = defaultMaxWait);
+
+	// Enable/Disable NMEA High Precision Mode - include extra decimal places in the Lat and Lon
+	bool setHighPrecisionMode(bool enable = true, uint16_t maxWait = defaultMaxWait);
+
+	// Helper functions for NMEA logging
+	void setNMEALoggingMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Add selected NMEA messages to file buffer - if enabled. Default to adding ALL messages to the file buffer
+	uint32_t getNMEALoggingMask(); // Return which NMEA messages are selected for logging to the file buffer - if enabled
+
+	// Helper functions to control which NMEA messages are passed to processNMEA
+	void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
+	uint32_t getProcessNMEAMask(); // Return which NMEA messages are passed to processNMEA
+
+	// Support for "auto" storage of NMEA messages
+	uint8_t getLatestNMEAGPGGA(NMEA_GGA_data_t *data); // Return the most recent GPGGA: 0 = no data, 1 = stale data, 2 = fresh data
+	bool setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GPGGA message
+	uint8_t getLatestNMEAGNGGA(NMEA_GGA_data_t *data); // Return the most recent GNGGA: 0 = no data, 1 = stale data, 2 = fresh data
+	bool setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GNGGA message
+
 	// Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
 	// From v2.0: These are public. The user can call these to extract data from custom packets
 	uint32_t extractLong(ubxPacket *msg, uint8_t spotToStart); //Combine four bytes from payload into long
@@ -1324,6 +1377,7 @@ public:
 	UBX_NAV_VELNED_t *packetUBXNAVVELNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_HPPOSLLH_t *packetUBXNAVHPPOSLLH = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_PVAT_t *packetUBXNAVPVAT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_TIMELS_t *packetUBXNAVTIMELS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1350,6 +1404,9 @@ public:
 
 	UBX_MGA_ACK_DATA0_t *packetUBXMGAACK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_MGA_DBD_t *packetUBXMGADBD = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+
+	NMEA_GPGGA_t *storageNMEAGPGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	NMEA_GNGGA_t *storageNMEAGNGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -1408,6 +1465,7 @@ private:
 	bool initPacketUBXNAVVELNED(); // Allocate RAM for packetUBXNAVVELNED and initialize it
 	bool initPacketUBXNAVHPPOSECEF(); // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
 	bool initPacketUBXNAVHPPOSLLH(); // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
+	bool initPacketUBXNAVPVAT(); // Allocate RAM for packetUBXNAVPVAT and initialize it
 	bool initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
 	bool initPacketUBXNAVTIMELS(); // Allocate RAM for packetUBXNAVTIMELS and initialize it
 	bool initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
@@ -1428,6 +1486,9 @@ private:
 	bool initPacketUBXHNRPVT(); // Allocate RAM for packetUBXHNRPVT and initialize it
 	bool initPacketUBXMGAACK(); // Allocate RAM for packetUBXMGAACK and initialize it
 	bool initPacketUBXMGADBD(); // Allocate RAM for packetUBXMGADBD and initialize it
+
+	bool initStorageNMEAGPGGA(); // Allocate RAM for incoming NMEA GPGGA messages and initialize it
+	bool initStorageNMEAGNGGA(); // Allocate RAM for incoming NMEA GNGGA messages and initialize it
 
 	//Variables
 	TwoWire *_i2cPort;				//The generic connection to user's chosen I2C hardware
@@ -1502,6 +1563,17 @@ private:
 	bool logThisNMEA();				// Return true if we should log this NMEA message
 	bool processThisNMEA();			// Return true if we should pass this NMEA message to processNMEA
 	bool isNMEAHeaderValid();		// Return true if the six byte NMEA header appears valid. Used to set _signsOfLife
+
+	bool isThisNMEAauto(); // Check if the NMEA message (in nmeaAddressField) is "auto" (i.e. has RAM allocated for it)
+	bool doesThisNMEAHaveCallback(); // Do we need to copy the data into the callback copy?
+	uint8_t *getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+	uint8_t *getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+	uint8_t *getNMEACompleteLengthPtr(); // Get a pointer to the complete copy length
+	uint8_t *getNMEACompleteNMEAPtr(); // Get a pointer to the complete copy NMEA data
+	uint8_t *getNMEACallbackLengthPtr(); // Get a pointer to the callback copy length
+	uint8_t *getNMEACallbackNMEAPtr(); // Get a pointer to the callback copy NMEA data
+	uint8_t getNMEAMaxLength(); // Get the maximum length of this NMEA message
+	nmeaAutomaticFlags *getNMEAFlagsPtr(); // Get a pointer to the flags
 
 	uint16_t rtcmLen = 0;
 

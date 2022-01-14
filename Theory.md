@@ -54,6 +54,7 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-VELNED (0x01 0x12): Velocity solution in NED frame
 - UBX-NAV-HPPOSECEF (0x01 0x13): High precision position solution in ECEF
 - UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
+- UBX-NAV-PVAT (0x01 0x17): Navigation position velocity attitude time solution (**only with ADR or UDR products**)
 - UBX-NAV-CLOCK (0x01 0x22): Clock solution
 - UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
 - UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
@@ -69,6 +70,8 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-HNR-PVT (0x28 0x00): High rate output of PVT solution (**only with ADR or UDR products**)
 - UBX-HNR-ATT (0x28 0x01): Attitude solution (**only with ADR or UDR products**)
 - UBX-HNR-INS (0x28 0x02): Vehicle dynamics information (**only with ADR or UDR products**)
+
+Please see [Adding_New_Messages](./Adding_New_Messages.md) for details on how to add "auto" support for new messages.
 
 Notes:
 - UBX-NAV-POSLLH is not supported as UBX-NAV-PVT contains the same information

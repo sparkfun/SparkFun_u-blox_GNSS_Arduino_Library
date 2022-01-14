@@ -214,6 +214,16 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXNAVHPPOSLLH = NULL; // Redundant?
   }
 
+  if (packetUBXNAVPVAT != NULL)
+  {
+    if (packetUBXNAVPVAT->callbackData != NULL)
+    {
+      delete packetUBXNAVPVAT->callbackData;
+    }
+    delete packetUBXNAVPVAT;
+    packetUBXNAVPVAT = NULL; // Redundant?
+  }
+
   if (packetUBXNAVCLOCK != NULL)
   {
     if (packetUBXNAVCLOCK->callbackData != NULL)
@@ -394,6 +404,26 @@ void SFE_UBLOX_GNSS::end(void)
     }
     delete packetUBXHNRPVT;
     packetUBXHNRPVT = NULL; // Redundant?
+  }
+
+  if (storageNMEAGPGGA != NULL)
+  {
+    if (storageNMEAGPGGA->callbackCopy != NULL)
+    {
+      delete storageNMEAGPGGA->callbackCopy;
+    }
+    delete storageNMEAGPGGA;
+    storageNMEAGPGGA = NULL; // Redundant?
+  }
+
+  if (storageNMEAGNGGA != NULL)
+  {
+    if (storageNMEAGNGGA->callbackCopy != NULL)
+    {
+      delete storageNMEAGNGGA->callbackCopy;
+    }
+    delete storageNMEAGNGGA;
+    storageNMEAGNGGA = NULL; // Redundant?
   }
 
 }
@@ -1145,6 +1175,9 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_HPPOSLLH:
           if (packetUBXNAVHPPOSLLH != NULL) result = true;
         break;
+        case UBX_NAV_PVAT:
+          if (packetUBXNAVPVAT != NULL) result = true;
+        break;
         case UBX_NAV_CLOCK:
           if (packetUBXNAVCLOCK != NULL) result = true;
         break;
@@ -1669,6 +1702,24 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         _signsOfLife = isNMEAHeaderValid();
       }
 
+      // Check if we have automatic storage for this message
+      if (isThisNMEAauto())
+      {
+        uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+        uint8_t *nmeaPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        uint8_t nmeaMaxLength = getNMEAMaxLength();
+        *lengthPtr = 6; // Set the working copy length
+        memset(nmeaPtr, 0, nmeaMaxLength); // Clear the working copy
+        memcpy(nmeaPtr, &nmeaAddressField[0], 6); // Copy the start character and address field into the working copy
+      }
+      else
+      {
+        // if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        // {
+        //   _debugSerial->println(F("process: non-auto NMEA message"));
+        // }
+      }
+
       // We've just received the end of the address field. Check if it is selected for logging
       if (logThisNMEA())
       {
@@ -1688,6 +1739,24 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if ((nmeaByteCounter > 5) || (nmeaByteCounter < 0)) // Should we add incoming to the file buffer and/or pass it to processNMEA?
     {
+      if (isThisNMEAauto())
+      {
+        uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+        uint8_t *nmeaPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        uint8_t nmeaMaxLength = getNMEAMaxLength();
+        if (*lengthPtr < nmeaMaxLength)
+        {
+          *(nmeaPtr + *lengthPtr) = incoming; // Store the character
+          *lengthPtr = *lengthPtr + 1; // Increment the length
+          if (*lengthPtr == nmeaMaxLength)
+          {
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+            {
+              _debugSerial->println(F("process: NMEA buffer is full!"));
+            }
+          }
+        }
+      }
       if (logThisNMEA())
         storeFileBytes(&incoming, 1); // Add incoming to the file buffer
       if (processThisNMEA())
@@ -1703,7 +1772,86 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
       currentSentence = NONE; //Something went wrong. Reset.
 
     if (nmeaByteCounter == 0) // Check if we are done
+    {
+      if (isThisNMEAauto())
+      {
+        uint8_t *workingLengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
+        uint8_t *workingNMEAPtr = getNMEAWorkingNMEAPtr(); // Get a pointer to the working copy NMEA data
+        uint8_t nmeaMaxLength = getNMEAMaxLength();
+        
+        // Check the checksum: the checksum is the exclusive-OR of all characters between the $ and the *
+        uint8_t nmeaChecksum = 0;
+        uint8_t charsChecked = 1; // Start after the $
+        uint8_t thisChar = '\0';
+        while ((charsChecked < (nmeaMaxLength - 1))
+                && (charsChecked < ((*workingLengthPtr) - 4))
+                && (thisChar != '*'))
+        {
+          thisChar = *(workingNMEAPtr + charsChecked); // Get a char from the working copy
+          if (thisChar != '*') // Ex-or the char into the checksum - but not if it is the '*'
+            nmeaChecksum ^= thisChar;
+          charsChecked++; // Increment the counter
+        }
+        if (thisChar == '*') // Make sure we found the *
+        {
+          uint8_t expectedChecksum1 = (nmeaChecksum >> 4) + '0';
+          if (expectedChecksum1 >= ':') // Handle Hex correctly
+            expectedChecksum1 += 'A' - ':';
+          uint8_t expectedChecksum2 = (nmeaChecksum & 0x0F) + '0';
+          if (expectedChecksum2 >= ':') // Handle Hex correctly
+            expectedChecksum2 += 'A' - ':';
+          if ((expectedChecksum1 == *(workingNMEAPtr + charsChecked))
+              && (expectedChecksum2 == *(workingNMEAPtr + charsChecked + 1)))
+          {
+            uint8_t *completeLengthPtr = getNMEACompleteLengthPtr(); // Get a pointer to the complete copy length
+            uint8_t *completeNMEAPtr = getNMEACompleteNMEAPtr(); // Get a pointer to the complete copy NMEA data
+            memset(completeNMEAPtr, 0, nmeaMaxLength); // Clear the previous complete copy
+            memcpy(completeNMEAPtr, workingNMEAPtr, *workingLengthPtr); // Copy the working copy into the complete copy
+            *completeLengthPtr = *workingLengthPtr; // Update the length
+            nmeaAutomaticFlags *flagsPtr = getNMEAFlagsPtr(); // Get a pointer to the flags
+            nmeaAutomaticFlags flagsCopy = *flagsPtr;
+            flagsCopy.flags.bits.completeCopyValid = 1; // Set the complete copy valid flag
+            flagsCopy.flags.bits.completeCopyRead = 0; // Clear the complete copy read flag
+            *flagsPtr = flagsCopy; // Update the flags
+            // Callback
+            if (doesThisNMEAHaveCallback()) // Do we need to copy the data into the callback copy?
+            {
+              if (flagsCopy.flags.bits.callbackCopyValid == 0) // Has the callback copy valid flag been cleared (by checkCallbacks)
+              {
+                uint8_t *callbackLengthPtr = getNMEACallbackLengthPtr(); // Get a pointer to the callback copy length
+                uint8_t *callbackNMEAPtr = getNMEACallbackNMEAPtr(); // Get a pointer to the callback copy NMEA data
+                memset(callbackNMEAPtr, 0, nmeaMaxLength); // Clear the previous callback copy
+                memcpy(callbackNMEAPtr, workingNMEAPtr, *workingLengthPtr); // Copy the working copy into the callback copy
+                *callbackLengthPtr = *workingLengthPtr; // Update the length
+                flagsCopy.flags.bits.callbackCopyValid = 1; // Set the callback copy valid flag
+                *flagsPtr = flagsCopy; // Update the flags
+              }
+            }
+          }
+          else
+          {
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+            {
+              _debugSerial->print(F("process: NMEA checksum fail (2)! Expected "));
+              _debugSerial->write(expectedChecksum1);
+              _debugSerial->write(expectedChecksum2);
+              _debugSerial->print(F(" Got "));
+              _debugSerial->write(*(workingNMEAPtr + charsChecked));
+              _debugSerial->write(*(workingNMEAPtr + charsChecked + 1));
+              _debugSerial->println();
+            }
+          }
+        }
+        else
+        {
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+          {
+            _debugSerial->println(F("process: NMEA checksum fail (1)!"));
+          }
+        }
+      }
       currentSentence = NONE; // All done!
+    }
   }
   else if (currentSentence == RTCM)
   {
@@ -1813,6 +1961,194 @@ void SFE_UBLOX_GNSS::processNMEA(char incoming)
   //If user has assigned an output port then pipe the characters there
   if (_nmeaOutputPort != NULL)
     _nmeaOutputPort->write(incoming); //Echo this byte to the serial port
+}
+
+// Check if the NMEA message (in nmeaAddressField) is "auto" (i.e. has RAM allocated for it)
+bool SFE_UBLOX_GNSS::isThisNMEAauto()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGPGGA != NULL)
+      return true;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGNGGA != NULL)
+      return true;
+  }
+
+  return false;
+}
+
+// Do we need to copy the data into the callback copy?
+bool SFE_UBLOX_GNSS::doesThisNMEAHaveCallback()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGPGGA != NULL)
+      if (storageNMEAGPGGA->callbackCopy != NULL)
+        if (storageNMEAGPGGA->callbackPointer != NULL)
+          return true;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+    if (storageNMEAGNGGA != NULL)
+      if (storageNMEAGNGGA->callbackCopy != NULL)
+        if (storageNMEAGNGGA->callbackPointer != NULL)
+          return true;
+  }
+
+  return false;
+}
+
+// Get a pointer to the working copy length
+uint8_t * SFE_UBLOX_GNSS::getNMEAWorkingLengthPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->workingCopy.length;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->workingCopy.length;
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the working copy NMEA data
+uint8_t * SFE_UBLOX_GNSS::getNMEAWorkingNMEAPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->workingCopy.nmea[0];
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->workingCopy.nmea[0];
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the complete copy length
+uint8_t * SFE_UBLOX_GNSS::getNMEACompleteLengthPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->completeCopy.length;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->completeCopy.length;
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the complete copy NMEA data
+uint8_t * SFE_UBLOX_GNSS::getNMEACompleteNMEAPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->completeCopy.nmea[0];
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->completeCopy.nmea[0];
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the callback copy length
+uint8_t * SFE_UBLOX_GNSS::getNMEACallbackLengthPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->callbackCopy->length;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->callbackCopy->length;
+  }
+
+  return NULL;
+}
+
+// Get a pointer to the callback copy NMEA data
+uint8_t * SFE_UBLOX_GNSS::getNMEACallbackNMEAPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->callbackCopy->nmea[0];
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->callbackCopy->nmea[0];
+  }
+
+  return NULL;
+}
+
+// Get the maximum length of this NMEA message
+uint8_t SFE_UBLOX_GNSS::getNMEAMaxLength()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return NMEA_GGA_MAX_LENGTH;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return NMEA_GGA_MAX_LENGTH;
+  }
+
+  return 0;
+}
+
+// Get a pointer to the automatic NMEA flags
+nmeaAutomaticFlags * SFE_UBLOX_GNSS::getNMEAFlagsPtr()
+{
+  char thisNMEA[] = "GPGGA";
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGPGGA->automaticFlags;
+  }
+
+  strcpy(thisNMEA, "GNGGA");
+  if (memcmp(thisNMEA, &nmeaAddressField[1], 5) == 0)
+  {
+      return &storageNMEAGNGGA->automaticFlags;
+  }
+
+  return NULL;
 }
 
 //We need to be able to identify an RTCM packet and then the length
@@ -2473,6 +2809,69 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
 
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storePacket(msg);
+        }
+      }
+    }
+    else if (msg->id == UBX_NAV_PVAT && msg->len == UBX_NAV_PVAT_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVPVAT != NULL)
+      {
+        packetUBXNAVPVAT->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVPVAT->data.version = extractByte(msg, 4);
+        packetUBXNAVPVAT->data.valid.all = extractByte(msg, 5);
+        packetUBXNAVPVAT->data.year = extractInt(msg, 6);
+        packetUBXNAVPVAT->data.month = extractByte(msg, 8);
+        packetUBXNAVPVAT->data.day = extractByte(msg, 9);
+        packetUBXNAVPVAT->data.hour = extractByte(msg, 10);
+        packetUBXNAVPVAT->data.min = extractByte(msg, 11);
+        packetUBXNAVPVAT->data.sec = extractByte(msg, 12);
+        packetUBXNAVPVAT->data.tAcc = extractLong(msg, 16);
+        packetUBXNAVPVAT->data.nano = extractSignedLong(msg, 20); //Includes milliseconds
+        packetUBXNAVPVAT->data.fixType = extractByte(msg, 24);
+        packetUBXNAVPVAT->data.flags.all = extractByte(msg, 25);
+        packetUBXNAVPVAT->data.flags2.all = extractByte(msg, 26);
+        packetUBXNAVPVAT->data.numSV = extractByte(msg, 27);
+        packetUBXNAVPVAT->data.lon = extractSignedLong(msg, 28);
+        packetUBXNAVPVAT->data.lat = extractSignedLong(msg, 32);
+        packetUBXNAVPVAT->data.height = extractSignedLong(msg, 36);
+        packetUBXNAVPVAT->data.hMSL = extractSignedLong(msg, 40);
+        packetUBXNAVPVAT->data.hAcc = extractLong(msg, 44);
+        packetUBXNAVPVAT->data.vAcc = extractLong(msg, 48);
+        packetUBXNAVPVAT->data.velN = extractSignedLong(msg, 52);
+        packetUBXNAVPVAT->data.velE = extractSignedLong(msg, 56);
+        packetUBXNAVPVAT->data.velD = extractSignedLong(msg, 60);
+        packetUBXNAVPVAT->data.gSpeed = extractSignedLong(msg, 64);
+        packetUBXNAVPVAT->data.sAcc = extractLong(msg, 68);
+        packetUBXNAVPVAT->data.vehRoll = extractSignedLong(msg, 72);
+        packetUBXNAVPVAT->data.vehPitch = extractSignedLong(msg, 76);
+        packetUBXNAVPVAT->data.vehHeading = extractSignedLong(msg, 80);
+        packetUBXNAVPVAT->data.motHeading = extractSignedLong(msg, 84);
+        packetUBXNAVPVAT->data.accRoll = extractInt(msg, 88);
+        packetUBXNAVPVAT->data.accPitch = extractInt(msg, 90);
+        packetUBXNAVPVAT->data.accHeading = extractInt(msg, 92);
+        packetUBXNAVPVAT->data.magDec = extractSignedInt(msg, 94);
+        packetUBXNAVPVAT->data.magAcc = extractInt(msg, 96);
+        packetUBXNAVPVAT->data.errEllipseOrient = extractInt(msg, 98);
+        packetUBXNAVPVAT->data.errEllipseMajor = extractLong(msg, 100);
+        packetUBXNAVPVAT->data.errEllipseMinor = extractLong(msg, 104);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0xFFFFFFFF;
+        packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVPVAT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVPVAT->callbackData->iTOW, &packetUBXNAVPVAT->data.iTOW, sizeof(UBX_NAV_PVAT_data_t));
+          packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVPVAT->automaticFlags.flags.bits.addToFileBuffer)
         {
           storePacket(msg);
         }
@@ -4057,6 +4456,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
+  if ((packetUBXNAVPVAT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVPVAT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVPVAT->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    //if (_printDebug == true)
+    //  _debugSerial->println(F("checkCallbacks: calling callback for NAV PVAT"));
+    packetUBXNAVPVAT->callbackPointer(*packetUBXNAVPVAT->callbackData); // Call the callback
+    packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
   if ((packetUBXNAVCLOCK != NULL) // If RAM has been allocated for message storage
     && (packetUBXNAVCLOCK->callbackData != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXNAVCLOCK->callbackPointer != NULL) // If the pointer to the callback has been defined
@@ -4220,6 +4630,28 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     //   _debugSerial->println(F("checkCallbacks: calling callback for HNR PVT"));
     packetUBXHNRPVT->callbackPointer(*packetUBXHNRPVT->callbackData); // Call the callback
     packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((storageNMEAGPGGA != NULL) // If RAM has been allocated for message storage
+    && (storageNMEAGPGGA->callbackCopy != NULL) // If RAM has been allocated for the copy of the data
+    && (storageNMEAGPGGA->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid == 1)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for GPGGA"));
+    storageNMEAGPGGA->callbackPointer(*storageNMEAGPGGA->callbackCopy); // Call the callback
+    storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
+  }
+
+  if ((storageNMEAGNGGA != NULL) // If RAM has been allocated for message storage
+    && (storageNMEAGNGGA->callbackCopy != NULL) // If RAM has been allocated for the copy of the data
+    && (storageNMEAGNGGA->callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (storageNMEAGNGGA->automaticFlags.flags.bits.callbackCopyValid == 1)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for GNGGA"));
+    storageNMEAGNGGA->callbackPointer(*storageNMEAGNGGA->callbackCopy); // Call the callback
+    storageNMEAGNGGA->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
   }
 
   checkCallbacksReentrant = false;
@@ -5802,6 +6234,23 @@ bool SFE_UBLOX_GNSS::setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, i
 {
   return (setStaticPosition(ecefXOrLat, 0, ecefYOrLon, 0, ecefZOrAlt, 0, latlong, maxWait));
 }
+
+// Set the DGNSS differential mode
+bool SFE_UBLOX_GNSS::setDGNSSConfiguration(sfe_ublox_dgnss_mode_e dgnssMode, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_DGNSS;
+  packetCfg.len = 4;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = (uint8_t)dgnssMode;
+  payloadCfg[1] = 0; // reserved0
+  payloadCfg[2] = 0;
+  payloadCfg[3] = 0;
+
+  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 
 // Module Protocol Version
 
@@ -8697,6 +9146,165 @@ void SFE_UBLOX_GNSS::logNAVHPPOSLLH(bool enabled)
   packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
+// ***** PVAT automatic support
+
+//Get the latest Position/Velocity/Time solution and fill all global variables
+bool SFE_UBLOX_GNSS::getNAVPVAT(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (packetUBXNAVPVAT->automaticFlags.flags.bits.automatic && packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate)
+  {
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVAT);
+    return packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all;
+  }
+  else if (packetUBXNAVPVAT->automaticFlags.flags.bits.automatic && !packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    return (false);
+  }
+  else
+  {
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_PVAT;
+    packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+    {
+      return (true);
+    }
+
+    return (false);
+  }
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVAT(bool enable, uint16_t maxWait)
+{
+  return setAutoNAVPVATrate(enable ? 1 : 0, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVAT(bool enable, bool implicitUpdate, uint16_t maxWait)
+{
+  return setAutoNAVPVATrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVAT
+//works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVATrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  if (rate > 127) rate = 127;
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_PVAT;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
+
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    packetUBXNAVPVAT->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return ok;
+}
+
+//Enable automatic navigation message generation by the GNSS. This changes the way getPVAT works.
+bool SFE_UBLOX_GNSS::setAutoNAVPVATcallback(void (*callbackPointer)(UBX_NAV_PVAT_data_t), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVPVAT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAutoPVAT failed
+
+  if (packetUBXNAVPVAT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPVAT->callbackData = new UBX_NAV_PVAT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPVAT->callbackData == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVPVATcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  packetUBXNAVPVAT->callbackPointer = callbackPointer; // RAM has been allocated so now update the pointer
+
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and PVAT is send cyclically already
+//set config to suitable parameters
+bool SFE_UBLOX_GNSS::assumeAutoNAVPVAT(bool enabled, bool implicitUpdate)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Only attempt this if RAM allocation was successful
+    return false;
+
+  bool changes = packetUBXNAVPVAT->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
+  if (changes)
+  {
+      packetUBXNAVPVAT->automaticFlags.flags.bits.automatic = enabled;
+      packetUBXNAVPVAT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+// PRIVATE: Allocate RAM for packetUBXNAVPVAT and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXNAVPVAT()
+{
+  packetUBXNAVPVAT = new UBX_NAV_PVAT_t; //Allocate RAM for the main struct
+  if (packetUBXNAVPVAT == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXNAVPVAT: RAM alloc failed!"));
+    return (false);
+  }
+  packetUBXNAVPVAT->automaticFlags.flags.all = 0;
+  packetUBXNAVPVAT->callbackPointer = NULL;
+  packetUBXNAVPVAT->callbackData = NULL;
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0;
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0;
+  return (true);
+}
+
+//Mark all the PVAT data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GNSS::flushNAVPVAT()
+{
+  if (packetUBXNAVPVAT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0; //Mark all datums as stale (read before)
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0;
+}
+
+//Log this data in file buffer
+void SFE_UBLOX_GNSS::logNAVPVAT(bool enabled)
+{
+  if (packetUBXNAVPVAT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPVAT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
+
 // ***** NAV CLOCK automatic support
 
 bool SFE_UBLOX_GNSS::getNAVCLOCK(uint16_t maxWait)
@@ -11449,6 +12057,54 @@ void SFE_UBLOX_GNSS::logHNRPVT(bool enabled)
 
 // ***** Helper Functions for NMEA Logging / Processing
 
+// Set the mainTalkerId used by NMEA messages - allows all NMEA messages except GSV to be prefixed with GP instead of GN
+bool SFE_UBLOX_GNSS::setMainTalkerID(sfe_ublox_talker_ids_e id, uint16_t maxWait)
+{
+  //Get the current extended NMEA protocol configuration (V1)
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NMEA;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  payloadCfg[9] = (uint8_t)id;
+
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+// Enable/Disable NMEA High Precision Mode - include extra decimal places in the Lat and Lon
+bool SFE_UBLOX_GNSS::setHighPrecisionMode(bool enable, uint16_t maxWait)
+{
+  //Get the current extended NMEA protocol configuration (V1)
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NMEA;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  if (enable)
+  {
+    payloadCfg[3] |= (1 << 3); // Set the highPrec flag
+    payloadCfg[3] &= ~((1 << 0) | (1 << 2)); // Clear the compat and limit82 flags
+  }
+  else
+    payloadCfg[3] &= ~(1 << 3); // Clear the highPrec flag
+
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 // Log selected NMEA messages to file buffer - if the messages are enabled and if the file buffer exists
 // User needs to call setFileBufferSize before .begin
 void SFE_UBLOX_GNSS::setNMEALoggingMask(uint32_t messages)
@@ -11468,6 +12124,153 @@ void SFE_UBLOX_GNSS::setProcessNMEAMask(uint32_t messages)
 uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
 {
   return (_processNMEA.all);
+}
+
+// Initiate automatic storage of NMEA GPGGA messages
+
+// Get the most recent GPGGA message
+// Return 0 if the message has not been received from the module
+// Return 1 if the data is valid but has been read before
+// Return 2 if the data is valid and is fresh/unread
+uint8_t SFE_UBLOX_GNSS::getLatestNMEAGPGGA(NMEA_GGA_data_t *data)
+{
+  if (storageNMEAGPGGA == NULL) initStorageNMEAGPGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGPGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  checkUbloxInternal(&packetCfg, 0, 0); // Call checkUbloxInternal to parse any incoming data. Use a fake UBX class and ID.
+
+  memcpy(data, &storageNMEAGPGGA->completeCopy, sizeof(NMEA_GGA_data_t)); // Copy the complete copy
+
+  uint8_t result = 0;
+  if (storageNMEAGPGGA->automaticFlags.flags.bits.completeCopyValid == 1) // Is the complete copy valid?
+  {
+    result = 1;
+    if (storageNMEAGPGGA->automaticFlags.flags.bits.completeCopyRead == 0) // Has the data already been read?
+    {
+      result = 2;
+      storageNMEAGPGGA->automaticFlags.flags.bits.completeCopyRead = 1; // Mark the data as read
+    }
+  }
+
+  return (result);
+}
+
+//Enable a callback on the arrival of a GPGGA message
+bool SFE_UBLOX_GNSS::setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t))
+{
+  if (storageNMEAGPGGA == NULL) initStorageNMEAGPGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGPGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (storageNMEAGPGGA->callbackCopy == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    storageNMEAGPGGA->callbackCopy = new NMEA_GGA_data_t;
+  }
+
+  if (storageNMEAGPGGA->callbackCopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setNMEAGPGGAcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGPGGA->callbackPointer = callbackPointer;
+  return (true);
+}
+
+// Private: allocate RAM for incoming NMEA GPGGA messages and initialize it
+bool SFE_UBLOX_GNSS::initStorageNMEAGPGGA()
+{
+  storageNMEAGPGGA = new NMEA_GPGGA_t; //Allocate RAM for the main struct
+  if (storageNMEAGPGGA == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initStorageNMEAGPGGA: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGPGGA->workingCopy.length = 0; // Clear the data length
+  memset(storageNMEAGPGGA->workingCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+  storageNMEAGPGGA->completeCopy.length = 0; // Clear the data length
+  memset(storageNMEAGPGGA->completeCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+
+  storageNMEAGPGGA->callbackPointer = NULL; // Clear the callback pointers
+  storageNMEAGPGGA->callbackCopy = NULL;
+
+  storageNMEAGPGGA->automaticFlags.flags.all = 0; // Mark the data as invalid/stale and unread
+
+  return (true);
+}
+
+uint8_t SFE_UBLOX_GNSS::getLatestNMEAGNGGA(NMEA_GGA_data_t *data)
+{
+  if (storageNMEAGNGGA == NULL) initStorageNMEAGNGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGNGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  checkUbloxInternal(&packetCfg, 0, 0); // Call checkUbloxInternal to parse any incoming data. Use a fake UBX class and ID.
+
+  memcpy(data, &storageNMEAGNGGA->completeCopy, sizeof(NMEA_GGA_data_t)); // Copy the complete copy
+
+  uint8_t result = 0;
+  if (storageNMEAGNGGA->automaticFlags.flags.bits.completeCopyValid == 1) // Is the complete copy valid?
+  {
+    result = 1;
+    if (storageNMEAGNGGA->automaticFlags.flags.bits.completeCopyRead == 0) // Has the data already been read?
+    {
+      result = 2;
+      storageNMEAGNGGA->automaticFlags.flags.bits.completeCopyRead = 1; // Mark the data as read
+    }
+  }
+
+  return (result);
+}
+
+bool SFE_UBLOX_GNSS::setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t))
+{
+  if (storageNMEAGNGGA == NULL) initStorageNMEAGNGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGNGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (storageNMEAGNGGA->callbackCopy == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    storageNMEAGNGGA->callbackCopy = new NMEA_GGA_data_t;
+  }
+
+  if (storageNMEAGNGGA->callbackCopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setNMEAGNGGAcallback: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGNGGA->callbackPointer = callbackPointer;
+  return (true);
+}
+
+// Private: allocate RAM for incoming NMEA GNGGA messages and initialize it
+bool SFE_UBLOX_GNSS::initStorageNMEAGNGGA()
+{
+  storageNMEAGNGGA = new NMEA_GNGGA_t; //Allocate RAM for the main struct
+  if (storageNMEAGNGGA == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initStorageNMEAGNGGA: RAM alloc failed!"));
+    return (false);
+  }
+
+  storageNMEAGNGGA->workingCopy.length = 0; // Clear the data length
+  memset(storageNMEAGNGGA->workingCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+  storageNMEAGNGGA->completeCopy.length = 0; // Clear the data length
+  memset(storageNMEAGNGGA->completeCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
+
+  storageNMEAGNGGA->callbackPointer = NULL; // Clear the callback pointers
+  storageNMEAGNGGA->callbackCopy = NULL;
+
+  storageNMEAGNGGA->automaticFlags.flags.all = 0; // Mark the data as invalid/stale and unread
+
+  return (true);
 }
 
 // ***** CFG RATE Helper Functions
@@ -12523,6 +13326,60 @@ uint32_t SFE_UBLOX_GNSS::getVerticalAccuracy(uint16_t maxWait)
   packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.bits.vAcc = false; //Since we are about to give this to user, mark this data as stale
   packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.bits.all = false;
   return (packetUBXNAVHPPOSLLH->data.vAcc);
+}
+
+// ***** PVAT Helper Functions
+
+int32_t SFE_UBLOX_GNSS::getVehicleRoll(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehRoll == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehRoll = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.vehRoll);
+}
+
+int32_t SFE_UBLOX_GNSS::getVehiclePitch(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehPitch == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehPitch = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.vehPitch);
+}
+
+int32_t SFE_UBLOX_GNSS::getVehicleHeading(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehHeading == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.vehHeading = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.vehHeading);
+}
+
+int32_t SFE_UBLOX_GNSS::getMotionHeading(uint16_t maxWait)
+{
+  if (packetUBXNAVPVAT == NULL) initPacketUBXNAVPVAT(); //Check that RAM has been allocated for the PVAT data
+  if (packetUBXNAVPVAT == NULL) //Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.motHeading == false)
+    getNAVPVAT(maxWait);
+  packetUBXNAVPVAT->moduleQueried.moduleQueried2.bits.motHeading = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVAT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVAT->data.motHeading);
 }
 
 // ***** SVIN Helper Functions

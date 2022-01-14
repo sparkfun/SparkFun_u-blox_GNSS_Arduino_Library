@@ -134,6 +134,7 @@ const uint32_t UBLOX_CFG_I2C_ENABLED = 0x10510003;	// Flag to indicate if the I2
 const uint32_t UBLOX_CFG_I2CINPROT_UBX = 0x10710001;	// Flag to indicate if UBX should be an input protocol on I2C
 const uint32_t UBLOX_CFG_I2CINPROT_NMEA = 0x10710002;	// Flag to indicate if NMEA should be an input protocol on I2C
 const uint32_t UBLOX_CFG_I2CINPROT_RTCM3X = 0x10710004;	// Flag to indicate if RTCM3X should be an input protocol on I2C
+const uint32_t UBLOX_CFG_I2CINPROT_SPARTN = 0x10710005;	// Flag to indicate if SPARTN should be an input protocol on I2C
 
 //CFG-I2COUTPROT: Output protocol configuration of the I2C interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -550,6 +551,16 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_SPI = 0x20910235;			// Output rate
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_UART1 = 0x20910232;		// Output rate of the UBX-RXM-SFRBX message on port UART1
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_UART2 = 0x20910233;	// Output rate of the UBX-RXM-SFRBX message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_USB = 0x20910234;		// Output rate of the UBX-RXM-SFRBX message on port USB
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SPARTN_I2C = 0x20910605;	// Output rate of the UBX-RXM-SPARTN message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SPARTN_UART1 = 0x20910606;	// Output rate of the UBX-RXM-SPARTN message on port UART1
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SPARTN_UART2 = 0x20910607;	// Output rate of the UBX-RXM-SPARTN message on port UART2
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SPARTN_USB = 0x20910608;	// Output rate of the UBX-RXM-SPARTN message on port USB
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_SPARTN_SPI = 0x20910609;	// Output rate of the UBX-RXM-SPARTN message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_I2C = 0x20910634; // Output rate of the UBX-SEC-SIG message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_SPI = 0x20910638; // Output rate of the UBX-SEC-SIG message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_UART1 = 0x20910635; // Output rate of the UBX-SEC-SIG message on port UART1
+const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_UART2 = 0x20910636; // Output rate of the UBX-SEC-SIG message on port UART2
+const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_USB = 0x20910637; // Output rate of the UBX-SEC-SIG message on port USB
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_TM2_I2C = 0x20910178;				// Output rate of the UBX-TIM-TM2 message on port I2C
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_TM2_SPI = 0x2091017c;				// Output rate of the UBX-TIM-TM2 message on port SPI
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_TM2_UART1 = 0x20910179;			// Output rate of the UBX-TIM-TM2 message on port UART1
@@ -566,7 +577,7 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_VRFY_UART1 = 0x20910093;			// Output rat
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_VRFY_UART2 = 0x20910094;		// Output rate of the UBX-TIM-VRFY message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_VRFY_USB = 0x20910095;		// Output rate of the UBX-TIM-VRFY message on port USB
 
-//Additional CFG_MSGOUT keys for the ZED-F9R HPS120
+//Additional CFG_MSGOUT keys for the ZED-F9R HPS121
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_COV_I2C = 0x20910083; // Output rate of the UBX-NAV-COV message on port I2C
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_COV_UART1 = 0x20910084; // Output rate of the UBX-NAV-COV message on port UART1
@@ -608,6 +619,12 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_EELL_UART1 = 0x20910314; // Output rate 
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_EELL_UART2 = 0x20910315; // Output rate of the UBX-NAV-EELL message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_EELL_USB = 0x20910316; // Output rate of the UBX-NAV-EELL message on port USB
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_EELL_SPI = 0x20910317; // Output rate of the UBX-NAV-EELL message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_PVAT_I2C = 0x2091062a; // Output rate of the UBX-NAV-PVAT message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_PVAT_UART1 = 0x2091062b; // Output rate of the UBX-NAV-PVAT message on port UART1
+const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_PVAT_UART2 = 0x2091062c; // Output rate of the UBX-NAV-PVAT message on port UART2
+const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_PVAT_USB = 0x2091062d; // Output rate of the UBX-NAV-PVAT message on port USB
+const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV_PVAT_SPI = 0x2091062e; // Output rate of the UBX-NAV-PVAT message on port SPI
+
 
 //Additional CFG_MSGOUT keys for the ZED-F9T
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -761,11 +778,6 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIGLOG_SPI = 0x2091068d; // Output rate 
 const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIGLOG_UART1 = 0x2091068a; // Output rate of the UBX-SEC-SIGLOG message on port UART1
 const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIGLOG_UART2 = 0x2091068b; // Output rate of the UBX-SEC-SIGLOG message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIGLOG_USB = 0x2091068c; // Output rate of the UBX-SEC-SIGLOG message on port USB
-const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_I2C = 0x20910634; // Output rate of the UBX-DBG-SKYMAP message on port I2C
-const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_SPI = 0x20910638; // Output rate of the UBX-SEC-SIG message on port SPI
-const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_UART1 = 0x20910635; // Output rate of the UBX-SEC-SIG message on port UART1
-const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_UART2 = 0x20910636; // Output rate of the UBX-SEC-SIG message on port UART2
-const uint32_t UBLOX_CFG_MSGOUT_UBX_SEC_SIG_USB = 0x20910637; // Output rate of the UBX-SEC-SIG message on port USB
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_SVIN_I2C = 0x20910097; // Output rate of the UBX-TIM-SVIN message on port I2C
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_SVIN_SPI = 0x2091009b; // Output rate of the UBX-TIM-SVIN message on port SPI
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_SVIN_UART1 = 0x20910098; // Output rate of the UBX-TIM-SVIN message on port UART1
@@ -976,6 +988,7 @@ const uint32_t UBLOX_CFG_SPI_ENABLED = 0x10640006;	// Flag to indicate if the SP
 const uint32_t UBLOX_CFG_SPIINPROT_UBX = 0x10790001;	// Flag to indicate if UBX should be an input protocol on SPI
 const uint32_t UBLOX_CFG_SPIINPROT_NMEA = 0x10790002;	// Flag to indicate if NMEA should be an input protocol on SPI
 const uint32_t UBLOX_CFG_SPIINPROT_RTCM3X = 0x10790004;	// Flag to indicate if RTCM3X should be an input protocol on SPI
+const uint32_t UBLOX_CFG_SPIINPROT_SPARTN = 0x10790005;	// Flag to indicate if SPARTN should be an input protocol on SPI
 
 //CFG-SPIOUTPROT: Output protocol configuration of the SPI interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1062,6 +1075,7 @@ const uint32_t UBLOX_CFG_UART1_ENABLED = 0x10520005;	// Flag to indicate if the 
 const uint32_t UBLOX_CFG_UART1INPROT_UBX = 0x10730001;	// Flag to indicate if UBX should be an input protocol on UART1
 const uint32_t UBLOX_CFG_UART1INPROT_NMEA = 0x10730002;	// Flag to indicate if NMEA should be an input protocol on UART1
 const uint32_t UBLOX_CFG_UART1INPROT_RTCM3X = 0x10730004;	// Flag to indicate if RTCM3X should be an input protocol on UART1
+const uint32_t UBLOX_CFG_UART1INPROT_SPARTN = 0x10730005;	// Flag to indicate if SPARTN should be an input protocol on UART1
 
 //CFG-UART1OUTPROT: Output protocol configuration of the UART1 interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1083,6 +1097,7 @@ const uint32_t UBLOX_CFG_UART2_REMAP = 0x10530006;	// UART2 Remapping
 const uint32_t UBLOX_CFG_UART2INPROT_UBX = 0x10750001;	// Flag to indicate if UBX should be an input protocol on UART2
 const uint32_t UBLOX_CFG_UART2INPROT_NMEA = 0x10750002;	// Flag to indicate if NMEA should be an input protocol on UART2
 const uint32_t UBLOX_CFG_UART2INPROT_RTCM3X = 0x10750004;	// Flag to indicate if RTCM3X should be an input protocol on UART2
+const uint32_t UBLOX_CFG_UART2INPROT_SPARTN = 0x10750005;	// Flag to indicate if SPARTN should be an input protocol on UART2
 
 //CFG-UART2OUTPROT: Output protocol configuration of the UART2 interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1115,6 +1130,7 @@ const uint32_t UBLOX_CFG_USB_SERIAL_NO_STR3 = 0x50650018;	// Serial number strin
 const uint32_t UBLOX_CFG_USBINPROT_UBX = 0x10770001;	// Flag to indicate if UBX should be an input protocol on USB
 const uint32_t UBLOX_CFG_USBINPROT_NMEA = 0x10770002;	// Flag to indicate if NMEA should be an input protocol on USB
 const uint32_t UBLOX_CFG_USBINPROT_RTCM3X = 0x10770004;	// Flag to indicate if RTCM3X should be an input protocol on USB
+const uint32_t UBLOX_CFG_USBINPROT_SPARTN = 0x10770005;	// Flag to indicate if SPARTN should be an input protocol on USB
 
 //CFG-USBOUTPROT: Output protocol configuration of the USB interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
