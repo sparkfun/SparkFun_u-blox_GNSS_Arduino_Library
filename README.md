@@ -37,7 +37,7 @@ We've also added a new [NTRIP Caster Client example](./examples/ZED-F9P/Example1
 
 ## AssistNow<sup>TM</sup>
 
-v2.1.0 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
+v2.1 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
 
 ## v2 vs. v1
 
