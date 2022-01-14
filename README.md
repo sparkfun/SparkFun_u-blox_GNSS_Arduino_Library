@@ -100,9 +100,9 @@ The SPI examples have their [own folder](./examples/SPI).
 
 Please check the module datasheets for details on what clock speeds and data rates each module supports. The maximum clock speed is typically 5.5MHz and the maximum transfer rate is typically 125kBytes/s.
 
-## Max (400kHz) I<sup>2</sup>C Support
+## I<sup>2</sup>C Support
 
-To achieve 400kHz I<sup>2</sup>C speed please be sure to remove all pull-ups on the I<sup>2</sup>C bus. Most, if not all, u-blox modules include internal pull ups on the I<sup>2</sup>C lines (sometimes called DDC in their manuals). Cut all I<sup>2</sup>C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I<sup>2</sup>C bus at 100kHz.
+For I<sup>2</sup>C communication, please be sure to remove all additional pull-ups on the I<sup>2</sup>C bus. u-blox modules include internal pull-ups on the I<sup>2</sup>C lines (sometimes called DDC in their manuals). Cut all I<sup>2</sup>C pull-up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. We recommend running the I<sup>2</sup>C bus at 100kHz.
 
 ## Contributing
 
