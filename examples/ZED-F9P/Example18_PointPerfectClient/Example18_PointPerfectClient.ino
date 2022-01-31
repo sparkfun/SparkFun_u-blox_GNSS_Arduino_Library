@@ -52,7 +52,6 @@ void setup()
   Serial.println(F("PointPerfect testing"));
   
   Wire.begin(); //Start I2C
-  Wire.setClock(100000);
 
   if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
