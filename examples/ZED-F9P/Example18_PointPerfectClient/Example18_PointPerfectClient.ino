@@ -9,22 +9,27 @@
   and push it over I2C to a ZED-F9x.
   It's confusing, but the Arduino is acting as a 'client' to the PointPerfect SSR correction service.
 
-  You will need to have a valid u-blox Thingstream account and have a PointPerfect Thinng and Plan. 
-  Thingstream offers continetal SSR corrections to SPARTN cabalble RTK receivers such as the u-blox 
-  ZED-F9 sweries in continental Europ and US. There Network is planned to be expanded to ther regions 
-  over next years. To see sign up go to https://portal.thingstream.io/app/location-services/things
+  You will need to have a valid u-blox Thingstream account and have a PointPerfect Thing and payed plan. 
+  Thingstream offers SSR corrections to SPARTN cabalble RTK receivers such as the u-blox ZED-F9 series 
+  in continental Europ and US. There Network is planned to be expanded to ther regions over next years. 
+  To see sign up go to https://portal.thingstream.io/app/location-services/things
 
   This is a proof of concept to show how to connect via MQTT to get SPARTN SSR correction. 
-  Using WiFi for a rover is generally a bad idea because of limited WiFi range in the field.
+  Using WiFi for a rover is generally a bad idea because of limited WiFi range in the field. 
+  You may use this exmaple in combination with a cell phone with hotspot mode enabled. 
 
   For more information about MQTT, SPARTN and PointPerfect Correction Services 
-  please see: https://www.u-blox.com/en/product/pointperfect?lang=de
+  please see: https://www.u-blox.com/en/product/pointperfect
   
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/16481
   RTK Surveyor: https://www.sparkfun.com/products/18443
   RTK Express: https://www.sparkfun.com/products/18442
+  
+  Recommended Hardware:
+  MicroMod GNSS Carrier Board: https://www.sparkfun.com/products/17722 
+  ESP32 Micromod https://www.sparkfun.com/products/16781
 
   Hardware Connections:
   Plug a Qwiic cable into the GNSS and a ESP32 Thing Plus
