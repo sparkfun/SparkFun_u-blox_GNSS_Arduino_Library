@@ -784,6 +784,14 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_SVIN_UART1 = 0x20910098; // Output rate 
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_SVIN_UART2 = 0x20910099; // Output rate of the UBX-TIM-SVIN message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_TIM_SVIN_USB = 0x2091009a; // Output rate of the UBX-TIM-SVIN message on port USB
 
+//Additional CFG_MSGOUT keys for the NEO-D9S
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C = 0x2091031d; // Output rate of the UBX_RXM_PMP message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_SPI = 0x20910321; // Output rate of the UBX_RXM_PMP message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1 = 0x2091031e; // Output rate of the UBX_RXM_PMP message on port UART1
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2 = 0x2091031f; // Output rate of the UBX_RXM_PMP message on port UART2
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_USB = 0x20910320; // Output rate of the UBX_RXM_PMP message on port USB
+
 //CFG-NAV2: Secondary output configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const uint32_t UBLOX_CFG_NAV2_OUT_ENABLED = 0x10170001; // Enable secondary (NAV2) output
@@ -864,6 +872,26 @@ const uint32_t UBLOX_CFG_ODO_COGMAXSPEED = 0x20220021;	// Upper speed limit for 
 const uint32_t UBLOX_CFG_ODO_COGMAXPOSACC = 0x20220022;	// Maximum acceptable position accuracy for computing low-speed filtered course over ground
 const uint32_t UBLOX_CFG_ODO_VELLPGAIN = 0x20220031;	// Velocity low-pass filter level
 const uint32_t UBLOX_CFG_ODO_COGLPGAIN = 0x20220032;	// Course over ground low-pass filter level (at speed < 8 m/s)
+
+//CFG-PM: Configuration for receiver power management (NEO-D9S)
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t UBLOX_CFG_PM_EXTINTSEL = 0x20d0000b; // EXTINT pin select
+const uint32_t UBLOX_CFG_PM_EXTINTWAKE = 0x10d0000c; // EXTINT pin control (Wake). Enable to keep receiver awake as long as selected EXTINT pin is "high".
+const uint32_t UBLOX_CFG_PM_EXTINTBACKUP = 0x10d0000d; // EXTINT pin control (Backup). Enable to force receiver into BACKUP mode when selected EXTINT pin is "low".
+const uint32_t UBLOX_CFG_PM_EXTINTINACTIVE = 0x10d0000e; // EXTINT pin control (Inactive). Enable to force backup in case EXTINT Pin is inactive for time longer than CFG-PM-EXTINTINACTIVITY.
+const uint32_t UBLOX_CFG_PM_EXTINTINACTIVITY = 0x40d0000f; // Inactivity time out on EXTINT pin if enabled
+
+//CFG-PMP: Point to multipoint (PMP) configuration (NEO-D9S)
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t UBLOX_CFG_PMP_CENTER_FREQUENCY = 0x40b10011; // Center frequency. The center frequency for the receiver can be set from 1525000000 to 1559000000 Hz.
+const uint32_t UBLOX_CFG_PMP_SEARCH_WINDOW = 0x30b10012; // Search window. Search window can be set from 0 to 65535 Hz. It is +/- this value from the center frequency set by CENTER_FREQUENCY.
+const uint32_t UBLOX_CFG_PMP_USE_SERVICE_ID = 0x10b10016; // Use service ID. Enable/disable service ID check to confirm the correct service is received.
+const uint32_t UBLOX_CFG_PMP_SERVICE_ID = 0x30b10017; // Service identifier. Defines the expected service ID.
+const uint32_t UBLOX_CFG_PMP_DATA_RATE = 0x30b10013; // bps Data rate. The data rate of the received data.
+const uint32_t UBLOX_CFG_PMP_USE_DESCRAMBLER = 0x10b10014; // Use descrambler. Enables/disables the descrambler.
+const uint32_t UBLOX_CFG_PMP_DESCRAMBLER_INIT = 0x30b10015; // Descrambler initialization. Set the intialisation value for the descrambler.
+const uint32_t UBLOX_CFG_PMP_USE_PRESCRAMBLING = 0x10b10019; // Use prescrambling. Enables/disables the prescrambling.
+const uint32_t UBLOX_CFG_PMP_UNIQUE_WORD = 0x50b1001a; // Unique word. Defines value of unique word.
 
 //CFG-QZSS: QZSS system configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
