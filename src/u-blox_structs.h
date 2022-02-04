@@ -1463,6 +1463,33 @@ typedef struct
   UBX_RXM_RAWX_data_t  *callbackData;
 } UBX_RXM_RAWX_t;
 
+// UBX-RXM-PMP (0x02 0x72): PMP raw data (D9 modules)
+const uint16_t UBX_RXM_PMP_MAX_LEN = 528;
+
+typedef struct
+{
+  uint8_t version; // Message version (0x00 for this version)
+  uint8_t reserved0[3]; // Reserved
+  uint32_t timeTag; // Time since startup when frame started : ms
+  uint32_t uniqueWord[2]; // Received unique words
+  uint16_t serviceIdentifier; // Received service identifier
+  uint8_t spare; // Received spare data
+  uint8_t uniqueWordBitErrors; // Number of bit errors in both unique words
+  uint8_t userData[504]; // Received user data
+  uint16_t fecBits; // Number of bits corrected by FEC (forward error correction)
+  uint8_t ebno; // Energy per bit to noise power spectral density ratio : 2^-3 dB
+  uint8_t reserved1; // Reserved
+} UBX_RXM_PMP_data_t;
+
+typedef struct
+{
+	ubxAutomaticFlags automaticFlags;
+  UBX_RXM_PMP_data_t data;
+  bool moduleQueried;
+  void (*callbackPointer)(UBX_RXM_PMP_data_t);
+  UBX_RXM_PMP_data_t  *callbackData;
+} UBX_RXM_PMP_t;
+
 // CFG-specific structs
 
 // UBX-CFG-RATE (0x06 0x08): Navigation/measurement rate settings

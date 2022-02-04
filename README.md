@@ -104,6 +104,10 @@ Please check the module datasheets for details on what clock speeds and data rat
 
 For I<sup>2</sup>C communication, please be sure to remove all additional pull-ups on the I<sup>2</sup>C bus. u-blox modules include internal pull-ups on the I<sup>2</sup>C lines (sometimes called DDC in their manuals). Cut all I<sup>2</sup>C pull-up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. We recommend running the I<sup>2</sup>C bus at 100kHz.
 
+## Compatibility
+
+v2 of the library provides support for generation 8, 9 and 10 u-blox GNSS modules. For generation 6 and 7, please see [this example (depricated)](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/tree/master/examples/Series_6_7/Example1_GetPositionAndTime_Series_6_7).
+
 ## Contributing
 
 If you would like to contribute to this library: please do, we truly appreciate it, but please follow [these guidelines](./CONTRIBUTING.md). Thanks!
