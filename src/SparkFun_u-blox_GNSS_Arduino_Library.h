@@ -375,7 +375,8 @@ const uint8_t UBX_NAV_AOPSTATUS = 0x60; //AssistNow Autonomous status
 //Class: RXM
 //The following are used to configure the RXM UBX messages (receiver manager messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
 const uint8_t UBX_RXM_MEASX = 0x14; //Satellite Measurements for RRLP
-const uint8_t UBX_RXM_PMREQ = 0x41; //Requests a Power Management task (two differenent packet sizes)
+const uint8_t UBX_RXM_PMREQ = 0x41; //Requests a Power Management task (two different packet sizes)
+const uint8_t UBX_RXM_PMP = 0x72; //PMP raw data (two different versions) (packet size for version 0x01 is variable)
 const uint8_t UBX_RXM_RAWX = 0x15;	//Multi-GNSS Raw Measurement Data
 const uint8_t UBX_RXM_RLM = 0x59;	//Galileo SAR Short-RLM report (two different packet sizes)
 const uint8_t UBX_RXM_RTCM = 0x32;	//RTCM input status
@@ -1070,6 +1071,13 @@ public:
 
 	// Receiver Manager Messages (RXM)
 
+	// Configure a callback for the UBX-RXM-PMP messages produced by the NEO-D9S
+	// Note: on the NEO-D9S, the UBX-RXM-PMP messages are enabled by default on all ports.
+	//       You can disable them by calling (e.g.) setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 0)
+	//       The NEO-D9S does not support UBX-CFG-MSG
+	bool setAutoRXMPMPcallback(void (*callbackPointer)(UBX_RXM_PMP_data_t), uint16_t maxWait = defaultMaxWait); // Callback is passed all of the data. Heavy on the stack. May cause problems on some platforms.
+	bool setAutoRXMPMPcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_PMP_data_t *), uint16_t maxWait = defaultMaxWait); // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
+
 	bool getRXMSFRBX(uint16_t maxWait = defaultMaxWait); // RXM SFRBX
 	bool setAutoRXMSFRBX(bool enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic RXM SFRBX reports at the navigation frequency
 	bool setAutoRXMSFRBX(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RXM SFRBX reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -1385,6 +1393,7 @@ public:
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_AOPSTATUS_t *packetUBXNAVAOPSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
+	UBX_RXM_PMP_t *packetUBXRXMPMP = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
@@ -1472,6 +1481,7 @@ private:
 	bool initPacketUBXNAVSAT(); // Allocate RAM for packetUBXNAVSAT and initialize it
 	bool initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 	bool initPacketUBXNAVAOPSTATUS(); // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
+	bool initPacketUBXRXMPMP(bool usePtr = false); // Allocate RAM for packetUBXRXMPMP and initialize it
 	bool initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
 	bool initPacketUBXRXMRAWX(); // Allocate RAM for packetUBXRXMRAWX and initialize it
 	bool initPacketUBXCFGRATE(); // Allocate RAM for packetUBXCFGRATE and initialize it
