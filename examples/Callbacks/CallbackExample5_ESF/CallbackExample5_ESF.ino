@@ -35,39 +35,39 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 /                   _____ You can use any name you like for the struct
 //        |                 |                  /
 //        |                 |                  |
-void printESFALGdata(UBX_ESF_ALG_data_t ubxDataStruct)
+void printESFALGdata(UBX_ESF_ALG_data_t *ubxDataStruct)
 {
   Serial.println();
 
   Serial.print(F("TOW: ")); // Print the Time Of Week
-  unsigned long iTOW = ubxDataStruct.iTOW; // iTOW is in milliseconds
+  unsigned long iTOW = ubxDataStruct->iTOW; // iTOW is in milliseconds
   Serial.print(iTOW);
   Serial.print(F(" (ms)"));
 
   Serial.print(F(" Roll: ")); // Print selected data
-  Serial.print((float)ubxDataStruct.roll / 100.0, 2); // Convert roll to degrees
+  Serial.print((float)ubxDataStruct->roll / 100.0, 2); // Convert roll to degrees
 
   Serial.print(F(" Pitch: "));
-  Serial.print((float)ubxDataStruct.pitch / 100.0, 2); // Convert pitch to degrees
+  Serial.print((float)ubxDataStruct->pitch / 100.0, 2); // Convert pitch to degrees
 
   Serial.print(F(" Yaw: "));
-  Serial.print((float)ubxDataStruct.yaw / 100.0, 2); // Convert yaw to degrees
+  Serial.print((float)ubxDataStruct->yaw / 100.0, 2); // Convert yaw to degrees
 
   Serial.println(F(" (Degrees)"));
 }
 
 // Callback: printESFINSdata will be called when new ESF INS data arrives
 // See u-blox_structs.h for the full definition of UBX_ESF_INS_data_t
-void printESFINSdata(UBX_ESF_INS_data_t ubxDataStruct)
+void printESFINSdata(UBX_ESF_INS_data_t *ubxDataStruct)
 {
   Serial.print(F("xAccel: ")); // Print selected data
-  Serial.print(ubxDataStruct.xAccel);
+  Serial.print(ubxDataStruct->xAccel);
 
   Serial.print(F(" yAccel: "));
-  Serial.print(ubxDataStruct.yAccel);
+  Serial.print(ubxDataStruct->yAccel);
 
   Serial.print(F(" zAccel: "));
-  Serial.print(ubxDataStruct.zAccel);
+  Serial.print(ubxDataStruct->zAccel);
 
   Serial.println(F(" (m/s^2)"));
 }
@@ -75,23 +75,23 @@ void printESFINSdata(UBX_ESF_INS_data_t ubxDataStruct)
 // Callback: printESFMEASdata will be called when new ESF MEAS data arrives
 // See u-blox_structs.h for the full definition of UBX_ESF_MEAS_data_t
 // and UBX_ESF_MEAS_sensorData_t
-void printESFMEASdata(UBX_ESF_MEAS_data_t ubxDataStruct)
+void printESFMEASdata(UBX_ESF_MEAS_data_t *ubxDataStruct)
 {
   Serial.println();
 
   Serial.print(F("id: ")); // Print selected data
-  Serial.print(ubxDataStruct.id);
+  Serial.print(ubxDataStruct->id);
 
   Serial.print(F(" numMeas: "));
-  Serial.println(ubxDataStruct.flags.bits.numMeas);
+  Serial.println(ubxDataStruct->flags.bits.numMeas);
 
-  for (uint8_t num = 0; num < ubxDataStruct.flags.bits.numMeas; num++) // For each sensor
+  for (uint8_t num = 0; num < ubxDataStruct->flags.bits.numMeas; num++) // For each sensor
   {
     Serial.print(F("Sensor "));
     Serial.print(num);
 
     UBX_ESF_MEAS_sensorData_t sensorData;
-    myGNSS.getSensorFusionMeasurement(&sensorData, ubxDataStruct, num); // Extract the data for one sensor
+    myGNSS.getSensorFusionMeasurement(&sensorData, *ubxDataStruct, num); // Extract the data for one sensor
 
     Serial.print(F(": Type: "));
     Serial.print(sensorData.data.bits.dataType);
@@ -103,21 +103,21 @@ void printESFMEASdata(UBX_ESF_MEAS_data_t ubxDataStruct)
 // Callback: printESFSTATUSdata will be called when new ESF STATUS data arrives
 // See u-blox_structs.h for the full definition of UBX_ESF_STATUS_data_t
 // and UBX_ESF_STATUS_sensorStatus_t
-void printESFSTATUSdata(UBX_ESF_STATUS_data_t ubxDataStruct)
+void printESFSTATUSdata(UBX_ESF_STATUS_data_t *ubxDataStruct)
 {
   Serial.print(F("fusionMode: ")); // Print selected data
-  Serial.print(ubxDataStruct.fusionMode);
+  Serial.print(ubxDataStruct->fusionMode);
 
   Serial.print(F(" numSens: "));
-  Serial.println(ubxDataStruct.numSens);
+  Serial.println(ubxDataStruct->numSens);
 
-  for (uint8_t num = 0; num < ubxDataStruct.numSens; num++) // For each sensor
+  for (uint8_t num = 0; num < ubxDataStruct->numSens; num++) // For each sensor
   {
     Serial.print(F("Sensor "));
     Serial.print(num);
 
     UBX_ESF_STATUS_sensorStatus_t sensorStatus;
-    myGNSS.getSensorFusionStatus(&sensorStatus, ubxDataStruct, num); // Extract the data for one sensor
+    myGNSS.getSensorFusionStatus(&sensorStatus, *ubxDataStruct, num); // Extract the data for one sensor
 
     Serial.print(F(": Type: "));
     Serial.print(sensorStatus.sensStatus1.bits.type);
@@ -156,16 +156,16 @@ void setup()
 
   myGNSS.setI2CpollingWait(50); //Allow checkUblox to poll I2C data every 50ms to keep up with the ESF MEAS messages
 
-  if (myGNSS.setAutoESFALGcallback(&printESFALGdata) == true) // Enable automatic ESF ALG messages with callback to printESFALGdata
+  if (myGNSS.setAutoESFALGcallbackPtr(&printESFALGdata) == true) // Enable automatic ESF ALG messages with callback to printESFALGdata
     Serial.println(F("setAutoESFALGcallback successful"));
 
-  if (myGNSS.setAutoESFINScallback(&printESFINSdata) == true) // Enable automatic ESF INS messages with callback to printESFINSdata
+  if (myGNSS.setAutoESFINScallbackPtr(&printESFINSdata) == true) // Enable automatic ESF INS messages with callback to printESFINSdata
     Serial.println(F("setAutoESFINScallback successful"));
 
-  if (myGNSS.setAutoESFMEAScallback(&printESFMEASdata) == true) // Enable automatic ESF MEAS messages with callback to printESFMEASdata
+  if (myGNSS.setAutoESFMEAScallbackPtr(&printESFMEASdata) == true) // Enable automatic ESF MEAS messages with callback to printESFMEASdata
     Serial.println(F("setAutoESFMEAScallback successful"));
 
-  if (myGNSS.setAutoESFSTATUScallback(&printESFSTATUSdata) == true) // Enable automatic ESF STATUS messages with callback to printESFSTATUSdata
+  if (myGNSS.setAutoESFSTATUScallbackPtr(&printESFSTATUSdata) == true) // Enable automatic ESF STATUS messages with callback to printESFSTATUSdata
     Serial.println(F("setAutoESFSTATUScallback successful"));
 }
 

@@ -48,30 +48,30 @@ int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 mes
 //        |                 /                   _____ You can use any name you like for the struct
 //        |                 |                  /
 //        |                 |                  |
-void printTIMTM2data(UBX_TIM_TM2_data_t ubxDataStruct)
+void printTIMTM2data(UBX_TIM_TM2_data_t *ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("newFallingEdge: ")); // 1 if a new falling edge was detected
-    Serial.print(ubxDataStruct.flags.bits.newFallingEdge);
+    Serial.print(ubxDataStruct->flags.bits.newFallingEdge);
 
     Serial.print(F(" newRisingEdge: ")); // 1 if a new rising edge was detected
-    Serial.print(ubxDataStruct.flags.bits.newRisingEdge);
+    Serial.print(ubxDataStruct->flags.bits.newRisingEdge);
 
     Serial.print(F(" Rising Edge Counter: ")); // Rising edge counter
-    Serial.print(ubxDataStruct.count);
+    Serial.print(ubxDataStruct->count);
 
     Serial.print(F(" towMsR: ")); // Time Of Week of rising edge (ms)
-    Serial.print(ubxDataStruct.towMsR);
+    Serial.print(ubxDataStruct->towMsR);
 
     Serial.print(F(" towSubMsR: ")); // Millisecond fraction of Time Of Week of rising edge in nanoseconds
-    Serial.print(ubxDataStruct.towSubMsR);
+    Serial.print(ubxDataStruct->towSubMsR);
 
     Serial.print(F(" towMsF: ")); // Time Of Week of falling edge (ms)
-    Serial.print(ubxDataStruct.towMsF);
+    Serial.print(ubxDataStruct->towMsF);
 
     Serial.print(F(" towSubMsF: ")); // Millisecond fraction of Time Of Week of falling edge in nanoseconds
-    Serial.println(ubxDataStruct.towSubMsF);
+    Serial.println(ubxDataStruct->towSubMsF);
 
     dotsPrinted = 0; // Reset dotsPrinted
 }
@@ -97,7 +97,7 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one solution per second
 
-  myGNSS.setAutoTIMTM2callback(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
+  myGNSS.setAutoTIMTM2callbackPtr(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
 }
 
 void loop()
