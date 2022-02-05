@@ -103,6 +103,7 @@ typedef struct
   UBX_NAV_POSECEF_data_t data;
   UBX_NAV_POSECEF_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_POSECEF_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_POSECEF_data_t *);
   UBX_NAV_POSECEF_data_t  *callbackData;
 } UBX_NAV_POSECEF_t;
 
@@ -146,6 +147,7 @@ typedef struct
   UBX_NAV_POSLLH_data_t data;
   UBX_NAV_POSLLH_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_POSLLH_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_POSLLH_data_t *);
   UBX_NAV_POSLLH_data_t  *callbackData;
 } UBX_NAV_POSLLH_t;
 
@@ -246,6 +248,7 @@ typedef struct
   UBX_NAV_STATUS_data_t data;
   UBX_NAV_STATUS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_STATUS_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_STATUS_data_t *);
   UBX_NAV_STATUS_data_t  *callbackData;
 } UBX_NAV_STATUS_t;
 
@@ -291,6 +294,7 @@ typedef struct
   UBX_NAV_DOP_data_t data;
   UBX_NAV_DOP_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_DOP_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_DOP_data_t *);
   UBX_NAV_DOP_data_t  *callbackData;
 } UBX_NAV_DOP_t;
 
@@ -337,6 +341,7 @@ typedef struct
   UBX_NAV_ATT_data_t data;
   UBX_NAV_ATT_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_ATT_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_ATT_data_t *);
   UBX_NAV_ATT_data_t  *callbackData;
 } UBX_NAV_ATT_t;
 
@@ -500,6 +505,7 @@ typedef struct
   UBX_NAV_PVT_data_t data;
   UBX_NAV_PVT_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_PVT_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_PVT_data_t *);
   UBX_NAV_PVT_data_t  *callbackData;
 } UBX_NAV_PVT_t;
 
@@ -540,6 +546,7 @@ typedef struct
   UBX_NAV_ODO_data_t data;
   UBX_NAV_ODO_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_ODO_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_ODO_data_t *);
   UBX_NAV_ODO_data_t  *callbackData;
 } UBX_NAV_ODO_t;
 
@@ -579,6 +586,7 @@ typedef struct
   UBX_NAV_VELECEF_data_t data;
   UBX_NAV_VELECEF_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_VELECEF_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_VELECEF_data_t *);
   UBX_NAV_VELECEF_data_t  *callbackData;
 } UBX_NAV_VELECEF_t;
 
@@ -626,6 +634,7 @@ typedef struct
   UBX_NAV_VELNED_data_t data;
   UBX_NAV_VELNED_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_VELNED_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_VELNED_data_t *);
   UBX_NAV_VELNED_data_t  *callbackData;
 } UBX_NAV_VELNED_t;
 
@@ -685,6 +694,7 @@ typedef struct
   UBX_NAV_HPPOSECEF_data_t data;
   UBX_NAV_HPPOSECEF_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_HPPOSECEF_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_HPPOSECEF_data_t *);
   UBX_NAV_HPPOSECEF_data_t  *callbackData;
 } UBX_NAV_HPPOSECEF_t;
 
@@ -750,6 +760,7 @@ typedef struct
   UBX_NAV_HPPOSLLH_data_t data;
   UBX_NAV_HPPOSLLH_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_HPPOSLLH_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_HPPOSLLH_data_t *);
   UBX_NAV_HPPOSLLH_data_t  *callbackData;
 } UBX_NAV_HPPOSLLH_t;
 
@@ -924,6 +935,7 @@ typedef struct
   UBX_NAV_PVAT_data_t data;
   UBX_NAV_PVAT_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_PVAT_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_PVAT_data_t *);
   UBX_NAV_PVAT_data_t  *callbackData;
 } UBX_NAV_PVAT_t;
 
@@ -988,6 +1000,7 @@ typedef struct
   UBX_NAV_TIMEUTC_data_t data;
   UBX_NAV_TIMEUTC_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_TIMEUTC_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_TIMEUTC_data_t *);
   UBX_NAV_TIMEUTC_data_t  *callbackData;
 } UBX_NAV_TIMEUTC_t;
 
@@ -1027,6 +1040,7 @@ typedef struct
   UBX_NAV_CLOCK_data_t data;
   UBX_NAV_CLOCK_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_CLOCK_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_CLOCK_data_t *);
   UBX_NAV_CLOCK_data_t  *callbackData;
 } UBX_NAV_CLOCK_t;
 
@@ -1087,6 +1101,7 @@ typedef struct
   UBX_NAV_TIMELS_data_t data;
   UBX_NAV_TIMELS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_TIMELS_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_TIMELS_data_t *);
   UBX_NAV_TIMELS_data_t  *callbackData;
 } UBX_NAV_TIMELS_t;
 
@@ -1160,6 +1175,7 @@ typedef struct
   UBX_NAV_SAT_data_t data;
   bool moduleQueried;
   void (*callbackPointer)(UBX_NAV_SAT_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_SAT_data_t *);
   UBX_NAV_SAT_data_t  *callbackData;
 } UBX_NAV_SAT_t;
 
@@ -1218,6 +1234,7 @@ typedef struct
   UBX_NAV_SVIN_data_t data;
   UBX_NAV_SVIN_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_SVIN_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_SVIN_data_t *);
   UBX_NAV_SVIN_data_t  *callbackData;
 } UBX_NAV_SVIN_t;
 
@@ -1317,6 +1334,7 @@ typedef struct
   UBX_NAV_RELPOSNED_data_t data;
   UBX_NAV_RELPOSNED_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_RELPOSNED_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_RELPOSNED_data_t *);
   UBX_NAV_RELPOSNED_data_t  *callbackData;
 } UBX_NAV_RELPOSNED_t;
 
@@ -1362,6 +1380,7 @@ typedef struct
   UBX_NAV_AOPSTATUS_data_t data;
   UBX_NAV_AOPSTATUS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_NAV_AOPSTATUS_data_t);
+  void (*callbackPointerPtr)(UBX_NAV_AOPSTATUS_data_t *);
   UBX_NAV_AOPSTATUS_data_t  *callbackData;
 } UBX_NAV_AOPSTATUS_t;
 
@@ -1393,6 +1412,7 @@ typedef struct
   UBX_RXM_SFRBX_data_t data;
   bool moduleQueried;
   void (*callbackPointer)(UBX_RXM_SFRBX_data_t);
+  void (*callbackPointerPtr)(UBX_RXM_SFRBX_data_t *);
   UBX_RXM_SFRBX_data_t  *callbackData;
 } UBX_RXM_SFRBX_t;
 
@@ -1460,6 +1480,7 @@ typedef struct
   UBX_RXM_RAWX_data_t data;
   bool moduleQueried;
   void (*callbackPointer)(UBX_RXM_RAWX_data_t);
+  void (*callbackPointerPtr)(UBX_RXM_RAWX_data_t *);
   UBX_RXM_RAWX_data_t  *callbackData;
 } UBX_RXM_RAWX_t;
 
@@ -1499,6 +1520,63 @@ typedef struct
 
 // CFG-specific structs
 
+// UBX-CFG-PRT (0x06 0x00): Port configuration
+// The content changes depending on which port type is being configured
+// This struct defines the common structure
+const uint16_t UBX_CFG_PRT_LEN = 20;
+
+typedef struct
+{
+  uint8_t portID; // Port identifier number
+  uint8_t reserved0; // Reserved
+  union
+  {
+    uint16_t all;
+    struct
+    {
+      uint16_t en : 1; // Enable TX ready feature for this port
+      uint16_t pol : 1; // Polarity: 0 High-active; 1 Low-active
+      uint16_t pin : 5; // PIO to be used (must not be in use by another function)
+      uint16_t thres : 9; // Threshold
+    } bits;
+  } txReady;
+  uint32_t mode; // Content changes depending on the port type
+  uint32_t baudRate ; // Content changes depending on the port type
+  union
+  {
+    uint16_t all;
+    struct
+    {
+      uint16_t inUbx : 1; // UBX protocol
+      uint16_t inNmea : 1; // NMEA protocol
+      uint16_t inRtcm : 1; // RTCM2 protocol
+      uint16_t reserved : 2;
+      uint16_t inRtcm3 : 1; // RTCM3 protocol (not supported for protocol versions less than 20.00)
+      uint16_t inSPARTN : 1;
+    } bits;
+  } inProtoMask;
+  union
+  {
+    uint16_t all;
+    struct
+    {
+      uint16_t outUbx : 1; // UBX protocol
+      uint16_t outNmea : 1; // NMEA protocol
+      uint16_t reserved : 3;
+      uint16_t outRtcm3 : 1; // RTCM3 protocol (not supported for protocol versions less than 20.00)
+      uint16_t outSPARTN : 1;
+    } bits;
+  } outProtoMask;
+  uint16_t flags; // Content changes depending on the port type
+  uint16_t reserved1; 
+} UBX_CFG_PRT_data_t;
+
+typedef struct
+{
+  UBX_CFG_PRT_data_t data;
+  bool dataValid;
+} UBX_CFG_PRT_t;
+
 // UBX-CFG-RATE (0x06 0x08): Navigation/measurement rate settings
 const uint16_t UBX_CFG_RATE_LEN = 6;
 
@@ -1531,6 +1609,7 @@ typedef struct
   UBX_CFG_RATE_data_t data;
   UBX_CFG_RATE_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_CFG_RATE_data_t);
+  void (*callbackPointerPtr)(UBX_CFG_RATE_data_t *);
   UBX_CFG_RATE_data_t  *callbackData;
 } UBX_CFG_RATE_t;
 
@@ -1637,6 +1716,7 @@ typedef struct
   UBX_TIM_TM2_data_t data;
   UBX_TIM_TM2_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_TIM_TM2_data_t);
+  void (*callbackPointerPtr)(UBX_TIM_TM2_data_t *);
   UBX_TIM_TM2_data_t  *callbackData;
 } UBX_TIM_TM2_t;
 
@@ -1711,6 +1791,7 @@ typedef struct
   UBX_ESF_ALG_data_t data;
   UBX_ESF_ALG_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_ESF_ALG_data_t);
+  void (*callbackPointerPtr)(UBX_ESF_ALG_data_t *);
   UBX_ESF_ALG_data_t  *callbackData;
 } UBX_ESF_ALG_t;
 
@@ -1777,6 +1858,7 @@ typedef struct
   UBX_ESF_INS_data_t data;
   UBX_ESF_INS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_ESF_INS_data_t);
+  void (*callbackPointerPtr)(UBX_ESF_INS_data_t *);
   UBX_ESF_INS_data_t  *callbackData;
 } UBX_ESF_INS_t;
 
@@ -1847,6 +1929,7 @@ typedef struct
   UBX_ESF_MEAS_data_t data;
   UBX_ESF_MEAS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_ESF_MEAS_data_t);
+  void (*callbackPointerPtr)(UBX_ESF_MEAS_data_t *);
   UBX_ESF_MEAS_data_t  *callbackData;
 } UBX_ESF_MEAS_t;
 
@@ -1894,6 +1977,7 @@ typedef struct
   UBX_ESF_RAW_data_t data;
   UBX_ESF_RAW_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_ESF_RAW_data_t);
+  void (*callbackPointerPtr)(UBX_ESF_RAW_data_t *);
   UBX_ESF_RAW_data_t  *callbackData;
 } UBX_ESF_RAW_t;
 
@@ -1981,6 +2065,7 @@ typedef struct
   UBX_ESF_STATUS_data_t data;
   UBX_ESF_STATUS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_ESF_STATUS_data_t);
+  void (*callbackPointerPtr)(UBX_ESF_STATUS_data_t *);
   UBX_ESF_STATUS_data_t  *callbackData;
 } UBX_ESF_STATUS_t;
 
@@ -2151,6 +2236,7 @@ typedef struct
   UBX_HNR_PVT_data_t data;
   UBX_HNR_PVT_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_HNR_PVT_data_t);
+  void (*callbackPointerPtr)(UBX_HNR_PVT_data_t *);
   UBX_HNR_PVT_data_t  *callbackData;
 } UBX_HNR_PVT_t;
 
@@ -2197,6 +2283,7 @@ typedef struct
   UBX_HNR_ATT_data_t data;
   UBX_HNR_ATT_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_HNR_ATT_data_t);
+  void (*callbackPointerPtr)(UBX_HNR_ATT_data_t *);
   UBX_HNR_ATT_data_t  *callbackData;
 } UBX_HNR_ATT_t;
 
@@ -2263,6 +2350,7 @@ typedef struct
   UBX_HNR_INS_data_t data;
   UBX_HNR_INS_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_HNR_INS_data_t);
+  void (*callbackPointerPtr)(UBX_HNR_INS_data_t *);
   UBX_HNR_INS_data_t  *callbackData;
 } UBX_HNR_INS_t;
 
@@ -2302,6 +2390,7 @@ typedef struct
   NMEA_GGA_data_t workingCopy; // Incoming data is added to the working copy
   NMEA_GGA_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
   void (*callbackPointer)(NMEA_GGA_data_t);
+  void (*callbackPointerPtr)(NMEA_GGA_data_t *);
   NMEA_GGA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
 } NMEA_GPGGA_t;
 
@@ -2311,6 +2400,7 @@ typedef struct
   NMEA_GGA_data_t workingCopy; // Incoming data is added to the working copy
   NMEA_GGA_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
   void (*callbackPointer)(NMEA_GGA_data_t);
+  void (*callbackPointerPtr)(NMEA_GGA_data_t *);
   NMEA_GGA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
 } NMEA_GNGGA_t;
 
