@@ -306,10 +306,6 @@ void SFE_UBLOX_GNSS::end(void)
 
   if (packetUBXCFGRATE != NULL)
   {
-    if (packetUBXCFGRATE->callbackData != NULL)
-    {
-      delete packetUBXCFGRATE->callbackData;
-    }
     delete packetUBXCFGRATE;
     packetUBXCFGRATE = NULL; // Redundant?
   }
@@ -4508,7 +4504,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV STATUS"));
       packetUBXNAVSTATUS->callbackPointer(*packetUBXNAVSTATUS->callbackData); // Call the callback
     }
-    else if (packetUBXNAVSTATUS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVSTATUS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV STATUS"));
@@ -4527,7 +4523,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV DOP"));
       packetUBXNAVDOP->callbackPointer(*packetUBXNAVDOP->callbackData); // Call the callback
     }
-    else if (packetUBXNAVDOP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVDOP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV DOP"));
@@ -4546,7 +4542,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV ATT"));
       packetUBXNAVATT->callbackPointer(*packetUBXNAVATT->callbackData); // Call the callback
     }
-    else if (packetUBXNAVATT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVATT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV ATT"));
@@ -4565,7 +4561,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
       packetUBXNAVPVT->callbackPointer(*packetUBXNAVPVT->callbackData); // Call the callback
     }
-    else if (packetUBXNAVPVT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVPVT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV PVT"));
@@ -4584,7 +4580,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV ODO"));
       packetUBXNAVODO->callbackPointer(*packetUBXNAVODO->callbackData); // Call the callback
     }
-    else if (packetUBXNAVODO->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVODO->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV ODO"));
@@ -4603,7 +4599,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV VELECEF"));
       packetUBXNAVVELECEF->callbackPointer(*packetUBXNAVVELECEF->callbackData); // Call the callback
     }
-    else if (packetUBXNAVVELECEF->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVVELECEF->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV VELECEF"));
@@ -4622,7 +4618,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV VELNED"));
       packetUBXNAVVELNED->callbackPointer(*packetUBXNAVVELNED->callbackData); // Call the callback
     }
-    else if (packetUBXNAVVELNED->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVVELNED->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV VELNED"));
@@ -4641,7 +4637,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV HPPOSECEF"));
       packetUBXNAVHPPOSECEF->callbackPointer(*packetUBXNAVHPPOSECEF->callbackData); // Call the callback
     }
-    else if (packetUBXNAVHPPOSECEF->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVHPPOSECEF->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV HPPOSECEF"));
@@ -4660,7 +4656,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV HPPOSLLH"));
       packetUBXNAVHPPOSLLH->callbackPointer(*packetUBXNAVHPPOSLLH->callbackData); // Call the callback
     }
-    else if (packetUBXNAVHPPOSLLH->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVHPPOSLLH->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV HPPOSLLH"));
@@ -4679,7 +4675,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV PVAT"));
       packetUBXNAVPVAT->callbackPointer(*packetUBXNAVPVAT->callbackData); // Call the callback
     }
-    else if (packetUBXNAVPVAT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVPVAT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV PVAT"));
@@ -4698,7 +4694,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV CLOCK"));
       packetUBXNAVCLOCK->callbackPointer(*packetUBXNAVCLOCK->callbackData); // Call the callback
     }
-    else if (packetUBXNAVCLOCK->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVCLOCK->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV CLOCK"));
@@ -4717,7 +4713,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV SAT"));
       packetUBXNAVSAT->callbackPointer(*packetUBXNAVSAT->callbackData); // Call the callback
     }
-    else if (packetUBXNAVSAT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVSAT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV SAT"));
@@ -4736,7 +4732,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV RELPOSNED"));
       packetUBXNAVRELPOSNED->callbackPointer(*packetUBXNAVRELPOSNED->callbackData); // Call the callback
     }
-    else if (packetUBXNAVRELPOSNED->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVRELPOSNED->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV RELPOSNED"));
@@ -4755,7 +4751,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV AOPSTATUS"));
       packetUBXNAVAOPSTATUS->callbackPointer(*packetUBXNAVAOPSTATUS->callbackData); // Call the callback
     }
-    else if (packetUBXNAVAOPSTATUS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVAOPSTATUS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV AOPSTATUS"));
@@ -4774,7 +4770,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for RXM PMP"));
       packetUBXRXMPMP->callbackPointer(*packetUBXRXMPMP->callbackData); // Call the callback
     }
-    else if (packetUBXRXMPMP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXRXMPMP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP"));
@@ -4793,7 +4789,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for RXM SFRBX"));
       packetUBXRXMSFRBX->callbackPointer(*packetUBXRXMSFRBX->callbackData); // Call the callback
     }
-    else if (packetUBXRXMSFRBX->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXRXMSFRBX->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM SFRBX"));
@@ -4812,7 +4808,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for RXM RAWX"));
       packetUBXRXMRAWX->callbackPointer(*packetUBXRXMRAWX->callbackData); // Call the callback
     }
-    else if (packetUBXRXMRAWX->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXRXMRAWX->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM RAWX"));
@@ -4831,7 +4827,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for TIM TM2"));
       packetUBXTIMTM2->callbackPointer(*packetUBXTIMTM2->callbackData); // Call the callback
     }
-    else if (packetUBXTIMTM2->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXTIMTM2->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for TIM TM2"));
@@ -4850,7 +4846,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for ESF ALG"));
       packetUBXESFALG->callbackPointer(*packetUBXESFALG->callbackData); // Call the callback
     }
-    else if (packetUBXESFALG->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXESFALG->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for ESF ALG"));
@@ -4869,7 +4865,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for ESF INS"));
       packetUBXESFINS->callbackPointer(*packetUBXESFINS->callbackData); // Call the callback
     }
-    else if (packetUBXESFINS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXESFINS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for ESF INS"));
@@ -4888,7 +4884,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for ESF MEAS"));
       packetUBXESFMEAS->callbackPointer(*packetUBXESFMEAS->callbackData); // Call the callback
     }
-    else if (packetUBXESFMEAS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXESFMEAS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for ESF MEAS"));
@@ -4907,7 +4903,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for ESF RAW"));
       packetUBXESFRAW->callbackPointer(*packetUBXESFRAW->callbackData); // Call the callback
     }
-    else if (packetUBXESFRAW->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXESFRAW->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for ESF RAW"));
@@ -4926,7 +4922,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for ESF STATUS"));
       packetUBXESFSTATUS->callbackPointer(*packetUBXESFSTATUS->callbackData); // Call the callback
     }
-    else if (packetUBXESFSTATUS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXESFSTATUS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for ESF STATUS"));
@@ -4945,7 +4941,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for HNR ATT"));
       packetUBXHNRATT->callbackPointer(*packetUBXHNRATT->callbackData); // Call the callback
     }
-    else if (packetUBXHNRATT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXHNRATT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for HNR ATT"));
@@ -4964,7 +4960,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for HNR INS"));
       packetUBXHNRINS->callbackPointer(*packetUBXHNRINS->callbackData); // Call the callback
     }
-    else if (packetUBXHNRINS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXHNRINS->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for HNR INS"));
@@ -4983,7 +4979,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for HNR PVT"));
       packetUBXHNRPVT->callbackPointer(*packetUBXHNRPVT->callbackData); // Call the callback
     }
-    else if (packetUBXHNRPVT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXHNRPVT->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for HNR PVT"));
@@ -5002,7 +4998,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for GPGGA"));
       storageNMEAGPGGA->callbackPointer(*storageNMEAGPGGA->callbackCopy); // Call the callback
     }
-    else if (storageNMEAGPGGA->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (storageNMEAGPGGA->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for GPGGA"));
@@ -5021,7 +5017,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for GNGGA"));
       storageNMEAGNGGA->callbackPointer(*storageNMEAGNGGA->callbackCopy); // Call the callback
     }
-    else if (storageNMEAGNGGA->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (storageNMEAGNGGA->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for GNGGA"));
@@ -8012,6 +8008,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVPOSECEFcallback(void (*callbackPointer)(UBX_NAV_P
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVPOSECEFcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_POSECEF_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVPOSECEF(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVPOSECEF->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPOSECEF->callbackData = new UBX_NAV_POSECEF_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPOSECEF->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVPOSECEFcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVPOSECEF->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and POSECEF is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVPOSECEF(bool enabled, bool implicitUpdate)
@@ -8043,6 +8064,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVPOSECEF()
   }
   packetUBXNAVPOSECEF->automaticFlags.flags.all = 0;
   packetUBXNAVPOSECEF->callbackPointer = NULL;
+  packetUBXNAVPOSECEF->callbackPointerPtr = NULL;
   packetUBXNAVPOSECEF->callbackData = NULL;
   packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -8173,6 +8195,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVSTATUScallback(void (*callbackPointer)(UBX_NAV_ST
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVSTATUScallbackPtr(void (*callbackPointerPtr)(UBX_NAV_STATUS_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVSTATUS->callbackData = new UBX_NAV_STATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVSTATUS->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVSTATUScallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVSTATUS->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and STATUS is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVSTATUS(bool enabled, bool implicitUpdate)
@@ -8204,6 +8251,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVSTATUS()
   }
   packetUBXNAVSTATUS->automaticFlags.flags.all = 0;
   packetUBXNAVSTATUS->callbackPointer = NULL;
+  packetUBXNAVSTATUS->callbackPointerPtr = NULL;
   packetUBXNAVSTATUS->callbackData = NULL;
   packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -8351,6 +8399,31 @@ bool SFE_UBLOX_GNSS::setAutoDOPcallback(void (*callbackPointer)(UBX_NAV_DOP_data
   }
 
   packetUBXNAVDOP->callbackPointer = callbackPointer;
+  return (true);
+}
+
+bool SFE_UBLOX_GNSS::setAutoDOPcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_DOP_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoDOP(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVDOP->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVDOP->callbackData = new UBX_NAV_DOP_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVDOP->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoDOPcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVDOP->callbackPointerPtr = callbackPointerPtr;
   return (true);
 }
 
@@ -8521,6 +8594,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVATTcallback(void (*callbackPointer)(UBX_NAV_ATT_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVATTcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_ATT_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVATT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVATT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVATT->callbackData = new UBX_NAV_ATT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVATT->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVATTcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVATT->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and NAV ATT attitude is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVATT(bool enabled, bool implicitUpdate)
@@ -8552,6 +8650,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVATT()
   }
   packetUBXNAVATT->automaticFlags.flags.all = 0;
   packetUBXNAVATT->callbackPointer = NULL;
+  packetUBXNAVATT->callbackPointerPtr = NULL;
   packetUBXNAVATT->callbackData = NULL;
   packetUBXNAVATT->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -8706,6 +8805,32 @@ bool SFE_UBLOX_GNSS::setAutoPVTcallback(void (*callbackPointer)(UBX_NAV_PVT_data
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoPVTcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_PVT_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoPVT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAutoPVT failed
+
+  if (packetUBXNAVPVT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPVT->callbackData = new UBX_NAV_PVT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPVT->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoPVTcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVPVT->callbackPointerPtr = callbackPointerPtr; // RAM has been allocated so now update the pointer
+
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and PVT is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoPVT(bool enabled, bool implicitUpdate)
@@ -8737,6 +8862,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVPVT()
   }
   packetUBXNAVPVT->automaticFlags.flags.all = 0;
   packetUBXNAVPVT->callbackPointer = NULL;
+  packetUBXNAVPVT->callbackPointerPtr = NULL;
   packetUBXNAVPVT->callbackData = NULL;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
   packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
@@ -8868,6 +8994,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVODOcallback(void (*callbackPointer)(UBX_NAV_ODO_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVODOcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_ODO_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVODO(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVODO->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVODO->callbackData = new UBX_NAV_ODO_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVODO->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVODOcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVODO->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and ODO is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVODO(bool enabled, bool implicitUpdate)
@@ -8899,6 +9050,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVODO()
   }
   packetUBXNAVODO->automaticFlags.flags.all = 0;
   packetUBXNAVODO->callbackPointer = NULL;
+  packetUBXNAVODO->callbackPointerPtr = NULL;
   packetUBXNAVODO->callbackData = NULL;
   packetUBXNAVODO->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9028,6 +9180,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVVELECEFcallback(void (*callbackPointer)(UBX_NAV_V
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVVELECEFcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_VELECEF_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVVELECEF(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVVELECEF->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVVELECEF->callbackData = new UBX_NAV_VELECEF_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVVELECEF->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVVELECEFcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVVELECEF->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and VELECEF is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVVELECEF(bool enabled, bool implicitUpdate)
@@ -9059,6 +9236,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVVELECEF()
   }
   packetUBXNAVVELECEF->automaticFlags.flags.all = 0;
   packetUBXNAVVELECEF->callbackPointer = NULL;
+  packetUBXNAVVELECEF->callbackPointerPtr = NULL;
   packetUBXNAVVELECEF->callbackData = NULL;
   packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9186,6 +9364,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVVELNEDcallback(void (*callbackPointer)(UBX_NAV_VE
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVVELNEDcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_VELNED_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVVELNED(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVVELNED->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVVELNED->callbackData = new UBX_NAV_VELNED_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVVELNED->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVVELNEDcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVVELNED->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and VELNED is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVVELNED(bool enabled, bool implicitUpdate)
@@ -9217,6 +9420,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVVELNED()
   }
   packetUBXNAVVELNED->automaticFlags.flags.all = 0;
   packetUBXNAVVELNED->callbackPointer = NULL;
+  packetUBXNAVVELNED->callbackPointerPtr = NULL;
   packetUBXNAVVELNED->callbackData = NULL;
   packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9346,6 +9550,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVHPPOSECEFcallback(void (*callbackPointer)(UBX_NAV
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVHPPOSECEFcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_HPPOSECEF_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVHPPOSECEF(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVHPPOSECEF->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVHPPOSECEF->callbackData = new UBX_NAV_HPPOSECEF_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVHPPOSECEF->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVHPPOSECEFcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVHPPOSECEF->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HPPOSECEF is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVHPPOSECEF(bool enabled, bool implicitUpdate)
@@ -9377,6 +9606,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVHPPOSECEF()
   }
   packetUBXNAVHPPOSECEF->automaticFlags.flags.all = 0;
   packetUBXNAVHPPOSECEF->callbackPointer = NULL;
+  packetUBXNAVHPPOSECEF->callbackPointerPtr = NULL;
   packetUBXNAVHPPOSECEF->callbackData = NULL;
   packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9528,6 +9758,31 @@ bool SFE_UBLOX_GNSS::setAutoHPPOSLLHcallback(void (*callbackPointer)(UBX_NAV_HPP
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoHPPOSLLHcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_HPPOSLLH_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoHPPOSLLH(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVHPPOSLLH->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVHPPOSLLH->callbackData = new UBX_NAV_HPPOSLLH_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVHPPOSLLH->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoHPPOSLLHcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVHPPOSLLH->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HPPOSLLH is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoHPPOSLLH(bool enabled, bool implicitUpdate)
@@ -9559,6 +9814,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVHPPOSLLH()
   }
   packetUBXNAVHPPOSLLH->automaticFlags.flags.all = 0;
   packetUBXNAVHPPOSLLH->callbackPointer = NULL;
+  packetUBXNAVHPPOSLLH->callbackPointerPtr = NULL;
   packetUBXNAVHPPOSLLH->callbackData = NULL;
   packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9689,6 +9945,32 @@ bool SFE_UBLOX_GNSS::setAutoNAVPVATcallback(void (*callbackPointer)(UBX_NAV_PVAT
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVPVATcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_PVAT_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVPVAT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAutoPVAT failed
+
+  if (packetUBXNAVPVAT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPVAT->callbackData = new UBX_NAV_PVAT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPVAT->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVPVATcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVPVAT->callbackPointerPtr = callbackPointerPtr; // RAM has been allocated so now update the pointer
+
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and PVAT is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVPVAT(bool enabled, bool implicitUpdate)
@@ -9720,6 +10002,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVPVAT()
   }
   packetUBXNAVPVAT->automaticFlags.flags.all = 0;
   packetUBXNAVPVAT->callbackPointer = NULL;
+  packetUBXNAVPVAT->callbackPointerPtr = NULL;
   packetUBXNAVPVAT->callbackData = NULL;
   packetUBXNAVPVAT->moduleQueried.moduleQueried1.all = 0;
   packetUBXNAVPVAT->moduleQueried.moduleQueried2.all = 0;
@@ -9851,6 +10134,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVCLOCKcallback(void (*callbackPointer)(UBX_NAV_CLO
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVCLOCKcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_CLOCK_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVCLOCK(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVCLOCK->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVCLOCK->callbackData = new UBX_NAV_CLOCK_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVCLOCK->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVCLOCKcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVCLOCK->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVCLOCK(bool enabled, bool implicitUpdate)
@@ -9882,6 +10190,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVCLOCK()
   }
   packetUBXNAVCLOCK->automaticFlags.flags.all = 0;
   packetUBXNAVCLOCK->callbackPointer = NULL;
+  packetUBXNAVCLOCK->callbackPointerPtr = NULL;
   packetUBXNAVCLOCK->callbackData = NULL;
   packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9945,6 +10254,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVTIMELS()
   }
   packetUBXNAVTIMELS->automaticFlags.flags.all = 0;
   packetUBXNAVTIMELS->callbackPointer = NULL;
+  packetUBXNAVTIMELS->callbackPointerPtr = NULL;
   packetUBXNAVTIMELS->callbackData = NULL;
   packetUBXNAVTIMELS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -9994,6 +10304,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVSVIN()
   }
   packetUBXNAVSVIN->automaticFlags.flags.all = 0;
   packetUBXNAVSVIN->callbackPointer = NULL;
+  packetUBXNAVSVIN->callbackPointerPtr = NULL;
   packetUBXNAVSVIN->callbackData = NULL;
   packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -10111,6 +10422,31 @@ bool SFE_UBLOX_GNSS::setAutoNAVSATcallback(void (*callbackPointer)(UBX_NAV_SAT_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoNAVSATcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_SAT_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVSAT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVSAT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVSAT->callbackData = new UBX_NAV_SAT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVSAT->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVSATcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVSAT->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVSAT(bool enabled, bool implicitUpdate)
@@ -10142,6 +10478,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVSAT()
   }
   packetUBXNAVSAT->automaticFlags.flags.all = 0;
   packetUBXNAVSAT->callbackPointer = NULL;
+  packetUBXNAVSAT->callbackPointerPtr = NULL;
   packetUBXNAVSAT->callbackData = NULL;
   packetUBXNAVSAT->moduleQueried = false;
   return (true);
@@ -10276,6 +10613,31 @@ bool SFE_UBLOX_GNSS::setAutoRELPOSNEDcallback(void (*callbackPointer)(UBX_NAV_RE
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoRELPOSNEDcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_RELPOSNED_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoRELPOSNED(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVRELPOSNED->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVRELPOSNED->callbackData = new UBX_NAV_RELPOSNED_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVRELPOSNED->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRELPOSNEDcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVRELPOSNED->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoRELPOSNED(bool enabled, bool implicitUpdate)
@@ -10307,6 +10669,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVRELPOSNED()
   }
   packetUBXNAVRELPOSNED->automaticFlags.flags.all = 0;
   packetUBXNAVRELPOSNED->callbackPointer = NULL;
+  packetUBXNAVRELPOSNED->callbackPointerPtr = NULL;
   packetUBXNAVRELPOSNED->callbackData = NULL;
   packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -10456,6 +10819,31 @@ bool SFE_UBLOX_GNSS::setAutoAOPSTATUScallback(void (*callbackPointer)(UBX_NAV_AO
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoAOPSTATUScallbackPtr(void (*callbackPointerPtr)(UBX_NAV_AOPSTATUS_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoAOPSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVAOPSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVAOPSTATUS->callbackData = new UBX_NAV_AOPSTATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVAOPSTATUS->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoAOPSTATUScallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVAOPSTATUS->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and AOPSTATUS is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoAOPSTATUS(bool enabled, bool implicitUpdate)
@@ -10487,6 +10875,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVAOPSTATUS()
   }
   packetUBXNAVAOPSTATUS->automaticFlags.flags.all = 0;
   packetUBXNAVAOPSTATUS->callbackPointer = NULL;
+  packetUBXNAVAOPSTATUS->callbackPointerPtr = NULL;
   packetUBXNAVAOPSTATUS->callbackData = NULL;
   packetUBXNAVAOPSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -10688,6 +11077,31 @@ bool SFE_UBLOX_GNSS::setAutoRXMSFRBXcallback(void (*callbackPointer)(UBX_RXM_SFR
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoRXMSFRBXcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_SFRBX_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoRXMSFRBX(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXRXMSFRBX->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMSFRBX->callbackData = new UBX_RXM_SFRBX_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMSFRBX->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRXMSFRBXcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXRXMSFRBX->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and SFRBX is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoRXMSFRBX(bool enabled, bool implicitUpdate)
@@ -10719,6 +11133,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMSFRBX()
   }
   packetUBXRXMSFRBX->automaticFlags.flags.all = 0;
   packetUBXRXMSFRBX->callbackPointer = NULL;
+  packetUBXRXMSFRBX->callbackPointerPtr = NULL;
   packetUBXRXMSFRBX->callbackData = NULL;
   packetUBXRXMSFRBX->moduleQueried = false;
   return (true);
@@ -10848,6 +11263,31 @@ bool SFE_UBLOX_GNSS::setAutoRXMRAWXcallback(void (*callbackPointer)(UBX_RXM_RAWX
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoRXMRAWXcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_RAWX_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoRXMRAWX(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXRXMRAWX->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMRAWX->callbackData = new UBX_RXM_RAWX_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMRAWX->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRXMRAWXcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXRXMRAWX->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and VELNED is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoRXMRAWX(bool enabled, bool implicitUpdate)
@@ -10879,6 +11319,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMRAWX()
   }
   packetUBXRXMRAWX->automaticFlags.flags.all = 0;
   packetUBXRXMRAWX->callbackPointer = NULL;
+  packetUBXRXMRAWX->callbackPointerPtr = NULL;
   packetUBXRXMRAWX->callbackData = NULL;
   packetUBXRXMRAWX->moduleQueried = false;
   return (true);
@@ -10994,8 +11435,6 @@ bool SFE_UBLOX_GNSS::initPacketUBXCFGRATE()
     return (false);
   }
   packetUBXCFGRATE->automaticFlags.flags.all = 0; // Redundant
-  packetUBXCFGRATE->callbackPointer = NULL; // Redundant
-  packetUBXCFGRATE->callbackData = NULL; // Redundant
   packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0; // Mark all data as stale/read
   return (true);
 }
@@ -11110,6 +11549,31 @@ bool SFE_UBLOX_GNSS::setAutoTIMTM2callback(void (*callbackPointer)(UBX_TIM_TM2_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoTIMTM2callbackPtr(void (*callbackPointerPtr)(UBX_TIM_TM2_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoTIMTM2(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXTIMTM2->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXTIMTM2->callbackData = new UBX_TIM_TM2_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXTIMTM2->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoTIMTM2callbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXTIMTM2->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and VELNED is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoTIMTM2(bool enabled, bool implicitUpdate)
@@ -11141,6 +11605,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXTIMTM2()
   }
   packetUBXTIMTM2->automaticFlags.flags.all = 0;
   packetUBXTIMTM2->callbackPointer = NULL;
+  packetUBXTIMTM2->callbackPointerPtr = NULL;
   packetUBXTIMTM2->callbackData = NULL;
   packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -11299,6 +11764,31 @@ bool SFE_UBLOX_GNSS::setAutoESFALGcallback(void (*callbackPointer)(UBX_ESF_ALG_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoESFALGcallbackPtr(void (*callbackPointerPtr)(UBX_ESF_ALG_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoESFALG(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFALG->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFALG->callbackData = new UBX_ESF_ALG_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFALG->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoESFALGcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXESFALG->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and ESF ALG is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoESFALG(bool enabled, bool implicitUpdate)
@@ -11330,6 +11820,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFALG()
   }
   packetUBXESFALG->automaticFlags.flags.all = 0;
   packetUBXESFALG->callbackPointer = NULL;
+  packetUBXESFALG->callbackPointerPtr = NULL;
   packetUBXESFALG->callbackData = NULL;
   packetUBXESFALG->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -11488,6 +11979,31 @@ bool SFE_UBLOX_GNSS::setAutoESFSTATUScallback(void (*callbackPointer)(UBX_ESF_ST
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoESFSTATUScallbackPtr(void (*callbackPointerPtr)(UBX_ESF_STATUS_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoESFSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFSTATUS->callbackData = new UBX_ESF_STATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFSTATUS->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoESFSTATUScallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXESFSTATUS->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and ESF STATUS is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoESFSTATUS(bool enabled, bool implicitUpdate)
@@ -11520,6 +12036,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFSTATUS()
   }
   packetUBXESFSTATUS->automaticFlags.flags.all = 0;
   packetUBXESFSTATUS->callbackPointer = NULL;
+  packetUBXESFSTATUS->callbackPointerPtr = NULL;
   packetUBXESFSTATUS->callbackData = NULL;
   packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -11678,6 +12195,31 @@ bool SFE_UBLOX_GNSS::setAutoESFINScallback(void (*callbackPointer)(UBX_ESF_INS_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoESFINScallbackPtr(void (*callbackPointerPtr)(UBX_ESF_INS_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoESFINS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFINS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFINS->callbackData = new UBX_ESF_INS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFINS->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoESFINScallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXESFINS->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and ESF INS is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoESFINS(bool enabled, bool implicitUpdate)
@@ -11709,6 +12251,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFINS()
   }
   packetUBXESFINS->automaticFlags.flags.all = 0;
   packetUBXESFINS->callbackPointer = NULL;
+  packetUBXESFINS->callbackPointerPtr = NULL;
   packetUBXESFINS->callbackData = NULL;
   packetUBXESFINS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -11867,6 +12410,31 @@ bool SFE_UBLOX_GNSS::setAutoESFMEAScallback(void (*callbackPointer)(UBX_ESF_MEAS
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoESFMEAScallbackPtr(void (*callbackPointerPtr)(UBX_ESF_MEAS_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoESFMEAS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFMEAS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFMEAS->callbackData = new UBX_ESF_MEAS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFMEAS->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoESFMEAScallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXESFMEAS->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and ESF MEAS is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoESFMEAS(bool enabled, bool implicitUpdate)
@@ -11898,6 +12466,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFMEAS()
   }
   packetUBXESFMEAS->automaticFlags.flags.all = 0;
   packetUBXESFMEAS->callbackPointer = NULL;
+  packetUBXESFMEAS->callbackPointerPtr = NULL;
   packetUBXESFMEAS->callbackData = NULL;
   packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -12056,6 +12625,31 @@ bool SFE_UBLOX_GNSS::setAutoESFRAWcallback(void (*callbackPointer)(UBX_ESF_RAW_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoESFRAWcallbackPtr(void (*callbackPointerPtr)(UBX_ESF_RAW_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoESFRAW(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFRAW->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFRAW->callbackData = new UBX_ESF_RAW_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFRAW->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoESFRAWcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXESFRAW->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and ESF RAW is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoESFRAW(bool enabled, bool implicitUpdate)
@@ -12087,6 +12681,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFRAW()
   }
   packetUBXESFRAW->automaticFlags.flags.all = 0;
   packetUBXESFRAW->callbackPointer = NULL;
+  packetUBXESFRAW->callbackPointerPtr = NULL;
   packetUBXESFRAW->callbackData = NULL;
   packetUBXESFRAW->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -12250,6 +12845,31 @@ bool SFE_UBLOX_GNSS::setAutoHNRATTcallback(void (*callbackPointer)(UBX_HNR_ATT_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoHNRATTcallbackPtr(void (*callbackPointerPtr)(UBX_HNR_ATT_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoHNRATT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXHNRATT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXHNRATT->callbackData = new UBX_HNR_ATT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXHNRATT->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoHNRAttcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXHNRATT->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoHNRATT(bool enabled, bool implicitUpdate)
@@ -12281,6 +12901,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXHNRATT()
   }
   packetUBXHNRATT->automaticFlags.flags.all = 0;
   packetUBXHNRATT->callbackPointer = NULL;
+  packetUBXHNRATT->callbackPointerPtr = NULL;
   packetUBXHNRATT->callbackData = NULL;
   packetUBXHNRATT->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -12445,6 +13066,31 @@ bool SFE_UBLOX_GNSS::setAutoHNRINScallback(void (*callbackPointer)(UBX_HNR_INS_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoHNRINScallbackPtr(void (*callbackPointerPtr)(UBX_HNR_INS_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoHNRINS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXHNRINS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXHNRINS->callbackData = new UBX_HNR_INS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXHNRINS->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoHNRDyncallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXHNRINS->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HNR vehicle dynamics is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoHNRINS(bool enabled, bool implicitUpdate)
@@ -12476,6 +13122,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXHNRINS()
   }
   packetUBXHNRINS->automaticFlags.flags.all = 0;
   packetUBXHNRINS->callbackPointer = NULL;
+  packetUBXHNRINS->callbackPointerPtr = NULL;
   packetUBXHNRINS->callbackData = NULL;
   packetUBXHNRINS->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -12634,6 +13281,31 @@ bool SFE_UBLOX_GNSS::setAutoHNRPVTcallback(void (*callbackPointer)(UBX_HNR_PVT_d
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setAutoHNRPVTcallbackPtr(void (*callbackPointerPtr)(UBX_HNR_PVT_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoHNRPVT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXHNRPVT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXHNRPVT->callbackData = new UBX_HNR_PVT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXHNRPVT->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoHNRPVTcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXHNRPVT->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 //In case no config access to the GNSS is possible and HNR PVT is send cyclically already
 //set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoHNRPVT(bool enabled, bool implicitUpdate)
@@ -12665,6 +13337,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXHNRPVT()
   }
   packetUBXHNRPVT->automaticFlags.flags.all = 0;
   packetUBXHNRPVT->callbackPointer = NULL;
+  packetUBXHNRPVT->callbackPointerPtr = NULL;
   packetUBXHNRPVT->callbackData = NULL;
   packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0;
   return (true);
@@ -12810,6 +13483,30 @@ bool SFE_UBLOX_GNSS::setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setNMEAGPGGAcallbackPtr(void (*callbackPointerPtr)(NMEA_GGA_data_t *))
+{
+  if (storageNMEAGPGGA == NULL) initStorageNMEAGPGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGPGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (storageNMEAGPGGA->callbackCopy == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    storageNMEAGPGGA->callbackCopy = new NMEA_GGA_data_t;
+  }
+
+  if (storageNMEAGPGGA->callbackCopy == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setNMEAGPGGAcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  storageNMEAGPGGA->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 // Private: allocate RAM for incoming NMEA GPGGA messages and initialize it
 bool SFE_UBLOX_GNSS::initStorageNMEAGPGGA()
 {
@@ -12829,6 +13526,7 @@ bool SFE_UBLOX_GNSS::initStorageNMEAGPGGA()
   memset(storageNMEAGPGGA->completeCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
 
   storageNMEAGPGGA->callbackPointer = NULL; // Clear the callback pointers
+  storageNMEAGPGGA->callbackPointerPtr = NULL; // Clear the callback pointers
   storageNMEAGPGGA->callbackCopy = NULL;
 
   storageNMEAGPGGA->automaticFlags.flags.all = 0; // Mark the data as invalid/stale and unread
@@ -12884,6 +13582,30 @@ bool SFE_UBLOX_GNSS::setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_
   return (true);
 }
 
+bool SFE_UBLOX_GNSS::setNMEAGNGGAcallbackPtr(void (*callbackPointerPtr)(NMEA_GGA_data_t *))
+{
+  if (storageNMEAGNGGA == NULL) initStorageNMEAGNGGA(); //Check that RAM has been allocated for the message
+  if (storageNMEAGNGGA == NULL) //Bail if the RAM allocation failed
+    return (false);
+
+  if (storageNMEAGNGGA->callbackCopy == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    storageNMEAGNGGA->callbackCopy = new NMEA_GGA_data_t;
+  }
+
+  if (storageNMEAGNGGA->callbackCopy == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setNMEAGNGGAcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  storageNMEAGNGGA->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
 // Private: allocate RAM for incoming NMEA GNGGA messages and initialize it
 bool SFE_UBLOX_GNSS::initStorageNMEAGNGGA()
 {
@@ -12903,6 +13625,7 @@ bool SFE_UBLOX_GNSS::initStorageNMEAGNGGA()
   memset(storageNMEAGNGGA->completeCopy.nmea, 0, NMEA_GGA_MAX_LENGTH); // Clear the nmea storage
 
   storageNMEAGNGGA->callbackPointer = NULL; // Clear the callback pointers
+  storageNMEAGNGGA->callbackPointerPtr = NULL; // Clear the callback pointers
   storageNMEAGNGGA->callbackCopy = NULL;
 
   storageNMEAGNGGA->automaticFlags.flags.all = 0; // Mark the data as invalid/stale and unread

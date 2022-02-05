@@ -1608,9 +1608,6 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_CFG_RATE_data_t data;
   UBX_CFG_RATE_moduleQueried_t moduleQueried;
-  void (*callbackPointer)(UBX_CFG_RATE_data_t);
-  void (*callbackPointerPtr)(UBX_CFG_RATE_data_t *);
-  UBX_CFG_RATE_data_t  *callbackData;
 } UBX_CFG_RATE_t;
 
 // UBX-CFG-TP5 (0x06 0x31): Time pulse parameters

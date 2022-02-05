@@ -1387,8 +1387,10 @@ public:
 	// Support for "auto" storage of NMEA messages
 	uint8_t getLatestNMEAGPGGA(NMEA_GGA_data_t *data); // Return the most recent GPGGA: 0 = no data, 1 = stale data, 2 = fresh data
 	bool setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GPGGA message
+	bool setNMEAGPGGAcallbackPtr(void (*callbackPointerPtr)(NMEA_GGA_data_t *)); //Enable a callback on the arrival of a GPGGA message
 	uint8_t getLatestNMEAGNGGA(NMEA_GGA_data_t *data); // Return the most recent GNGGA: 0 = no data, 1 = stale data, 2 = fresh data
 	bool setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t)); //Enable a callback on the arrival of a GNGGA message
+	bool setNMEAGNGGAcallbackPtr(void (*callbackPointerPtr)(NMEA_GGA_data_t *)); //Enable a callback on the arrival of a GNGGA message
 
 	// Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
 	// From v2.0: These are public. The user can call these to extract data from custom packets
