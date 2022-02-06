@@ -22,9 +22,7 @@
   Insert a formatted micro-SD card into the socket on the Carrier Board.
   Connect the Carrier Board to your computer using a USB-C cable.
   Ensure you have the SparkFun Apollo3 boards installed: http://boardsmanager/All#SparkFun_Apollo3
-  This code has been tested using version 2.1.0 of the Apollo3 boards on Arduino IDE 1.8.13.
-   - Version 2.1.1 of Apollo3 contains a feature which makes I2C communication with u-blox modules problematic
-   - We recommend using v2.1.0 of Apollo3 until v2.2.0 is released
+  This code has been tested using version 2.2.0 of the Apollo3 boards on Arduino IDE 1.8.13.
   Select "Artemis MicroMod Processor" as the board type.
   Press upload to upload the code onto the Artemis.
   Open the Serial Monitor at 115200 baud to see the output.
@@ -69,6 +67,7 @@ File myFile; //File that all GNSS data is written to
 #endif
 
 #define packetLength 100 // NAV PVT is 92 + 8 bytes in length (including the sync chars, class, id, length and checksum bytes)
+uint8_t *myBuffer; // Use myBuffer to hold the data while we write it to SD card
 
 // Callback: printPVTdata will be called when new NAV PVT data arrives
 // See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t
@@ -77,38 +76,38 @@ File myFile; //File that all GNSS data is written to
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
+void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("Time: ")); // Print the time
-    uint8_t hms = ubxDataStruct.hour; // Print the hours
+    uint8_t hms = ubxDataStruct->hour; // Print the hours
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = ubxDataStruct.min; // Print the minutes
+    hms = ubxDataStruct->min; // Print the minutes
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = ubxDataStruct.sec; // Print the seconds
+    hms = ubxDataStruct->sec; // Print the seconds
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F("."));
-    unsigned long millisecs = ubxDataStruct.iTOW % 1000; // Print the milliseconds
+    unsigned long millisecs = ubxDataStruct->iTOW % 1000; // Print the milliseconds
     if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
     if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
 
-    long latitude = ubxDataStruct.lat; // Print the latitude
+    long latitude = ubxDataStruct->lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = ubxDataStruct.lon; // Print the longitude
+    long longitude = ubxDataStruct->lon; // Print the longitude
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
+    long altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
     Serial.println(F(" (mm)"));
@@ -200,9 +199,11 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one navigation solution per second
 
-  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 
   myGNSS.logNAVPVT(); // Enable NAV PVT data logging
+
+  myBuffer = new uint8_t[packetLength]; // Create our own buffer to hold the data while we write it to SD card  
 
   Serial.println(F("Press any key to stop logging."));
 }
@@ -214,9 +215,7 @@ void loop()
 
   if (myGNSS.fileBufferAvailable() >= packetLength) // Check to see if a new packetLength-byte NAV PVT message has been stored
   {
-    uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
-
-    myGNSS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
+    myGNSS.extractFileBufferData(myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
 
     myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
 
