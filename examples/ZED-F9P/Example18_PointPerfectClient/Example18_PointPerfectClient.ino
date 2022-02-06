@@ -10,9 +10,9 @@
   It's confusing, but the Arduino is acting as a 'client' to the PointPerfect SSR correction service.
 
   You will need to have a valid u-blox Thingstream account and have a PointPerfect Thing and payed plan. 
-  Thingstream offers SSR corrections to SPARTN cabalble RTK receivers such as the u-blox ZED-F9 series 
-  in continental Europ and US. There Network is planned to be expanded to ther regions over next years. 
-  To see sign up go to https://portal.thingstream.io/app/location-services/things
+  Thingstream offers SSR corrections to SPARTN capable RTK receivers such as the u-blox ZED-F9 series 
+  in continental Europe and US. Their Network is planned to be expanded to other regions over the next years. 
+  To sign up, go to: https://portal.thingstream.io/app/location-services/things
 
   This is a proof of concept to show how to connect via MQTT to get SPARTN SSR correction. 
   Using WiFi for a rover is generally a bad idea because of limited WiFi range in the field. 
@@ -38,10 +38,10 @@
 */
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include <ArduinoMqttClient.h>  
+#include <ArduinoMqttClient.h> // Click here to get the library: http://librarymanager/All#ArduinoMqttClient
 #include "secrets.h"
 
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
     
 //Global variables
@@ -55,7 +55,7 @@ void setup()
   Serial.begin(115200);
   while (!Serial);
   Serial.println(F("PointPerfect testing"));
-  
+
   Wire.begin(); //Start I2C
 
   if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
