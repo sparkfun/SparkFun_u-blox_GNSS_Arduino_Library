@@ -69,16 +69,16 @@ WiFiClient ntripClient; // The WiFi connection to the NTRIP server. This is glob
 //        |              /           _____ You can use any name you like for the struct
 //        |              |          /
 //        |              |          |
-void pushGPGGA(NMEA_GGA_data_t nmeaData)
+void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
   //Provide the caster with our current position as needed
   if ((ntripClient.connected() == true) && (transmitLocation == true))
   {
     Serial.print(F("Pushing GGA to server: "));
-    Serial.print((const char *)nmeaData.nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+    Serial.print((const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 
     //Push our current GGA sentence to caster
-    ntripClient.print((const char *)nmeaData.nmea);
+    ntripClient.print((const char *)nmeaData->nmea);
   }
 }
 
@@ -91,26 +91,26 @@ void pushGPGGA(NMEA_GGA_data_t nmeaData)
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
+void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
-  long latitude = ubxDataStruct.lat; // Print the latitude
+  long latitude = ubxDataStruct->lat; // Print the latitude
   Serial.print(F("Lat: "));
   Serial.print(latitude / 10000000L);
   Serial.print(F("."));
   Serial.print(abs(latitude % 10000000L));
 
-  long longitude = ubxDataStruct.lon; // Print the longitude
+  long longitude = ubxDataStruct->lon; // Print the longitude
   Serial.print(F("  Long: "));
   Serial.print(longitude / 10000000L);
   Serial.print(F("."));
   Serial.print(abs(longitude % 10000000L));
 
-  long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
+  long altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
   Serial.print(F("  Height: "));
   Serial.print(altitude);
   Serial.print(F(" (mm)"));
 
-  uint8_t fixType = ubxDataStruct.fixType; // Print the fix type
+  uint8_t fixType = ubxDataStruct->fixType; // Print the fix type
   Serial.print(F("  Fix: "));
   Serial.print(fixType);
   if (fixType == 0)
@@ -128,7 +128,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
   else
     Serial.print(F(" (UNKNOWN)"));
 
-  uint8_t carrSoln = ubxDataStruct.flags.bits.carrSoln; // Print the carrier solution
+  uint8_t carrSoln = ubxDataStruct->flags.bits.carrSoln; // Print the carrier solution
   Serial.print(F("  Carrier Solution: "));
   Serial.print(carrSoln);
   if (carrSoln == 0)
@@ -140,7 +140,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
   else
     Serial.print(F(" (UNKNOWN)"));
 
-  uint32_t hAcc = ubxDataStruct.hAcc; // Print the horizontal accuracy estimate
+  uint32_t hAcc = ubxDataStruct->hAcc; // Print the horizontal accuracy estimate
   Serial.print(F("  Horizontal Accuracy Estimate: "));
   Serial.print(hAcc);
   Serial.print(F(" (mm)"));
@@ -175,11 +175,11 @@ void setup()
   // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
   myGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
 
-  myGNSS.setNMEAGPGGAcallback(&pushGPGGA); // Set up the callback for GPGGA
+  myGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
 
   myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, 10); // Tell the module to output GGA every 10 seconds
 
-  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata so we can watch the carrier solution go to fixed
+  myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata so we can watch the carrier solution go to fixed
 
   //myGNSS.saveConfiguration(VAL_CFG_SUBSEC_IOPORT | VAL_CFG_SUBSEC_MSGCONF); //Optional: Save the ioPort and message settings to NVM
 
