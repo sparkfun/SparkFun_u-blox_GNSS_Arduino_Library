@@ -1513,7 +1513,6 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_RXM_PMP_data_t data;
   bool moduleQueried;
-  void (*callbackPointer)(UBX_RXM_PMP_data_t);
   void (*callbackPointerPtr)(UBX_RXM_PMP_data_t *);
   UBX_RXM_PMP_data_t  *callbackData;
 } UBX_RXM_PMP_t;

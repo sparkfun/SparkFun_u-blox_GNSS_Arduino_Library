@@ -1096,7 +1096,6 @@ public:
 	// Note: on the NEO-D9S, the UBX-RXM-PMP messages are enabled by default on all ports.
 	//       You can disable them by calling (e.g.) setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 0)
 	//       The NEO-D9S does not support UBX-CFG-MSG
-	bool setAutoRXMPMPcallback(void (*callbackPointer)(UBX_RXM_PMP_data_t)); // Callback is passed all of the data. Heavy on the stack. May cause problems on some platforms.
 	bool setAutoRXMPMPcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_PMP_data_t *)); // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
 
 	bool getRXMSFRBX(uint16_t maxWait = defaultMaxWait); // RXM SFRBX

@@ -3183,12 +3183,6 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXRXMPMP->callbackData->version, &packetUBXRXMPMP->data.version, sizeof(UBX_RXM_PMP_data_t));
           packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid = true;
         }
-
-        //Check if we need to copy the data into the file buffer
-        if (packetUBXRXMPMP->automaticFlags.flags.bits.addToFileBuffer)
-        {
-          storePacket(msg);
-        }
       }
     }
     else if (msg->id == UBX_RXM_SFRBX)
@@ -4485,7 +4479,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       //   _debugSerial->println(F("checkCallbacks: calling callback for NAV POSECEF"));
       packetUBXNAVPOSECEF->callbackPointer(*packetUBXNAVPOSECEF->callbackData); // Call the callback
     }
-    else if (packetUBXNAVPOSECEF->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    if (packetUBXNAVPOSECEF->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
       //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV POSECEF"));
@@ -4764,12 +4758,6 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     && (packetUBXRXMPMP->callbackData != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
-    if (packetUBXRXMPMP->callbackPointer != NULL) // If the pointer to the callback has been defined
-    {
-      // if (_printDebug == true)
-      //   _debugSerial->println(F("checkCallbacks: calling callback for RXM PMP"));
-      packetUBXRXMPMP->callbackPointer(*packetUBXRXMPMP->callbackData); // Call the callback
-    }
     if (packetUBXRXMPMP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
       // if (_printDebug == true)
@@ -11021,31 +11009,6 @@ void SFE_UBLOX_GNSS::logAOPSTATUS(bool enabled)
 
 // ***** RXM PMP automatic support
 
-// Callback is passed all of the data. Heavy on the stack. May cause problems on some platforms.
-bool SFE_UBLOX_GNSS::setAutoRXMPMPcallback(void (*callbackPointer)(UBX_RXM_PMP_data_t))
-{
-  if (packetUBXRXMPMP == NULL) initPacketUBXRXMPMP(); //Check that RAM has been allocated for the data
-  if (packetUBXRXMPMP == NULL) //Only attempt this if RAM allocation was successful
-    return false;
-
-  if (packetUBXRXMPMP->callbackData == NULL) //Check if RAM has been allocated for the callback copy
-  {
-    packetUBXRXMPMP->callbackData = new UBX_RXM_PMP_data_t; //Allocate RAM for the main struct
-  }
-
-  if (packetUBXRXMPMP->callbackData == NULL)
-  {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
-    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("setAutoRXMPMPcallback: RAM alloc failed!"));
-#endif
-    return (false);
-  }
-
-  packetUBXRXMPMP->callbackPointer = callbackPointer;
-  return (true);
-}
-
 // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
 bool SFE_UBLOX_GNSS::setAutoRXMPMPcallbackPtr(void (*callbackPointer)(UBX_RXM_PMP_data_t *))
 {
@@ -11084,7 +11047,6 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMPMP()
     return (false);
   }
   packetUBXRXMPMP->automaticFlags.flags.all = 0;
-  packetUBXRXMPMP->callbackPointer = NULL;
   packetUBXRXMPMP->callbackPointerPtr = NULL;
   packetUBXRXMPMP->callbackData = NULL;
   packetUBXRXMPMP->moduleQueried = false;
@@ -13069,7 +13031,7 @@ bool SFE_UBLOX_GNSS::getHNRINS(uint16_t maxWait)
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
     // {
-    //   _debugSerial->println(F("getHNRDyn: Autoreporting"));
+    //   _debugSerial->println(F("getHNRINS: Autoreporting"));
     // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_INS);
     return packetUBXHNRINS->moduleQueried.moduleQueried.bits.all;
@@ -13079,7 +13041,7 @@ bool SFE_UBLOX_GNSS::getHNRINS(uint16_t maxWait)
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
     // {
-    //   _debugSerial->println(F("getHNRDyn: Exit immediately"));
+    //   _debugSerial->println(F("getHNRINS: Exit immediately"));
     // }
     return (false);
   }
@@ -13087,7 +13049,7 @@ bool SFE_UBLOX_GNSS::getHNRINS(uint16_t maxWait)
   {
     // if (_printDebug == true)
     // {
-    //   _debugSerial->println(F("getHNRDyn: Polling"));
+    //   _debugSerial->println(F("getHNRINS: Polling"));
     // }
 
     //The GPS is not automatically reporting HNR vehicle dynamics so we have to poll explicitly
@@ -13106,14 +13068,14 @@ bool SFE_UBLOX_GNSS::getHNRINS(uint16_t maxWait)
     {
       // if (_printDebug == true)
       // {
-      //   _debugSerial->println(F("getHNRDyn: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      //   _debugSerial->println(F("getHNRINS: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
       // }
       return (true);
     }
 
     // if (_printDebug == true)
     // {
-    //   _debugSerial->print(F("getHNRDyn retVal: "));
+    //   _debugSerial->print(F("getHNRINS retVal: "));
     //   _debugSerial->println(statusString(retVal));
     // }
     return (false);
@@ -13122,21 +13084,21 @@ bool SFE_UBLOX_GNSS::getHNRINS(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
+//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRINS
 //works.
 bool SFE_UBLOX_GNSS::setAutoHNRINS(bool enable, uint16_t maxWait)
 {
   return setAutoHNRINSrate(enable ? 1 : 0, true, maxWait);
 }
 
-//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
+//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRINS
 //works.
 bool SFE_UBLOX_GNSS::setAutoHNRINS(bool enable, bool implicitUpdate, uint16_t maxWait)
 {
   return setAutoHNRINSrate(enable ? 1 : 0, implicitUpdate, maxWait);
 }
 
-//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
+//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRINS
 //works.
 bool SFE_UBLOX_GNSS::setAutoHNRINSrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
 {
@@ -13181,7 +13143,7 @@ bool SFE_UBLOX_GNSS::setAutoHNRINScallback(void (*callbackPointer)(UBX_HNR_INS_d
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("setAutoHNRDyncallback: RAM alloc failed!"));
+      _debugSerial->println(F("setAutoHNRINScallback: RAM alloc failed!"));
 #endif
     return (false);
   }
@@ -13206,7 +13168,7 @@ bool SFE_UBLOX_GNSS::setAutoHNRINScallbackPtr(void (*callbackPointerPtr)(UBX_HNR
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("setAutoHNRDyncallbackPtr: RAM alloc failed!"));
+      _debugSerial->println(F("setAutoHNRINScallbackPtr: RAM alloc failed!"));
 #endif
     return (false);
   }
