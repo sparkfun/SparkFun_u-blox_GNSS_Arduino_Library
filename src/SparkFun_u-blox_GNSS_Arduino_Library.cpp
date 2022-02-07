@@ -7580,6 +7580,13 @@ uint32_t SFE_UBLOX_GNSS::getVal32(uint32_t key, uint8_t layer, uint16_t maxWait)
 
   return (extractLong(&packetCfg, 8));
 }
+uint64_t SFE_UBLOX_GNSS::getVal64(uint32_t key, uint8_t layer, uint16_t maxWait)
+{
+  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (0);
+
+  return (extractLongLong(&packetCfg, 8));
+}
 
 //Given a group, ID and size, return the value of this config spot
 //The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
@@ -7598,6 +7605,11 @@ uint32_t SFE_UBLOX_GNSS::getVal32(uint16_t group, uint16_t id, uint8_t size, uin
 {
   uint32_t key = createKey(group, id, size);
   return getVal32(key, layer, maxWait);
+}
+uint64_t SFE_UBLOX_GNSS::getVal64(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
+{
+  uint32_t key = createKey(group, id, size);
+  return getVal64(key, layer, maxWait);
 }
 
 //Given a key, set a 16-bit value
@@ -7703,9 +7715,83 @@ uint8_t SFE_UBLOX_GNSS::setVal32(uint32_t key, uint32_t value, uint8_t layer, ui
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+//Given a key, set a 64-bit value
+//This function takes a full 32-bit key
+//Default layer is all: RAM+BBR+Flash
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GNSS::setVal64(uint32_t key, uint64_t value, uint8_t layer, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_VALSET;
+  packetCfg.len = 4 + 4 + 8; //4 byte header, 4 byte key ID, 8 bytes of value
+  packetCfg.startingSpot = 0;
+
+  //Clear packet payload
+  memset(payloadCfg, 0, packetCfg.len);
+
+  payloadCfg[0] = 0;     //Message Version - set to 0
+  payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+  //Load key into outgoing payload
+  payloadCfg[4] = key >> 8 * 0; //Key LSB
+  payloadCfg[5] = key >> 8 * 1;
+  payloadCfg[6] = key >> 8 * 2;
+  payloadCfg[7] = key >> 8 * 3;
+
+  //Load user's value
+  payloadCfg[8] = value >> 8 * 0; //Value LSB
+  payloadCfg[9] = value >> 8 * 1;
+  payloadCfg[10] = value >> 8 * 2;
+  payloadCfg[11] = value >> 8 * 3;
+  payloadCfg[12] = value >> 8 * 4;
+  payloadCfg[13] = value >> 8 * 5;
+  payloadCfg[14] = value >> 8 * 6;
+  payloadCfg[15] = value >> 8 * 7;
+
+  //Send VALSET command with this key and value
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//Start defining a new UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 64-bit value
+//Default layer is RAM+BBR+Flash
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GNSS::newCfgValset64(uint32_t key, uint64_t value, uint8_t layer)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_VALSET;
+  packetCfg.len = 4 + 4 + 8; //4 byte header, 4 byte key ID, 8 bytes of value
+  packetCfg.startingSpot = 0;
+
+  //Clear all of packet payload
+  memset(payloadCfg, 0, packetCfgPayloadSize);
+
+  payloadCfg[0] = 0;     //Message Version - set to 0
+  payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+  //Load key into outgoing payload
+  payloadCfg[4] = key >> 8 * 0; //Key LSB
+  payloadCfg[5] = key >> 8 * 1;
+  payloadCfg[6] = key >> 8 * 2;
+  payloadCfg[7] = key >> 8 * 3;
+
+  //Load user's value
+  payloadCfg[8] = value >> 8 * 0; //Value LSB
+  payloadCfg[9] = value >> 8 * 1;
+  payloadCfg[10] = value >> 8 * 2;
+  payloadCfg[11] = value >> 8 * 3;
+  payloadCfg[12] = value >> 8 * 4;
+  payloadCfg[13] = value >> 8 * 5;
+  payloadCfg[14] = value >> 8 * 6;
+  payloadCfg[15] = value >> 8 * 7;
+
+  //All done
+  return (true);
+}
+
 //Start defining a new UBX-CFG-VALSET ubxPacket
 //This function takes a full 32-bit key and 32-bit value
-//Default layer is BBR
+//Default layer is RAM+BBR+Flash
 //Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GNSS::newCfgValset32(uint32_t key, uint32_t value, uint8_t layer)
 {
@@ -7738,7 +7824,7 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset32(uint32_t key, uint32_t value, uint8_t lay
 
 //Start defining a new UBX-CFG-VALSET ubxPacket
 //This function takes a full 32-bit key and 16-bit value
-//Default layer is BBR
+//Default layer is RAM+BBR+Flash
 //Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GNSS::newCfgValset16(uint32_t key, uint16_t value, uint8_t layer)
 {
@@ -7769,7 +7855,7 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset16(uint32_t key, uint16_t value, uint8_t lay
 
 //Start defining a new UBX-CFG-VALSET ubxPacket
 //This function takes a full 32-bit key and 8-bit value
-//Default layer is BBR
+//Default layer is RAM+BBR+Flash
 //Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GNSS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer)
 {
@@ -7792,6 +7878,33 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer
 
   //Load user's value
   payloadCfg[8] = value; //Value
+
+  //All done
+  return (true);
+}
+
+//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 64-bit value
+uint8_t SFE_UBLOX_GNSS::addCfgValset64(uint32_t key, uint64_t value)
+{
+  //Load key into outgoing payload
+  payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
+  payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
+  payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
+  payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
+
+  //Load user's value
+  payloadCfg[packetCfg.len + 4] = value >> 8 * 0; //Value LSB
+  payloadCfg[packetCfg.len + 5] = value >> 8 * 1;
+  payloadCfg[packetCfg.len + 6] = value >> 8 * 2;
+  payloadCfg[packetCfg.len + 7] = value >> 8 * 3;
+  payloadCfg[packetCfg.len + 8] = value >> 8 * 4;
+  payloadCfg[packetCfg.len + 9] = value >> 8 * 5;
+  payloadCfg[packetCfg.len + 10] = value >> 8 * 6;
+  payloadCfg[packetCfg.len + 11] = value >> 8 * 7;
+
+  //Update packet length: 4 byte key ID, 8 bytes of value
+  packetCfg.len = packetCfg.len + 4 + 8;
 
   //All done
   return (true);
@@ -7859,6 +7972,17 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset8(uint32_t key, uint8_t value)
 
   //All done
   return (true);
+}
+
+//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
+//This function takes a full 32-bit key and 64-bit value
+uint8_t SFE_UBLOX_GNSS::sendCfgValset64(uint32_t key, uint64_t value, uint16_t maxWait)
+{
+  //Load keyID and value into outgoing payload
+  addCfgValset64(key, value);
+
+  //Send VALSET command with this key and value
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
@@ -15159,6 +15283,21 @@ float SFE_UBLOX_GNSS::getHNRheading(uint16_t maxWait) // Returned as degrees
 
 // Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
 // From v2.0: These are public. The user can call these to extract data from custom packets
+
+//Given a spot in the payload array, extract eight bytes and build a uint64_t
+uint64_t SFE_UBLOX_GNSS::extractLongLong(ubxPacket *msg, uint16_t spotToStart)
+{
+  uint64_t val = 0;
+  val |= (uint64_t)msg->payload[spotToStart + 0] << 8 * 0;
+  val |= (uint64_t)msg->payload[spotToStart + 1] << 8 * 1;
+  val |= (uint64_t)msg->payload[spotToStart + 2] << 8 * 2;
+  val |= (uint64_t)msg->payload[spotToStart + 3] << 8 * 3;
+  val |= (uint64_t)msg->payload[spotToStart + 4] << 8 * 4;
+  val |= (uint64_t)msg->payload[spotToStart + 5] << 8 * 5;
+  val |= (uint64_t)msg->payload[spotToStart + 6] << 8 * 6;
+  val |= (uint64_t)msg->payload[spotToStart + 7] << 8 * 7;
+  return (val);
+}
 
 //Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GNSS::extractLong(ubxPacket *msg, uint16_t spotToStart)
