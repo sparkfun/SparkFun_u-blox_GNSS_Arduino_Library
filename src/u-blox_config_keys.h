@@ -791,6 +791,11 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_SPI = 0x20910321; // Output rate of 
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1 = 0x2091031e; // Output rate of the UBX_RXM_PMP message on port UART1
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2 = 0x2091031f; // Output rate of the UBX_RXM_PMP message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_PMP_USB = 0x20910320; // Output rate of the UBX_RXM_PMP message on port USB
+const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_I2C = 0x20910322; // Output rate of the UBX_MON_PMP message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_SPI = 0x20910326; // Output rate of the UBX_MON_PMP message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_UART1 = 0x20910323; // Output rate of the UBX_MON_PMP message on port UART1
+const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_UART2 = 0x20910324; // Output rate of the UBX_MON_PMP message on port UART2
+const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_USB = 0x20910325; // Output rate of the UBX_MON_PMP message on port USB
 
 //CFG-NAV2: Secondary output configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1002,6 +1007,10 @@ const uint32_t UBLOX_CFG_SIGNAL_QZSS_L2C_ENA = 0x10310015;	// QZSS L2C (only on 
 const uint32_t UBLOX_CFG_SIGNAL_GLO_ENA = 0x10310025;	// GLONASS enable
 const uint32_t UBLOX_CFG_SIGNAL_GLO_L1_ENA = 0x10310018;	// GLONASS L1
 const uint32_t UBLOX_CFG_SIGNAL_GLO_L2_ENA = 0x1031001a;	// GLONASS L2 (only on u-blox F9 platform products)
+
+//CFG-SPARTN: Configuration of the SPARTN interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t UBLOX_CFG_SPARTN_USE_SOURCE = 0x20a70001;
 
 //CFG-SPI: Configuration of the SPI interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
