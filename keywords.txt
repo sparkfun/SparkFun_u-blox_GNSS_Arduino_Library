@@ -178,6 +178,9 @@ setAckAiding	KEYWORD2
 getAopCfg	KEYWORD2
 setAopCfg	KEYWORD2
 
+setDynamicSPARTNKey	KEYWORD2
+setDynamicSPARTNKeys	KEYWORD2
+
 createKey	KEYWORD2
 getVal	KEYWORD2
 getVal8	KEYWORD2

@@ -338,6 +338,8 @@ const uint8_t UBX_MON_PATCH = 0x27; //Output information about installed patches
 const uint8_t UBX_MON_RF = 0x38;	//RF information
 const uint8_t UBX_MON_RXBUF = 0x07; //Receiver Buffer Status
 const uint8_t UBX_MON_RXR = 0x21;	//Receiver Status Information
+const uint8_t UBX_MON_SPAN = 0x31;	//Signal characteristics
+const uint8_t UBX_MON_SYS = 0x39; 	//Current system performance information
 const uint8_t UBX_MON_TXBUF = 0x08; //Transmitter Buffer Status. Used for query tx buffer size/state.
 const uint8_t UBX_MON_VER = 0x04;	//Receiver/Software Version. Used for obtaining Protocol Version.
 
@@ -352,6 +354,7 @@ const uint8_t UBX_NAV_HPPOSECEF = 0x13; //High Precision Position Solution in EC
 const uint8_t UBX_NAV_HPPOSLLH = 0x14;	//High Precision Geodetic Position Solution. Used for obtaining lat/long/alt in high precision
 const uint8_t UBX_NAV_ODO = 0x09;		//Odometer Solution
 const uint8_t UBX_NAV_ORB = 0x34;		//GNSS Orbit Database Info
+const uint8_t UBX_NAV_PL = 0x62;		//Protection Level Information
 const uint8_t UBX_NAV_POSECEF = 0x01;	//Position Solution in ECEF
 const uint8_t UBX_NAV_POSLLH = 0x02;	//Geodetic Position Solution
 const uint8_t UBX_NAV_PVT = 0x07;		//All the things! Position, velocity, time, PDOP, height, h/v accuracies, number of satellites. Navigation Position Velocity Time Solution.
@@ -374,14 +377,16 @@ const uint8_t UBX_NAV_AOPSTATUS = 0x60; //AssistNow Autonomous status
 
 //Class: RXM
 //The following are used to configure the RXM UBX messages (receiver manager messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
+const uint8_t UBX_RXM_COR = 0x34; 	// Differential correction input status
 const uint8_t UBX_RXM_MEASX = 0x14; //Satellite Measurements for RRLP
-const uint8_t UBX_RXM_PMP = 0x72; //PMP raw data (NEO-D9S) (two different versions) (packet size for version 0x01 is variable)
+const uint8_t UBX_RXM_PMP = 0x72; 	//PMP raw data (NEO-D9S) (two different versions) (packet size for version 0x01 is variable)
 const uint8_t UBX_RXM_PMREQ = 0x41; //Requests a Power Management task (two different packet sizes)
 const uint8_t UBX_RXM_RAWX = 0x15;	//Multi-GNSS Raw Measurement Data
 const uint8_t UBX_RXM_RLM = 0x59;	//Galileo SAR Short-RLM report (two different packet sizes)
 const uint8_t UBX_RXM_RTCM = 0x32;	//RTCM input status
 const uint8_t UBX_RXM_SFRBX = 0x13; //Broadcast Navigation Data Subframe
 const uint8_t UBX_RXM_SPARTN = 0x33; //SPARTN input status
+const uint8_t UBX_RXM_SPARTNKEY = 0x36; //Poll/transfer dynamic SPARTN keys
 
 //Class: SEC
 //The following are used to configure the SEC UBX messages (security feature messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
@@ -621,7 +626,7 @@ public:
 #endif
 
 	//New in v2.0: allow the payload size for packetCfg to be changed
-	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
+	bool setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
 	//Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
 	//Begin will then return true if "signs of life" have been seen: reception of _any_ valid UBX packet or _any_ valid NMEA header.
@@ -891,6 +896,15 @@ public:
 	//UBX-CFG-NAVX5 - get/set the aopCfg byte and set the aopOrdMaxErr word. If aopOrbMaxErr is 0 (default), the max orbit error is reset to the firmware default.
 	uint8_t getAopCfg(uint16_t maxWait = defaultMaxWait); // Get the AssistNow Autonomous configuration (aopCfg) - returns 255 if the sendCommand fails
 	bool setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr = 0, uint16_t maxWait = defaultMaxWait); // Set the aopCfg byte and the aopOrdMaxErr word
+
+	//SPARTN dynamic keys
+	//"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
+	//"Every time the 'current' key is expired, 'next' takes its place."
+	//"Therefore the host should then retrieve the new 'next' key and send only that." - Use setDynamicSPARTNKey for this.
+	//The key can be provided in binary format or in ASCII Hex format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
+	bool setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validFromWno, uint32_t validFromTow, const uint8_t *key, uint16_t maxWait = defaultMaxWait);
+	bool setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t validFromWno1, uint32_t validFromTow1, const uint8_t *key1,
+							  uint8_t keyLengthBytes2, uint16_t validFromWno2, uint32_t validFromTow2, const uint8_t *key2, uint16_t maxWait = defaultMaxWait);
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 

@@ -436,14 +436,17 @@ void SFE_UBLOX_GNSS::end(void)
 
 //Allow the user to change packetCfgPayloadSize. Handy if you want to process big messages like RAWX
 //This can be called before .begin if required / desired
-void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
+bool SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
 {
+  bool success = true;
+
   if ((payloadSize == 0) && (payloadCfg != NULL))
   {
     // Zero payloadSize? Dangerous! But we'll free the memory anyway...
     delete[] payloadCfg; // Created with new[]
     payloadCfg = NULL; // Redundant?
     packetCfg.payload = payloadCfg;
+    packetCfgPayloadSize = payloadSize;
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setPacketCfgPayloadSize: Zero payloadSize!"));
   }
@@ -453,24 +456,37 @@ void SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
     payloadCfg = new uint8_t[payloadSize];
     packetCfg.payload = payloadCfg;
     if (payloadCfg == NULL)
+    {
+      success = false;
+      packetCfgPayloadSize = 0;
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         _debugSerial->println(F("setPacketCfgPayloadSize: RAM alloc failed!"));
+    }
+    else
+      packetCfgPayloadSize = payloadSize;
   }
 
   else //Memory has already been allocated - so resize
   {
     uint8_t *newPayload = new uint8_t[payloadSize];
-    for (size_t i = 0; (i < payloadSize) && (i < packetCfgPayloadSize); i++) // Copy as much existing data as we can
-      newPayload[i] = payloadCfg[i];
-    delete[] payloadCfg; // Created with new[]
-    payloadCfg = newPayload;
-    packetCfg.payload = payloadCfg;
-    if (payloadCfg == NULL)
+
+    if (newPayload == NULL) // Check if the alloc was successful
+    {
+      success = false; // Report failure. Don't change payloadCfg, packetCfg.payload or packetCfgPayloadSize
       if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         _debugSerial->println(F("setPacketCfgPayloadSize: RAM resize failed!"));
+    }
+    else
+    {
+      memcpy(newPayload, payloadCfg, payloadSize <= packetCfgPayloadSize ? payloadSize : packetCfgPayloadSize); // Copy as much existing data as we can
+      delete[] payloadCfg; // Free payloadCfg. Created with new[]
+      payloadCfg = newPayload; // Point to the newPayload
+      packetCfg.payload = payloadCfg; // Update the packet pointer
+      packetCfgPayloadSize = payloadSize; // Update the packet payload size
+    }
   }
 
-  packetCfgPayloadSize = payloadSize;
+  return (success);
 }
 
 //Initialize the I2C port
@@ -7466,6 +7482,108 @@ bool SFE_UBLOX_GNSS::setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr, uint16_t m
   payloadCfg[4] = 0x00; // Clear the LS byte of mask2, just in case
   payloadCfg[5] = 0x00; // Clear the LS byte of mask2, just in case
 
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+//SPARTN dynamic keys
+//"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
+//"Every time the 'current' key is expired, 'next' takes its place."
+//"Therefore the host should then retrieve the new 'next' key and send only that." - Use setDynamicSPARTNKey for this.
+//The key can be provided in binary format or in ASCII Hex format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
+bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validFromWno, uint32_t validFromTow, const uint8_t *key, uint16_t maxWait)
+{
+  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
+  bool isASCIIHex = true;
+  uint16_t i = 0;
+  while((i < (uint16_t)keyLengthBytes) && (isASCIIHex == true))
+  {
+    if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
+      i++; // Keep checking if data is all ASCII Hex
+    else
+      isASCIIHex = false; // Data is binary
+  }
+  if (isASCIIHex) // Check the second half of the ASCII Hex key
+  {
+    while((i < ((uint16_t)keyLengthBytes * 2) && (isASCIIHex == true)))
+    {
+      if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
+        i++; // Keep checking if data is all ASCII Hex
+      else
+        isASCIIHex = false; // Data is binary
+    }
+  }
+
+  // Check if there is room for the key in packetCfg. Resize the buffer if not.
+  size_t payloadLength = (size_t)keyLengthBytes + 12;
+  if (packetCfgPayloadSize < payloadLength)
+  {
+    if (!setPacketCfgPayloadSize(payloadLength)) // Check if the resize was successful
+    {
+      return (false); 
+    }
+  }
+
+  // Copy the key etc. into packetCfg
+  packetCfg.cls = UBX_CLASS_RXM;
+  packetCfg.id = UBX_RXM_SPARTNKEY;
+  packetCfg.len = payloadLength;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0x01; // version
+  payloadCfg[1] = 0x01; // numKeys
+  payloadCfg[2] = 0x00; // reserved0
+  payloadCfg[3] = 0x00; // reserved0
+  payloadCfg[4] = 0x00; // reserved1
+  payloadCfg[5] = keyLengthBytes;
+  payloadCfg[6] = validFromWno & 0xFF; // validFromWno little-endian
+  payloadCfg[7] = validFromWno >> 8;
+  payloadCfg[8] = validFromTow & 0xFF; // validFromTow little-endian
+  payloadCfg[9] = (validFromTow >> 8) & 0xFF;
+  payloadCfg[10] = (validFromTow >> 16) & 0xFF;
+  payloadCfg[11] = (validFromTow >> 24) & 0xFF;
+
+  if (isASCIIHex) // Convert ASCII Hex key to binary
+  {
+    for(i = 0; i < ((uint16_t)keyLengthBytes * 2); i += 2)
+    {
+      if ((key[i] >= '0') && (key[i] <= '9'))
+      {
+        payloadCfg[12 + (i >> 1)] = (key[i] - '0') << 4;
+      }
+      else if ((key[i] >= 'a') && (key[i] <= 'f'))
+      {
+        payloadCfg[12 + (i >> 1)] = (key[i] + 10 - 'a') << 4;
+      }
+      else // if ((key[i] >= 'A') && (key[i] <= 'F'))
+      {
+        payloadCfg[12 + (i >> 1)] = (key[i] + 10 - 'A') << 4;
+      }
+
+      if ((key[i + 1] >= '0') && (key[i + 1] <= '9'))
+      {
+        payloadCfg[12 + (i >> 1)] |= key[i + 1] - '0';
+      }
+      else if ((key[i + 1] >= 'a') && (key[i + 1] <= 'f'))
+      {
+        payloadCfg[12 + (i >> 1)] |= key[i + 1] + 10 - 'a';
+      }
+      else // if ((key[i + 1] >= 'A') && (key[i + 1] <= 'F'))
+      {
+        payloadCfg[12 + (i >> 1)] |= key[i + 1] + 10 - 'A';
+      }
+    }
+  }
+  else // Binary key
+  {
+    memcpy(&payloadCfg[12], key, keyLengthBytes);
+  }
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+bool SFE_UBLOX_GNSS::setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t validFromWno1, uint32_t validFromTow1, const uint8_t *key1,
+                                          uint8_t keyLengthBytes2, uint16_t validFromWno2, uint32_t validFromTow2, const uint8_t *key2, uint16_t maxWait)
+{
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
