@@ -7585,27 +7585,6 @@ bool SFE_UBLOX_GNSS::setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr, uint16_t m
 // The key can be provided in binary format or in ASCII Hex format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
 bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validFromWno, uint32_t validFromTow, const uint8_t *key, uint16_t maxWait)
 {
-  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
-  bool isASCIIHex = true;
-  uint16_t i = 0;
-  while ((i < (uint16_t)keyLengthBytes) && (isASCIIHex == true))
-  {
-    if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
-      i++; // Keep checking if data is all ASCII Hex
-    else
-      isASCIIHex = false; // Data is binary
-  }
-  if (isASCIIHex) // Check the second half of the ASCII Hex key
-  {
-    while ((i < ((uint16_t)keyLengthBytes * 2) && (isASCIIHex == true)))
-    {
-      if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
-        i++; // Keep checking if data is all ASCII Hex
-      else
-        isASCIIHex = false; // Data is binary
-    }
-  }
-
   // Check if there is room for the key in packetCfg. Resize the buffer if not.
   size_t payloadLength = (size_t)keyLengthBytes + 12;
   if (packetCfgPayloadSize < payloadLength)
@@ -7634,6 +7613,27 @@ bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validF
   payloadCfg[9] = (validFromTow >> 8) & 0xFF;
   payloadCfg[10] = (validFromTow >> 16) & 0xFF;
   payloadCfg[11] = (validFromTow >> 24) & 0xFF;
+
+  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
+  bool isASCIIHex = true;
+  uint16_t i = 0;
+  while ((i < (uint16_t)keyLengthBytes) && (isASCIIHex == true))
+  {
+    if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
+      i++; // Keep checking if data is all ASCII Hex
+    else
+      isASCIIHex = false; // Data is binary
+  }
+  if (isASCIIHex) // Check the second half of the ASCII Hex key
+  {
+    while ((i < ((uint16_t)keyLengthBytes * 2) && (isASCIIHex == true)))
+    {
+      if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
+        i++; // Keep checking if data is all ASCII Hex
+      else
+        isASCIIHex = false; // Data is binary
+    }
+  }
 
   if (isASCIIHex) // Convert ASCII Hex key to binary
   {
@@ -7677,6 +7677,157 @@ bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validF
 bool SFE_UBLOX_GNSS::setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t validFromWno1, uint32_t validFromTow1, const uint8_t *key1,
                                           uint8_t keyLengthBytes2, uint16_t validFromWno2, uint32_t validFromTow2, const uint8_t *key2, uint16_t maxWait)
 {
+  // Check if there is room for the key in packetCfg. Resize the buffer if not.
+  size_t payloadLength = (size_t)keyLengthBytes1 + (size_t)keyLengthBytes2 + 20;
+  if (packetCfgPayloadSize < payloadLength)
+  {
+    if (!setPacketCfgPayloadSize(payloadLength)) // Check if the resize was successful
+    {
+      return (false);
+    }
+  }
+
+  // Copy the key etc. into packetCfg
+  packetCfg.cls = UBX_CLASS_RXM;
+  packetCfg.id = UBX_RXM_SPARTNKEY;
+  packetCfg.len = payloadLength;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0x01; // version
+  payloadCfg[1] = 0x02; // numKeys
+  payloadCfg[2] = 0x00; // reserved0
+  payloadCfg[3] = 0x00; // reserved0
+  payloadCfg[4] = 0x00; // reserved1
+  payloadCfg[5] = keyLengthBytes1;
+  payloadCfg[6] = validFromWno1 & 0xFF; // validFromWno little-endian
+  payloadCfg[7] = validFromWno1 >> 8;
+  payloadCfg[8] = validFromTow1 & 0xFF; // validFromTow little-endian
+  payloadCfg[9] = (validFromTow1 >> 8) & 0xFF;
+  payloadCfg[10] = (validFromTow1 >> 16) & 0xFF;
+  payloadCfg[11] = (validFromTow1 >> 24) & 0xFF;
+  payloadCfg[12] = 0x00; // reserved1
+  payloadCfg[13] = keyLengthBytes2;
+  payloadCfg[14] = validFromWno2 & 0xFF; // validFromWno little-endian
+  payloadCfg[15] = validFromWno2 >> 8;
+  payloadCfg[16] = validFromTow2 & 0xFF; // validFromTow little-endian
+  payloadCfg[17] = (validFromTow2 >> 8) & 0xFF;
+  payloadCfg[18] = (validFromTow2 >> 16) & 0xFF;
+  payloadCfg[19] = (validFromTow2 >> 24) & 0xFF;
+
+  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
+  bool isASCIIHex = true;
+  uint16_t i = 0;
+  while ((i < (uint16_t)keyLengthBytes1) && (isASCIIHex == true))
+  {
+    if (((key1[i] >= '0') && (key1[i] <= '9')) || ((key1[i] >= 'a') && (key1[i] <= 'f')) || ((key1[i] >= 'A') && (key1[i] <= 'F')))
+      i++; // Keep checking if data is all ASCII Hex
+    else
+      isASCIIHex = false; // Data is binary
+  }
+  if (isASCIIHex) // Check the second half of the ASCII Hex key
+  {
+    while ((i < ((uint16_t)keyLengthBytes1 * 2) && (isASCIIHex == true)))
+    {
+      if (((key1[i] >= '0') && (key1[i] <= '9')) || ((key1[i] >= 'a') && (key1[i] <= 'f')) || ((key1[i] >= 'A') && (key1[i] <= 'F')))
+        i++; // Keep checking if data is all ASCII Hex
+      else
+        isASCIIHex = false; // Data is binary
+    }
+  }
+
+  if (isASCIIHex) // Convert ASCII Hex key to binary
+  {
+    for (i = 0; i < ((uint16_t)keyLengthBytes1 * 2); i += 2)
+    {
+      if ((key1[i] >= '0') && (key1[i] <= '9'))
+      {
+        payloadCfg[20 + (i >> 1)] = (key1[i] - '0') << 4;
+      }
+      else if ((key1[i] >= 'a') && (key1[i] <= 'f'))
+      {
+        payloadCfg[20 + (i >> 1)] = (key1[i] + 10 - 'a') << 4;
+      }
+      else // if ((key1[i] >= 'A') && (key1[i] <= 'F'))
+      {
+        payloadCfg[20 + (i >> 1)] = (key1[i] + 10 - 'A') << 4;
+      }
+
+      if ((key1[i + 1] >= '0') && (key1[i + 1] <= '9'))
+      {
+        payloadCfg[20 + (i >> 1)] |= key1[i + 1] - '0';
+      }
+      else if ((key1[i + 1] >= 'a') && (key1[i + 1] <= 'f'))
+      {
+        payloadCfg[20 + (i >> 1)] |= key1[i + 1] + 10 - 'a';
+      }
+      else // if ((key1[i + 1] >= 'A') && (key1[i + 1] <= 'F'))
+      {
+        payloadCfg[20 + (i >> 1)] |= key1[i + 1] + 10 - 'A';
+      }
+    }
+  }
+  else // Binary key
+  {
+    memcpy(&payloadCfg[20], key1, keyLengthBytes1);
+  }
+
+  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
+  isASCIIHex = true;
+  i = 0;
+  while ((i < (uint16_t)keyLengthBytes2) && (isASCIIHex == true))
+  {
+    if (((key2[i] >= '0') && (key2[i] <= '9')) || ((key2[i] >= 'a') && (key2[i] <= 'f')) || ((key2[i] >= 'A') && (key2[i] <= 'F')))
+      i++; // Keep checking if data is all ASCII Hex
+    else
+      isASCIIHex = false; // Data is binary
+  }
+  if (isASCIIHex) // Check the second half of the ASCII Hex key
+  {
+    while ((i < ((uint16_t)keyLengthBytes2 * 2) && (isASCIIHex == true)))
+    {
+      if (((key2[i] >= '0') && (key2[i] <= '9')) || ((key2[i] >= 'a') && (key2[i] <= 'f')) || ((key2[i] >= 'A') && (key2[i] <= 'F')))
+        i++; // Keep checking if data is all ASCII Hex
+      else
+        isASCIIHex = false; // Data is binary
+    }
+  }
+
+  if (isASCIIHex) // Convert ASCII Hex key to binary
+  {
+    for (i = 0; i < ((uint16_t)keyLengthBytes2 * 2); i += 2)
+    {
+      if ((key2[i] >= '0') && (key2[i] <= '9'))
+      {
+        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] = (key2[i] - '0') << 4;
+      }
+      else if ((key2[i] >= 'a') && (key2[i] <= 'f'))
+      {
+        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] = (key2[i] + 10 - 'a') << 4;
+      }
+      else // if ((key2[i] >= 'A') && (key2[i] <= 'F'))
+      {
+        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] = (key2[i] + 10 - 'A') << 4;
+      }
+
+      if ((key2[i + 1] >= '0') && (key2[i + 1] <= '9'))
+      {
+        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] |= key2[i + 1] - '0';
+      }
+      else if ((key2[i + 1] >= 'a') && (key2[i + 1] <= 'f'))
+      {
+        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] |= key2[i + 1] + 10 - 'a';
+      }
+      else // if ((key2[i + 1] >= 'A') && (key2[i + 1] <= 'F'))
+      {
+        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] |= key2[i + 1] + 10 - 'A';
+      }
+    }
+  }
+  else // Binary key
+  {
+    memcpy(&payloadCfg[20 + keyLengthBytes1], key2, keyLengthBytes2);
+  }
+
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
