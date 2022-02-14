@@ -3312,7 +3312,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
 
         packetUBXRXMPMPmessage->callbackData->checksumA = msg->checksumA;
         packetUBXRXMPMPmessage->callbackData->checksumB = msg->checksumB;
-        
+
         packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
       }
     }
