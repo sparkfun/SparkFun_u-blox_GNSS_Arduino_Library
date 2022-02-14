@@ -1527,6 +1527,8 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
 // Take a given byte and file it into the proper array
 void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
+  if (_outputPort != NULL)
+    _outputPort->write(incoming); // Echo this byte to the serial port
   if ((currentSentence == NONE) || (currentSentence == NMEA))
   {
     if (incoming == UBX_SYNCH_1) // UBX binary frames start with 0xB5, aka μ
@@ -6449,6 +6451,11 @@ bool SFE_UBLOX_GNSS::setSPIOutput(uint8_t comSettings, uint16_t maxWait)
 void SFE_UBLOX_GNSS::setNMEAOutputPort(Stream &nmeaOutputPort)
 {
   _nmeaOutputPort = &nmeaOutputPort; // Store the port from user
+}
+
+void SFE_UBLOX_GNSS::setOutputPort(Stream &outputPort)
+{
+  _outputPort = &outputPort; // Store the port from user
 }
 
 // Reset to defaults

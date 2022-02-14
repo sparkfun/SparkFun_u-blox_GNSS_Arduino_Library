@@ -809,6 +809,7 @@ public:
   bool setUSBOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);   // Configure USB port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
   bool setSPIOutput(uint8_t comSettings, uint16_t maxWait = defaultMaxWait);   // Configure SPI port to output UBX, NMEA, RTCM3, SPARTN or a combination thereof
   void setNMEAOutputPort(Stream &nmeaOutputPort);                              // Sets the internal variable for the port to direct NMEA characters to
+  void setOutputPort(Stream &outputPort);                                      // Sets the internal variable for the port to direct ALL characters to
 
   // Reset to defaults
 
@@ -1562,7 +1563,7 @@ private:
   Stream *_serialPort;            // The generic connection to user's chosen Serial hardware
   Stream *_nmeaOutputPort = NULL; // The user can assign an output port to print NMEA sentences if they wish
   Stream *_debugSerial;           // The stream to send debug messages to if enabled
-
+  Stream *_outputPort = NULL;
   SPIClass *_spiPort; // The instance of SPIClass
   uint8_t _csPin;     // The chip select pin
   uint32_t _spiSpeed; // The speed to use for SPI (Hz)
