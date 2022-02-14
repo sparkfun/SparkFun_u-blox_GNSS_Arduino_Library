@@ -38,25 +38,24 @@ const uint32_t myLBandFreq = 1556290000; // Uncomment this line to use the US SP
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 // Callback: pushRXMPMP will be called when new PMP data arrives
-// See u-blox_structs.h for the full definition of UBX_RXM_PMP_data_t
-//         _____  You can use any name you like for the callback. Use the same name when you call setAutoRXMPMPcallbackPtr
-//        /               _____  This _must_ be UBX_RXM_PMP_data_t
+// See u-blox_structs.h for the full definition of UBX_RXM_PMP_message_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setRXMPMPmessageCallbackPtr
+//        /               _____  This _must_ be UBX_RXM_PMP_message_data_t
 //        |              /              _____ You can use any name you like for the struct
 //        |              |             /
 //        |              |             |
-void pushRXMPMP(UBX_RXM_PMP_data_t *pmpData)
+void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
 {
+  //Extract the raw message payload length
+  uint16_t payloadLen = ((uint16_t)pmpData->lengthMSB << 8) | (uint16_t)pmpData->lengthLSB;
+  Serial.print(F("New RXM-PMP data received. Message payload length is "));
+  Serial.print(payloadLen);
+  Serial.println(F(" Bytes. Pushing it to the GNSS..."));
+  
   //Push the PMP data to the GNSS
-  Serial.print(F("New RXM-PMP data received. Message version is 0x0"));
-  Serial.print(pmpData->version, HEX);
-  Serial.print(F(". numBytesUserData is "));
-  size_t numDataBytes = 504; // Version 0x00 messages always contain 504 bytes of userData
-  if (pmpData->version == 0x01)
-    numDataBytes = pmpData->numBytesUserData;
-  Serial.print(numDataBytes);
-  Serial.println(F(". Pushing them to the GNSS..."));
-
-  myGNSS.pushRawData(pmpData->userData, numDataBytes);
+  //The payload length could be variable, so we need to push the header and payload, then checksum
+  myGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); // Push the sync chars, class, ID, length and payload
+  myGNSS.pushRawData(&pmpData->checksumA, (size_t)2); // Push the checksum bytes
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -70,22 +69,17 @@ void pushRXMPMP(UBX_RXM_PMP_data_t *pmpData)
 //        |                 |              |
 void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
-  long latitude = ubxDataStruct->lat; // Print the latitude
+  double latitude = ubxDataStruct->lat; // Print the latitude
   Serial.print(F("Lat: "));
-  Serial.print(latitude / 10000000L);
-  Serial.print(F("."));
-  Serial.print(abs(latitude % 10000000L));
+  Serial.print(latitude / 10000000.0, 7);
 
-  long longitude = ubxDataStruct->lon; // Print the longitude
+  double longitude = ubxDataStruct->lon; // Print the longitude
   Serial.print(F("  Long: "));
-  Serial.print(longitude / 10000000L);
-  Serial.print(F("."));
-  Serial.print(abs(longitude % 10000000L));
+  Serial.print(longitude / 10000000.0, 7);
 
-  long altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
+  double altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
   Serial.print(F("  Height: "));
-  Serial.print(altitude);
-  Serial.print(F(" (mm)"));
+  Serial.print(altitude / 1000.0, 3);
 
   uint8_t fixType = ubxDataStruct->fixType; // Print the fix type
   Serial.print(F("  Fix: "));
@@ -157,7 +151,7 @@ void setup()
   //"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
   //"Every time the 'current' key is expired, 'next' takes its place."
   //"Therefore the host should then retrieve the new 'next' key and send only that." - Use setDynamicSPARTNKey for this.
-  // The key can be provided in binary format or in ASCII Hex format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
+  // The key can be provided in binary (uint8_t) format or in ASCII Hex (char) format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
   if (ok) ok = myGNSS.setDynamicSPARTNKeys(currentKeyLengthBytes, currentKeyGPSWeek, currentKeyGPSToW, currentDynamicKey,
                                            nextKeyLengthBytes, nextKeyGPSWeek, nextKeyGPSToW, nextDynamicKey);
 
@@ -200,7 +194,7 @@ void setup()
 
   myLBand.softwareResetGNSSOnly(); // Do a restart
 
-  myLBand.setAutoRXMPMPcallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
+  myLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
 
 }
 

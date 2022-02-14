@@ -14,11 +14,11 @@
 // The keys are given as: 32 hexadecimal digits = 128 bits = 16 Bytes
 
 const uint8_t currentKeyLengthBytes =   16; 
-const uint8_t currentDynamicKey[] =     "f742bd6b7248043177dd649141d8fb0b";
+const char currentDynamicKey[] =        "f742bd6b7248043177dd649141d8fb0b";
 const uint16_t currentKeyGPSWeek =      2192;
 const uint32_t currentKeyGPSToW =       518418;
 
 const uint8_t nextKeyLengthBytes =      16; 
-const uint8_t nextDynamicKey[] =        "8206........................29f4";
+const char nextDynamicKey[] =           "8206........................29f4";
 const uint16_t nextKeyGPSWeek =         2196;
 const uint32_t nextKeyGPSToW =          518418;

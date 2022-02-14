@@ -93,22 +93,17 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 //        |                 |              |
 void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
-  long latitude = ubxDataStruct->lat; // Print the latitude
+  double latitude = ubxDataStruct->lat; // Print the latitude
   Serial.print(F("Lat: "));
-  Serial.print(latitude / 10000000L);
-  Serial.print(F("."));
-  Serial.print(abs(latitude % 10000000L));
+  Serial.print(latitude / 10000000.0, 7);
 
-  long longitude = ubxDataStruct->lon; // Print the longitude
+  double longitude = ubxDataStruct->lon; // Print the longitude
   Serial.print(F("  Long: "));
-  Serial.print(longitude / 10000000L);
-  Serial.print(F("."));
-  Serial.print(abs(longitude % 10000000L));
+  Serial.print(longitude / 10000000.0, 7);
 
-  long altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
+  double altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
   Serial.print(F("  Height: "));
-  Serial.print(altitude);
-  Serial.print(F(" (mm)"));
+  Serial.print(altitude / 1000.0, 3);
 
   uint8_t fixType = ubxDataStruct->fixType; // Print the fix type
   Serial.print(F("  Fix: "));
@@ -159,9 +154,8 @@ void setup()
 
   while (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring."));
     delay(2000);
-    //while (1);
   }
   Serial.println(F("u-blox module connected"));
 

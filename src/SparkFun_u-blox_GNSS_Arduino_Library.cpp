@@ -284,6 +284,16 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXRXMPMP = NULL; // Redundant?
   }
 
+  if (packetUBXRXMPMPmessage != NULL)
+  {
+    if (packetUBXRXMPMPmessage->callbackData != NULL)
+    {
+      delete packetUBXRXMPMPmessage->callbackData;
+    }
+    delete packetUBXRXMPMPmessage;
+    packetUBXRXMPMPmessage = NULL; // Redundant?
+  }
+
   if (packetUBXRXMSFRBX != NULL)
   {
     if (packetUBXRXMSFRBX->callbackData != NULL)
@@ -1258,7 +1268,7 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
         result = true;
       break;
     case UBX_RXM_PMP:
-      if (packetUBXRXMPMP != NULL)
+      if ((packetUBXRXMPMP != NULL) || (packetUBXRXMPMPmessage != NULL))
         result = true;
       break;
     }
@@ -3254,45 +3264,52 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
     // Note: the field positions depend on the version
     {
       // Parse various byte fields into storage - but only if we have memory allocated for it
-      if (packetUBXRXMPMP != NULL)
+      if ((packetUBXRXMPMP != NULL) && (packetUBXRXMPMP->callbackData != NULL))
       {
-        packetUBXRXMPMP->data.version = extractByte(msg, 0);
-        packetUBXRXMPMP->data.numBytesUserData = extractInt(msg, 2);
-        packetUBXRXMPMP->data.timeTag = extractLong(msg, 4);
-        packetUBXRXMPMP->data.uniqueWord[0] = extractLong(msg, 8);
-        packetUBXRXMPMP->data.uniqueWord[1] = extractLong(msg, 12);
-        packetUBXRXMPMP->data.serviceIdentifier = extractInt(msg, 16);
-        packetUBXRXMPMP->data.spare = extractByte(msg, 18);
-        packetUBXRXMPMP->data.uniqueWordBitErrors = extractByte(msg, 19);
+        packetUBXRXMPMP->callbackData->version = extractByte(msg, 0);
+        packetUBXRXMPMP->callbackData->numBytesUserData = extractInt(msg, 2);
+        packetUBXRXMPMP->callbackData->timeTag = extractLong(msg, 4);
+        packetUBXRXMPMP->callbackData->uniqueWord[0] = extractLong(msg, 8);
+        packetUBXRXMPMP->callbackData->uniqueWord[1] = extractLong(msg, 12);
+        packetUBXRXMPMP->callbackData->serviceIdentifier = extractInt(msg, 16);
+        packetUBXRXMPMP->callbackData->spare = extractByte(msg, 18);
+        packetUBXRXMPMP->callbackData->uniqueWordBitErrors = extractByte(msg, 19);
 
-        if (packetUBXRXMPMP->data.version == 0x00)
+        if (packetUBXRXMPMP->callbackData->version == 0x00)
         {
-          packetUBXRXMPMP->data.fecBits = extractInt(msg, 524);
-          packetUBXRXMPMP->data.ebno = extractByte(msg, 526);
+          packetUBXRXMPMP->callbackData->fecBits = extractInt(msg, 524);
+          packetUBXRXMPMP->callbackData->ebno = extractByte(msg, 526);
         }
         else // if (packetUBXRXMPMP->data.version == 0x01)
         {
-          packetUBXRXMPMP->data.fecBits = extractInt(msg, 20);
-          packetUBXRXMPMP->data.ebno = extractByte(msg, 22);
+          packetUBXRXMPMP->callbackData->fecBits = extractInt(msg, 20);
+          packetUBXRXMPMP->callbackData->ebno = extractByte(msg, 22);
         }
 
-        uint16_t userDataStart = (packetUBXRXMPMP->data.version == 0x00) ? 20 : 24;
-        uint16_t userDataLength = (packetUBXRXMPMP->data.version == 0x00) ? 504 : (packetUBXRXMPMP->data.numBytesUserData);
+        uint16_t userDataStart = (packetUBXRXMPMP->callbackData->version == 0x00) ? 20 : 24;
+        uint16_t userDataLength = (packetUBXRXMPMP->callbackData->version == 0x00) ? 504 : (packetUBXRXMPMP->callbackData->numBytesUserData);
         for (uint16_t i = 0; (i < userDataLength) && (i < 504); i++)
         {
-          packetUBXRXMPMP->data.userData[i] = extractByte(msg, i + userDataStart);
+          packetUBXRXMPMP->callbackData->userData[i] = extractByte(msg, i + userDataStart);
         }
 
-        // Mark all datums as fresh (not read before)
-        packetUBXRXMPMP->moduleQueried = true;
+        packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
+      }
 
-        // Check if we need to copy the data for the callbacks
-        if ((packetUBXRXMPMP->callbackData != NULL)                                     // If RAM has been allocated for the copy of the data
-            && (packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
-        {
-          memcpy(&packetUBXRXMPMP->callbackData->version, &packetUBXRXMPMP->data.version, sizeof(UBX_RXM_PMP_data_t));
-          packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid = true;
-        }
+      // Full PMP message
+      if ((packetUBXRXMPMPmessage != NULL) && (packetUBXRXMPMPmessage->callbackData != NULL))
+      {
+        packetUBXRXMPMPmessage->callbackData->sync1 = UBX_SYNCH_1;
+        packetUBXRXMPMPmessage->callbackData->sync2 = UBX_SYNCH_2;
+        packetUBXRXMPMPmessage->callbackData->cls = UBX_CLASS_RXM;
+        packetUBXRXMPMPmessage->callbackData->ID = UBX_RXM_PMP;
+        packetUBXRXMPMPmessage->callbackData->lengthLSB = msg->len & 0xFF;
+        packetUBXRXMPMPmessage->callbackData->lengthMSB = msg->len >> 8;
+
+        memcpy(packetUBXRXMPMPmessage->callbackData->payload, msg->payload, msg->len);
+
+        packetUBXRXMPMPmessage->callbackData->checksumA = msg->checksumA;
+        packetUBXRXMPMPmessage->callbackData->checksumB = msg->checksumB;
       }
     }
     else if (msg->id == UBX_RXM_SFRBX)
@@ -4862,15 +4879,24 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
 
   if ((packetUBXRXMPMP != NULL)                                                  // If RAM has been allocated for message storage
       && (packetUBXRXMPMP->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXRXMPMP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
       && (packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
-    if (packetUBXRXMPMP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
-    {
-      // if (_printDebug == true)
-      //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP"));
-      packetUBXRXMPMP->callbackPointerPtr(packetUBXRXMPMP->callbackData); // Call the callback
-    }
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP"));
+    packetUBXRXMPMP->callbackPointerPtr(packetUBXRXMPMP->callbackData); // Call the callback
     packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXRXMPMPmessage != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXRXMPMPmessage->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXRXMPMPmessage->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+      && (packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP message"));
+    packetUBXRXMPMPmessage->callbackPointerPtr(packetUBXRXMPMPmessage->callbackData); // Call the callback
+    packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
   if ((packetUBXRXMSFRBX != NULL)                                                  // If RAM has been allocated for message storage
@@ -7582,8 +7608,69 @@ bool SFE_UBLOX_GNSS::setAopCfg(uint8_t aopCfg, uint16_t aopOrbMaxErr, uint16_t m
 //"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
 //"Every time the 'current' key is expired, 'next' takes its place."
 //"Therefore the host should then retrieve the new 'next' key and send only that." - Use setDynamicSPARTNKey for this.
-// The key can be provided in binary format or in ASCII Hex format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
-bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validFromWno, uint32_t validFromTow, const uint8_t *key, uint16_t maxWait)
+// The key can be provided in binary (uint8_t) format or in ASCII Hex (char) format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
+bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validFromWno, uint32_t validFromTow, const char *key)
+{
+  uint8_t *binaryKey = new uint8_t[keyLengthBytes]; // Allocate memory to store the binaryKey
+
+  if (binaryKey == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+      _debugSerial->println(F("setDynamicSPARTNKey: binaryKey RAM allocation failed!"));
+#endif
+    return (false);
+  }
+
+  bool ok = true;
+
+  // Convert the ASCII Hex const char to binary uint8_t
+  for (uint16_t i = 0; i < ((uint16_t)keyLengthBytes * 2); i += 2)
+  {
+    if ((key[i] >= '0') && (key[i] <= '9'))
+    {
+      binaryKey[i >> 1] = (key[i] - '0') << 4;
+    }
+    else if ((key[i] >= 'a') && (key[i] <= 'f'))
+    {
+      binaryKey[i >> 1] = (key[i] + 10 - 'a') << 4;
+    }
+    else if ((key[i] >= 'A') && (key[i] <= 'F'))
+    {
+      binaryKey[i >> 1] = (key[i] + 10 - 'A') << 4;
+    }
+    else
+    {
+      ok = false;
+    }
+
+    if ((key[i + 1] >= '0') && (key[i + 1] <= '9'))
+    {
+      binaryKey[i >> 1] |= key[i + 1] - '0';
+    }
+    else if ((key[i + 1] >= 'a') && (key[i + 1] <= 'f'))
+    {
+      binaryKey[i >> 1] |= key[i + 1] + 10 - 'a';
+    }
+    else if ((key[i + 1] >= 'A') && (key[i + 1] <= 'F'))
+    {
+      binaryKey[i >> 1] |= key[i + 1] + 10 - 'A';
+    }
+    else
+    {
+      ok = false;
+    }
+  }
+
+  if (ok)
+    ok = setDynamicSPARTNKey(keyLengthBytes, validFromWno, validFromTow, (const uint8_t *)binaryKey); 
+
+  delete[] binaryKey; // Free the memory allocated for binaryKey
+
+  return (ok);
+}
+
+bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validFromWno, uint32_t validFromTow, const uint8_t *key)
 {
   // Check if there is room for the key in packetCfg. Resize the buffer if not.
   size_t payloadLength = (size_t)keyLengthBytes + 12;
@@ -7614,68 +7701,127 @@ bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validF
   payloadCfg[10] = (validFromTow >> 16) & 0xFF;
   payloadCfg[11] = (validFromTow >> 24) & 0xFF;
 
-  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
-  bool isASCIIHex = true;
-  uint16_t i = 0;
-  while ((i < (uint16_t)keyLengthBytes) && (isASCIIHex == true))
+  memcpy(&payloadCfg[12], key, keyLengthBytes);
+
+  return (sendCommand(&packetCfg, 0) == SFE_UBLOX_STATUS_SUCCESS); // UBX-RXM-SPARTNKEY is silent. It does not ACK (or NACK)
+}
+
+bool SFE_UBLOX_GNSS::setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t validFromWno1, uint32_t validFromTow1, const char *key1,
+                                          uint8_t keyLengthBytes2, uint16_t validFromWno2, uint32_t validFromTow2, const char *key2)
+{
+  uint8_t *binaryKey1 = new uint8_t[keyLengthBytes1]; // Allocate memory to store binaryKey1
+
+  if (binaryKey1 == NULL)
   {
-    if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
-      i++; // Keep checking if data is all ASCII Hex
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+      _debugSerial->println(F("setDynamicSPARTNKeys: binaryKey1 RAM allocation failed!"));
+#endif
+    return (false);
+  }
+
+  uint8_t *binaryKey2 = new uint8_t[keyLengthBytes2]; // Allocate memory to store binaryKey2
+
+  if (binaryKey2 == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if (_printDebug == true)
+      _debugSerial->println(F("setDynamicSPARTNKeys: binaryKey2 RAM allocation failed!"));
+#endif
+    delete[] binaryKey1;
+    return (false);
+  }
+
+  bool ok = true;
+
+  // Convert the ASCII Hex const char to binary uint8_t
+  for (uint16_t i = 0; i < ((uint16_t)keyLengthBytes1 * 2); i += 2)
+  {
+    if ((key1[i] >= '0') && (key1[i] <= '9'))
+    {
+      binaryKey1[i >> 1] = (key1[i] - '0') << 4;
+    }
+    else if ((key1[i] >= 'a') && (key1[i] <= 'f'))
+    {
+      binaryKey1[i >> 1] = (key1[i] + 10 - 'a') << 4;
+    }
+    else if ((key1[i] >= 'A') && (key1[i] <= 'F'))
+    {
+      binaryKey1[i >> 1] = (key1[i] + 10 - 'A') << 4;
+    }
     else
-      isASCIIHex = false; // Data is binary
-  }
-  if (isASCIIHex) // Check the second half of the ASCII Hex key
-  {
-    while ((i < ((uint16_t)keyLengthBytes * 2) && (isASCIIHex == true)))
     {
-      if (((key[i] >= '0') && (key[i] <= '9')) || ((key[i] >= 'a') && (key[i] <= 'f')) || ((key[i] >= 'A') && (key[i] <= 'F')))
-        i++; // Keep checking if data is all ASCII Hex
-      else
-        isASCIIHex = false; // Data is binary
+      ok = false;
+    }
+
+    if ((key1[i + 1] >= '0') && (key1[i + 1] <= '9'))
+    {
+      binaryKey1[i >> 1] |= key1[i + 1] - '0';
+    }
+    else if ((key1[i + 1] >= 'a') && (key1[i + 1] <= 'f'))
+    {
+      binaryKey1[i >> 1] |= key1[i + 1] + 10 - 'a';
+    }
+    else if ((key1[i + 1] >= 'A') && (key1[i + 1] <= 'F'))
+    {
+      binaryKey1[i >> 1] |= key1[i + 1] + 10 - 'A';
+    }
+    else
+    {
+      ok = false;
     }
   }
 
-  if (isASCIIHex) // Convert ASCII Hex key to binary
+  // Convert the ASCII Hex const char to binary uint8_t
+  for (uint16_t i = 0; i < ((uint16_t)keyLengthBytes2 * 2); i += 2)
   {
-    for (i = 0; i < ((uint16_t)keyLengthBytes * 2); i += 2)
+    if ((key2[i] >= '0') && (key2[i] <= '9'))
     {
-      if ((key[i] >= '0') && (key[i] <= '9'))
-      {
-        payloadCfg[12 + (i >> 1)] = (key[i] - '0') << 4;
-      }
-      else if ((key[i] >= 'a') && (key[i] <= 'f'))
-      {
-        payloadCfg[12 + (i >> 1)] = (key[i] + 10 - 'a') << 4;
-      }
-      else // if ((key[i] >= 'A') && (key[i] <= 'F'))
-      {
-        payloadCfg[12 + (i >> 1)] = (key[i] + 10 - 'A') << 4;
-      }
+      binaryKey2[i >> 1] = (key2[i] - '0') << 4;
+    }
+    else if ((key2[i] >= 'a') && (key2[i] <= 'f'))
+    {
+      binaryKey2[i >> 1] = (key2[i] + 10 - 'a') << 4;
+    }
+    else if ((key2[i] >= 'A') && (key2[i] <= 'F'))
+    {
+      binaryKey2[i >> 1] = (key2[i] + 10 - 'A') << 4;
+    }
+    else
+    {
+      ok = false;
+    }
 
-      if ((key[i + 1] >= '0') && (key[i + 1] <= '9'))
-      {
-        payloadCfg[12 + (i >> 1)] |= key[i + 1] - '0';
-      }
-      else if ((key[i + 1] >= 'a') && (key[i + 1] <= 'f'))
-      {
-        payloadCfg[12 + (i >> 1)] |= key[i + 1] + 10 - 'a';
-      }
-      else // if ((key[i + 1] >= 'A') && (key[i + 1] <= 'F'))
-      {
-        payloadCfg[12 + (i >> 1)] |= key[i + 1] + 10 - 'A';
-      }
+    if ((key2[i + 1] >= '0') && (key2[i + 1] <= '9'))
+    {
+      binaryKey2[i >> 1] |= key2[i + 1] - '0';
+    }
+    else if ((key2[i + 1] >= 'a') && (key2[i + 1] <= 'f'))
+    {
+      binaryKey2[i >> 1] |= key2[i + 1] + 10 - 'a';
+    }
+    else if ((key2[i + 1] >= 'A') && (key2[i + 1] <= 'F'))
+    {
+      binaryKey2[i >> 1] |= key2[i + 1] + 10 - 'A';
+    }
+    else
+    {
+      ok = false;
     }
   }
-  else // Binary key
-  {
-    memcpy(&payloadCfg[12], key, keyLengthBytes);
-  }
 
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+    ok = setDynamicSPARTNKeys(keyLengthBytes1, validFromWno1, validFromTow1, (const uint8_t *)binaryKey1,
+                              keyLengthBytes2, validFromWno2, validFromTow2, (const uint8_t *)binaryKey2); 
+
+  delete[] binaryKey1; // Free the memory allocated for binaryKey1
+  delete[] binaryKey2; // Free the memory allocated for binaryKey2
+
+  return (ok);
 }
 
 bool SFE_UBLOX_GNSS::setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t validFromWno1, uint32_t validFromTow1, const uint8_t *key1,
-                                          uint8_t keyLengthBytes2, uint16_t validFromWno2, uint32_t validFromTow2, const uint8_t *key2, uint16_t maxWait)
+                                          uint8_t keyLengthBytes2, uint16_t validFromWno2, uint32_t validFromTow2, const uint8_t *key2)
 {
   // Check if there is room for the key in packetCfg. Resize the buffer if not.
   size_t payloadLength = (size_t)keyLengthBytes1 + (size_t)keyLengthBytes2 + 20;
@@ -7714,121 +7860,10 @@ bool SFE_UBLOX_GNSS::setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t vali
   payloadCfg[18] = (validFromTow2 >> 16) & 0xFF;
   payloadCfg[19] = (validFromTow2 >> 24) & 0xFF;
 
-  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
-  bool isASCIIHex = true;
-  uint16_t i = 0;
-  while ((i < (uint16_t)keyLengthBytes1) && (isASCIIHex == true))
-  {
-    if (((key1[i] >= '0') && (key1[i] <= '9')) || ((key1[i] >= 'a') && (key1[i] <= 'f')) || ((key1[i] >= 'A') && (key1[i] <= 'F')))
-      i++; // Keep checking if data is all ASCII Hex
-    else
-      isASCIIHex = false; // Data is binary
-  }
-  if (isASCIIHex) // Check the second half of the ASCII Hex key
-  {
-    while ((i < ((uint16_t)keyLengthBytes1 * 2) && (isASCIIHex == true)))
-    {
-      if (((key1[i] >= '0') && (key1[i] <= '9')) || ((key1[i] >= 'a') && (key1[i] <= 'f')) || ((key1[i] >= 'A') && (key1[i] <= 'F')))
-        i++; // Keep checking if data is all ASCII Hex
-      else
-        isASCIIHex = false; // Data is binary
-    }
-  }
+  memcpy(&payloadCfg[20], key1, keyLengthBytes1);
+  memcpy(&payloadCfg[20 + keyLengthBytes1], key2, keyLengthBytes2);
 
-  if (isASCIIHex) // Convert ASCII Hex key to binary
-  {
-    for (i = 0; i < ((uint16_t)keyLengthBytes1 * 2); i += 2)
-    {
-      if ((key1[i] >= '0') && (key1[i] <= '9'))
-      {
-        payloadCfg[20 + (i >> 1)] = (key1[i] - '0') << 4;
-      }
-      else if ((key1[i] >= 'a') && (key1[i] <= 'f'))
-      {
-        payloadCfg[20 + (i >> 1)] = (key1[i] + 10 - 'a') << 4;
-      }
-      else // if ((key1[i] >= 'A') && (key1[i] <= 'F'))
-      {
-        payloadCfg[20 + (i >> 1)] = (key1[i] + 10 - 'A') << 4;
-      }
-
-      if ((key1[i + 1] >= '0') && (key1[i + 1] <= '9'))
-      {
-        payloadCfg[20 + (i >> 1)] |= key1[i + 1] - '0';
-      }
-      else if ((key1[i + 1] >= 'a') && (key1[i + 1] <= 'f'))
-      {
-        payloadCfg[20 + (i >> 1)] |= key1[i + 1] + 10 - 'a';
-      }
-      else // if ((key1[i + 1] >= 'A') && (key1[i + 1] <= 'F'))
-      {
-        payloadCfg[20 + (i >> 1)] |= key1[i + 1] + 10 - 'A';
-      }
-    }
-  }
-  else // Binary key
-  {
-    memcpy(&payloadCfg[20], key1, keyLengthBytes1);
-  }
-
-  // Check if all keyLengthBytes are ASCII Hex 0-9, a-f, A-F
-  isASCIIHex = true;
-  i = 0;
-  while ((i < (uint16_t)keyLengthBytes2) && (isASCIIHex == true))
-  {
-    if (((key2[i] >= '0') && (key2[i] <= '9')) || ((key2[i] >= 'a') && (key2[i] <= 'f')) || ((key2[i] >= 'A') && (key2[i] <= 'F')))
-      i++; // Keep checking if data is all ASCII Hex
-    else
-      isASCIIHex = false; // Data is binary
-  }
-  if (isASCIIHex) // Check the second half of the ASCII Hex key
-  {
-    while ((i < ((uint16_t)keyLengthBytes2 * 2) && (isASCIIHex == true)))
-    {
-      if (((key2[i] >= '0') && (key2[i] <= '9')) || ((key2[i] >= 'a') && (key2[i] <= 'f')) || ((key2[i] >= 'A') && (key2[i] <= 'F')))
-        i++; // Keep checking if data is all ASCII Hex
-      else
-        isASCIIHex = false; // Data is binary
-    }
-  }
-
-  if (isASCIIHex) // Convert ASCII Hex key to binary
-  {
-    for (i = 0; i < ((uint16_t)keyLengthBytes2 * 2); i += 2)
-    {
-      if ((key2[i] >= '0') && (key2[i] <= '9'))
-      {
-        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] = (key2[i] - '0') << 4;
-      }
-      else if ((key2[i] >= 'a') && (key2[i] <= 'f'))
-      {
-        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] = (key2[i] + 10 - 'a') << 4;
-      }
-      else // if ((key2[i] >= 'A') && (key2[i] <= 'F'))
-      {
-        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] = (key2[i] + 10 - 'A') << 4;
-      }
-
-      if ((key2[i + 1] >= '0') && (key2[i + 1] <= '9'))
-      {
-        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] |= key2[i + 1] - '0';
-      }
-      else if ((key2[i + 1] >= 'a') && (key2[i + 1] <= 'f'))
-      {
-        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] |= key2[i + 1] + 10 - 'a';
-      }
-      else // if ((key2[i + 1] >= 'A') && (key2[i + 1] <= 'F'))
-      {
-        payloadCfg[20 + keyLengthBytes1 + (i >> 1)] |= key2[i + 1] + 10 - 'A';
-      }
-    }
-  }
-  else // Binary key
-  {
-    memcpy(&payloadCfg[20 + keyLengthBytes1], key2, keyLengthBytes2);
-  }
-
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return (sendCommand(&packetCfg, 0) == SFE_UBLOX_STATUS_SUCCESS); // UBX-RXM-SPARTNKEY is silent. It does not ACK (or NACK)
 }
 
 // CONFIGURATION INTERFACE (protocol v27 and above)
@@ -11460,7 +11495,7 @@ void SFE_UBLOX_GNSS::logAOPSTATUS(bool enabled)
 // ***** RXM PMP automatic support
 
 // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
-bool SFE_UBLOX_GNSS::setAutoRXMPMPcallbackPtr(void (*callbackPointer)(UBX_RXM_PMP_data_t *))
+bool SFE_UBLOX_GNSS::setRXMPMPcallbackPtr(void (*callbackPointer)(UBX_RXM_PMP_data_t *))
 {
   if (packetUBXRXMPMP == NULL)
     initPacketUBXRXMPMP();     // Check that RAM has been allocated for the data
@@ -11500,7 +11535,50 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMPMP()
   packetUBXRXMPMP->automaticFlags.flags.all = 0;
   packetUBXRXMPMP->callbackPointerPtr = NULL;
   packetUBXRXMPMP->callbackData = NULL;
-  packetUBXRXMPMP->moduleQueried = false;
+  return (true);
+}
+
+// Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
+bool SFE_UBLOX_GNSS::setRXMPMPmessageCallbackPtr(void (*callbackPointer)(UBX_RXM_PMP_message_data_t *))
+{
+  if (packetUBXRXMPMPmessage == NULL)
+    initPacketUBXRXMPMPmessage();     // Check that RAM has been allocated for the data
+  if (packetUBXRXMPMPmessage == NULL) // Only attempt this if RAM allocation was successful
+    return false;
+
+  if (packetUBXRXMPMPmessage->callbackData == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMPMPmessage->callbackData = new UBX_RXM_PMP_message_data_t; // Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMPMPmessage->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRXMPMPmessagecallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXRXMPMPmessage->callbackPointerPtr = callbackPointer;
+  return (true);
+}
+
+// PRIVATE: Allocate RAM for packetUBXRXMPMPmessage and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXRXMPMPmessage()
+{
+  packetUBXRXMPMPmessage = new UBX_RXM_PMP_message_t; // Allocate RAM for the main struct
+  if (packetUBXRXMPMPmessage == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXRXMPMPmessage: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+  packetUBXRXMPMPmessage->automaticFlags.flags.all = 0;
+  packetUBXRXMPMPmessage->callbackPointerPtr = NULL;
+  packetUBXRXMPMPmessage->callbackData = NULL;
   return (true);
 }
 

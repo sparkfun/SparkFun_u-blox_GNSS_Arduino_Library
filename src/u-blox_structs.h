@@ -1486,7 +1486,8 @@ typedef struct
 
 // UBX-RXM-PMP (0x02 0x72): PMP raw data (D9 modules)
 // There are two versions of this message but, fortunately, both have a max len of 528
-const uint16_t UBX_RXM_PMP_MAX_LEN = 528;
+const uint16_t UBX_RXM_PMP_MAX_USER_DATA = 504;
+const uint16_t UBX_RXM_PMP_MAX_LEN = UBX_RXM_PMP_MAX_USER_DATA + 24;
 
 typedef struct
 {
@@ -1504,18 +1505,40 @@ typedef struct
   uint8_t ebno;      // Energy per bit to noise power spectral density ratio : 2^-3 dB
   uint8_t reserved1; // Reserved
 
-  uint8_t userData[504]; // Received user data: version 0x00 : starts at byte 20 ; version 0x01 : starts at byte 24
+  uint8_t userData[UBX_RXM_PMP_MAX_USER_DATA]; // Received user data: version 0x00 : starts at byte 20 ; version 0x01 : starts at byte 24
 
 } UBX_RXM_PMP_data_t;
 
+// The PMP data can only be accessed via a callback. PMP cannot be polled.
 typedef struct
 {
   ubxAutomaticFlags automaticFlags;
-  UBX_RXM_PMP_data_t data;
-  bool moduleQueried;
   void (*callbackPointerPtr)(UBX_RXM_PMP_data_t *);
   UBX_RXM_PMP_data_t *callbackData;
 } UBX_RXM_PMP_t;
+
+// Define a struct to hold the entire PMP message so the whole thing can be pushed to a GNSS.
+// Remember that the length of the payload could be variable (with version 1 messages).
+typedef struct
+{
+  uint8_t sync1; // 0xB5
+  uint8_t sync2; // 0x62
+  uint8_t cls;
+  uint8_t ID;
+  uint8_t lengthLSB;
+  uint8_t lengthMSB;
+  uint8_t payload[UBX_RXM_PMP_MAX_LEN];
+  uint8_t checksumA;
+  uint8_t checksumB;
+} UBX_RXM_PMP_message_data_t;
+
+// The PMP data can only be accessed via a callback. PMP cannot be polled.
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  void (*callbackPointerPtr)(UBX_RXM_PMP_message_data_t *);
+  UBX_RXM_PMP_message_data_t *callbackData;
+} UBX_RXM_PMP_message_t;
 
 // CFG-specific structs
 
