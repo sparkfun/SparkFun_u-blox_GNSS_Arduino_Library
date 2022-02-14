@@ -146,7 +146,9 @@ void setup()
   if (ok) ok = myGNSS.setDGNSSConfiguration(SFE_UBLOX_DGNSS_MODE_FIXED); // Set the differential mode - ambiguities are fixed whenever possible
 
   if (ok) ok = myGNSS.setNavigationFrequency(1); //Set output in Hz.
-
+  
+  if (ok) ok = myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
+  
   //Configure the SPARTN IP Dynamic Keys
   //"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
   //"Every time the 'current' key is expired, 'next' takes its place."
