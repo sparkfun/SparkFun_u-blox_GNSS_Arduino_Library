@@ -42,22 +42,22 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printSATdata(UBX_NAV_SAT_data_t ubxDataStruct)
+void printSATdata(UBX_NAV_SAT_data_t *ubxDataStruct)
 {
   //Serial.println();
   
   Serial.print(F("UBX-NAV-SAT contains data for "));
-  Serial.print(ubxDataStruct.header.numSvs);
-  if (ubxDataStruct.header.numSvs == 1)
+  Serial.print(ubxDataStruct->header.numSvs);
+  if (ubxDataStruct->header.numSvs == 1)
     Serial.println(F(" SV"));
   else
     Serial.println(F(" SVs"));
 
   uint16_t numAopAvail = 0; // Count how many SVs have AssistNow Autonomous data available
     
-  for (uint16_t block = 0; block < ubxDataStruct.header.numSvs; block++) // For each SV
+  for (uint16_t block = 0; block < ubxDataStruct->header.numSvs; block++) // For each SV
   {
-    if (ubxDataStruct.blocks[block].flags.bits.aopAvail == 1) // If the aopAvail bit is set
+    if (ubxDataStruct->blocks[block].flags.bits.aopAvail == 1) // If the aopAvail bit is set
       numAopAvail++; // Increment the number of SVs
   }
 
@@ -78,12 +78,12 @@ void printSATdata(UBX_NAV_SAT_data_t ubxDataStruct)
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printAOPstatus(UBX_NAV_AOPSTATUS_data_t ubxDataStruct)
+void printAOPstatus(UBX_NAV_AOPSTATUS_data_t *ubxDataStruct)
 {
   //Serial.println();
   
   Serial.print(F("AOPSTATUS status is "));
-  Serial.println(ubxDataStruct.status);
+  Serial.println(ubxDataStruct->status);
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -95,27 +95,27 @@ void printAOPstatus(UBX_NAV_AOPSTATUS_data_t ubxDataStruct)
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
+void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
   // Print the UBX-NAV-PVT data so we can see how quickly the fixType goes to 3D
   
   Serial.println();
 
-  long latitude = ubxDataStruct.lat; // Print the latitude
+  long latitude = ubxDataStruct->lat; // Print the latitude
   Serial.print(F("Lat: "));
   Serial.print(latitude);
 
-  long longitude = ubxDataStruct.lon; // Print the longitude
+  long longitude = ubxDataStruct->lon; // Print the longitude
   Serial.print(F(" Long: "));
   Serial.print(longitude);
   Serial.print(F(" (degrees * 10^-7)"));
 
-  long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
+  long altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
   Serial.print(F(" Alt: "));
   Serial.print(altitude);
   Serial.print(F(" (mm)"));
 
-  byte fixType = ubxDataStruct.fixType; // Print the fix type
+  byte fixType = ubxDataStruct->fixType; // Print the fix type
   Serial.print(F(" Fix: "));
   if(fixType == 0) Serial.print(F("No fix"));
   else if(fixType == 1) Serial.print(F("Dead reckoning"));
@@ -171,9 +171,9 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one solution per second
 
-  myGNSS.setAutoNAVSATcallback(&printSATdata); // Enable automatic NAV SAT messages with callback to printSATdata
-  myGNSS.setAutoAOPSTATUScallback(&printAOPstatus); // Enable automatic NAV AOPSTATUS messages with callback to printAOPstatus
-  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGNSS.setAutoNAVSATcallbackPtr(&printSATdata); // Enable automatic NAV SAT messages with callback to printSATdata
+  myGNSS.setAutoAOPSTATUScallbackPtr(&printAOPstatus); // Enable automatic NAV AOPSTATUS messages with callback to printAOPstatus
+  myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

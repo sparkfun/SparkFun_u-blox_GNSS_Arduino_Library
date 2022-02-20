@@ -39,12 +39,12 @@ SFE_UBLOX_GNSS myGNSS;
 //        |              /           _____ You can use any name you like for the struct
 //        |              |          /
 //        |              |          |
-void printGPGGA(NMEA_GGA_data_t nmeaData)
+void printGPGGA(NMEA_GGA_data_t *nmeaData)
 {
     Serial.print(F("\r\nGPGGA: Length: "));
-    Serial.print(nmeaData.length);
+    Serial.print(nmeaData->length);
     Serial.print(F("\tData: "));
-    Serial.print((const char *)nmeaData.nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+    Serial.print((const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 }
 
 // Callback: printGNGGA will be called if new GNGGA NMEA data arrives
@@ -54,12 +54,12 @@ void printGPGGA(NMEA_GGA_data_t nmeaData)
 //        |              /           _____ You can use any name you like for the struct
 //        |              |          /
 //        |              |          |
-void printGNGGA(NMEA_GGA_data_t nmeaData)
+void printGNGGA(NMEA_GGA_data_t *nmeaData)
 {
     Serial.print(F("\r\nGNGGA: Length: "));
-    Serial.print(nmeaData.length);
+    Serial.print(nmeaData->length);
     Serial.print(F("\tData: "));
-    Serial.print((const char *)nmeaData.nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+    Serial.print((const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 }
 
 void setup()
@@ -101,10 +101,10 @@ void setup()
   //myGNSS.setNMEAOutputPort(Serial); // Uncomment this line to echo all NMEA data to Serial for debugging
 
   // Set up the callback for GPGGA
-  myGNSS.setNMEAGPGGAcallback(&printGPGGA);
+  myGNSS.setNMEAGPGGAcallbackPtr(&printGPGGA);
 
   // Set up the callback for GNGGA
-  myGNSS.setNMEAGNGGAcallback(&printGNGGA);
+  myGNSS.setNMEAGNGGAcallbackPtr(&printGNGGA);
 }
 
 void loop()

@@ -35,22 +35,22 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printSATdata(UBX_NAV_SAT_data_t ubxDataStruct)
+void printSATdata(UBX_NAV_SAT_data_t *ubxDataStruct)
 {
   Serial.println();
   
   Serial.print(F("UBX-NAV-SAT contains data for "));
-  Serial.print(ubxDataStruct.header.numSvs);
-  if (ubxDataStruct.header.numSvs == 1)
+  Serial.print(ubxDataStruct->header.numSvs);
+  if (ubxDataStruct->header.numSvs == 1)
     Serial.println(F(" SV"));
   else
     Serial.println(F(" SVs"));
 
   uint16_t numAopAvail = 0; // Count how many SVs have AssistNow Autonomous data available
     
-  for (uint16_t block = 0; block < ubxDataStruct.header.numSvs; block++) // For each SV
+  for (uint16_t block = 0; block < ubxDataStruct->header.numSvs; block++) // For each SV
   {
-    if (ubxDataStruct.blocks[block].flags.bits.aopAvail == 1) // If the aopAvail bit is set
+    if (ubxDataStruct->blocks[block].flags.bits.aopAvail == 1) // If the aopAvail bit is set
       numAopAvail++; // Increment the number of SVs
   }
 
@@ -71,12 +71,12 @@ void printSATdata(UBX_NAV_SAT_data_t ubxDataStruct)
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printAOPstatus(UBX_NAV_AOPSTATUS_data_t ubxDataStruct)
+void printAOPstatus(UBX_NAV_AOPSTATUS_data_t *ubxDataStruct)
 {
   //Serial.println();
   
   Serial.print(F("AOPSTATUS status is "));
-  Serial.println(ubxDataStruct.status);
+  Serial.println(ubxDataStruct->status);
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -126,8 +126,8 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one solution per second
 
-  myGNSS.setAutoNAVSATcallback(&printSATdata); // Enable automatic NAV SAT messages with callback to printSATdata
-  myGNSS.setAutoAOPSTATUScallback(&printAOPstatus); // Enable automatic NAV AOPSTATUS messages with callback to printAOPstatus
+  myGNSS.setAutoNAVSATcallbackPtr(&printSATdata); // Enable automatic NAV SAT messages with callback to printSATdata
+  myGNSS.setAutoAOPSTATUScallbackPtr(&printAOPstatus); // Enable automatic NAV AOPSTATUS messages with callback to printAOPstatus
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Keep displaying NAV SAT and AOPSTATUS until the user presses a key

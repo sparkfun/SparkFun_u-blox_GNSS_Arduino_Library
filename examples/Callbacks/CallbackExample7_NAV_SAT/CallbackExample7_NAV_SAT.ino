@@ -31,21 +31,21 @@ SFE_UBLOX_GNSS myGNSS;
 //        |            /                _____ You can use any name you like for the struct
 //        |            |               /
 //        |            |               |
-void newNAVSAT(UBX_NAV_SAT_data_t ubxDataStruct)
+void newNAVSAT(UBX_NAV_SAT_data_t *ubxDataStruct)
 {
   Serial.println();
 
   Serial.print(F("New NAV SAT data received. It contains data for "));
-  Serial.print(ubxDataStruct.header.numSvs);
-  if (ubxDataStruct.header.numSvs == 1)
+  Serial.print(ubxDataStruct->header.numSvs);
+  if (ubxDataStruct->header.numSvs == 1)
     Serial.println(F(" SV."));
   else
     Serial.println(F(" SVs."));
 
   // Just for giggles, print the signal strength for each SV as a barchart
-  for (uint16_t block = 0; block < ubxDataStruct.header.numSvs; block++) // For each SV
+  for (uint16_t block = 0; block < ubxDataStruct->header.numSvs; block++) // For each SV
   {
-    switch (ubxDataStruct.blocks[block].gnssId) // Print the GNSS ID
+    switch (ubxDataStruct->blocks[block].gnssId) // Print the GNSS ID
     {
       case 0:
         Serial.print(F("GPS     "));
@@ -73,14 +73,14 @@ void newNAVSAT(UBX_NAV_SAT_data_t ubxDataStruct)
       break;      
     }
     
-    Serial.print(ubxDataStruct.blocks[block].svId); // Print the SV ID
+    Serial.print(ubxDataStruct->blocks[block].svId); // Print the SV ID
     
-    if (ubxDataStruct.blocks[block].svId < 10) Serial.print(F("   "));
-    else if (ubxDataStruct.blocks[block].svId < 100) Serial.print(F("  "));
+    if (ubxDataStruct->blocks[block].svId < 10) Serial.print(F("   "));
+    else if (ubxDataStruct->blocks[block].svId < 100) Serial.print(F("  "));
     else Serial.print(F(" "));
 
     // Print the signal strength as a bar chart
-    for (uint8_t cno = 0; cno < ubxDataStruct.blocks[block].cno; cno++)
+    for (uint8_t cno = 0; cno < ubxDataStruct->blocks[block].cno; cno++)
       Serial.print(F("="));
 
     Serial.println();
@@ -108,7 +108,7 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one solution per second
 
-  myGNSS.setAutoNAVSATcallback(&newNAVSAT); // Enable automatic NAV SAT messages with callback to newNAVSAT
+  myGNSS.setAutoNAVSATcallbackPtr(&newNAVSAT); // Enable automatic NAV SAT messages with callback to newNAVSAT
 }
 
 void loop()

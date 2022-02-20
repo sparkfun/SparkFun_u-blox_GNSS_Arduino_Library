@@ -33,22 +33,22 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 /                   _____ You can use any name you like for the struct
 //        |                 |                  /
 //        |                 |                  |
-void printODOdata(UBX_NAV_ODO_data_t ubxDataStruct)
+void printODOdata(UBX_NAV_ODO_data_t *ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("TOW: ")); // Print the Time Of Week
-    unsigned long iTOW = ubxDataStruct.iTOW; // iTOW is in milliseconds
+    unsigned long iTOW = ubxDataStruct->iTOW; // iTOW is in milliseconds
     Serial.print(iTOW);
     Serial.print(F(" (ms)"));
 
     Serial.print(F(" Distance: "));
-    unsigned long distance = ubxDataStruct.distance; // Print the distance
+    unsigned long distance = ubxDataStruct->distance; // Print the distance
     Serial.print(distance);
     Serial.print(F(" (m)"));
 
     Serial.print(F(" Total Distance: "));
-    unsigned long totalDistance = ubxDataStruct.totalDistance; // Print the total distance
+    unsigned long totalDistance = ubxDataStruct->totalDistance; // Print the total distance
     Serial.print(totalDistance);
     Serial.println(F(" (m)"));
 }
@@ -76,7 +76,7 @@ void setup()
 
   //myGNSS.resetOdometer(); //Uncomment this line to reset the odometer
 
-  myGNSS.setAutoNAVODOcallback(&printODOdata); // Enable automatic NAV ODO messages with callback to printODOdata
+  myGNSS.setAutoNAVODOcallbackPtr(&printODOdata); // Enable automatic NAV ODO messages with callback to printODOdata
 }
 
 void loop()

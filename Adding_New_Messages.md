@@ -129,21 +129,23 @@ See [this commit](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Libra
 
 See [this commit](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/commit/b746d8e2742961ede95e2d06d5db3a3a557e571d) for the changes.
 
-#### Step 6.3: Update processUBXpacket()
+#### Step 6.3: Update getMaxPayloadSize()
+
+#### Step 6.4: Update processUBXpacket()
 
 Take time to double-check that you have used the correct data width, signed/unsigned and position for each field.
 
 See [this commit](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/commit/8eecdd5044f810b0e2b567150ff63a17c219fe8e) for the changes.
 
-#### Step 6.4: Update checkCallbacks()
+#### Step 6.5: Update checkCallbacks()
 
 See [this commit](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/commit/b53bffaa3ae12482cfb268f23796963d0b8519c9) for the changes.
 
-#### Step 6.5: Add the "auto" functions
+#### Step 6.6: Add the "auto" functions
 
 See [this commit](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/commit/e394ae003ad38117d150598774d0552059416473) for the changes.
 
-#### Step 6.6: Add the helper functions (if any)
+#### Step 6.7: Add the helper functions (if any)
 
 See [this commit](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/commit/318e76383e96d6676bbb57294c25e665c0d4a31f) for the changes.
 

@@ -22,9 +22,7 @@
   Insert a formatted micro-SD card into the socket on the Carrier Board.
   Connect the Carrier Board to your computer using a USB-C cable.
   Ensure you have the SparkFun Apollo3 boards installed: http://boardsmanager/All#SparkFun_Apollo3
-  This code has been tested using version 2.1.0 of the Apollo3 boards on Arduino IDE 1.8.13.
-   - Version 2.1.1 of Apollo3 contains a feature which makes I2C communication with u-blox modules problematic
-   - We recommend using v2.1.0 of Apollo3 until v2.2.0 is released
+  This code has been tested using version 2.2.0 of the Apollo3 boards on Arduino IDE 1.8.13.
   Select "Artemis MicroMod Processor" as the board type.
   Press upload to upload the code onto the Artemis.
   Open the Serial Monitor at 115200 baud to see the output.
@@ -82,6 +80,7 @@ File myFile; //File that all GNSS data is written to
 #endif
 
 #define packetLength 36 // TIM TM2 is 28 + 8 bytes in length (including the sync chars, class, id, length and checksum bytes)
+uint8_t *myBuffer; // Use myBuffer to hold the data while we write it to SD card
 
 int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 message
 
@@ -92,30 +91,30 @@ int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 mes
 //        |                 /                   _____ You can use any name you like for the struct
 //        |                 |                  /
 //        |                 |                  |
-void printTIMTM2data(UBX_TIM_TM2_data_t ubxDataStruct)
+void printTIMTM2data(UBX_TIM_TM2_data_t *ubxDataStruct)
 {
   Serial.println();
 
   Serial.print(F("newFallingEdge: ")); // 1 if a new falling edge was detected
-  Serial.print(ubxDataStruct.flags.bits.newFallingEdge);
+  Serial.print(ubxDataStruct->flags.bits.newFallingEdge);
 
   Serial.print(F(" newRisingEdge: ")); // 1 if a new rising edge was detected
-  Serial.print(ubxDataStruct.flags.bits.newRisingEdge);
+  Serial.print(ubxDataStruct->flags.bits.newRisingEdge);
 
   Serial.print(F(" Rising Edge Counter: ")); // Rising edge counter
-  Serial.print(ubxDataStruct.count);
+  Serial.print(ubxDataStruct->count);
 
   Serial.print(F(" towMsR: ")); // Time Of Week of rising edge (ms)
-  Serial.print(ubxDataStruct.towMsR);
+  Serial.print(ubxDataStruct->towMsR);
 
   Serial.print(F(" towSubMsR: ")); // Millisecond fraction of Time Of Week of rising edge in nanoseconds
-  Serial.print(ubxDataStruct.towSubMsR);
+  Serial.print(ubxDataStruct->towSubMsR);
 
   Serial.print(F(" towMsF: ")); // Time Of Week of falling edge (ms)
-  Serial.print(ubxDataStruct.towMsF);
+  Serial.print(ubxDataStruct->towMsF);
 
   Serial.print(F(" towSubMsF: ")); // Millisecond fraction of Time Of Week of falling edge in nanoseconds
-  Serial.println(ubxDataStruct.towSubMsF);
+  Serial.println(ubxDataStruct->towSubMsF);
 
   dotsPrinted = 0; // Reset dotsPrinted
 }
@@ -206,9 +205,11 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one navigation solution per second
 
-  myGNSS.setAutoTIMTM2callback(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
+  myGNSS.setAutoTIMTM2callbackPtr(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
 
   myGNSS.logTIMTM2(); // Enable TIM TM2 data logging
+
+  myBuffer = new uint8_t[packetLength]; // Create our own buffer to hold the data while we write it to SD card  
 
   Serial.println(F("Press any key to stop logging."));
 }
@@ -220,9 +221,7 @@ void loop()
 
   if (myGNSS.fileBufferAvailable() >= packetLength) // Check to see if a new packetLength-byte TIM TM2 message has been stored
   {
-    uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
-
-    myGNSS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
+    myGNSS.extractFileBufferData(myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
 
     myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
 
