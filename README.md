@@ -25,7 +25,7 @@ This library can be installed via the Arduino Library manager. Search for **Spar
 
 u-blox's PointPerfect GNSS augmentation service uses the secure MQTT protocol to download SPARTN format correction data, providing "3-6 cm accuracy and convergence within seconds". Please see the new [PointPerfect Client example](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/tree/main/examples/ZED-F9P/Example18_PointPerfectClient) for more details.
 
-v2.3 also supports L-band correction services using the new u-blox NEO-D9S correction data receiver. Please see the new [L-band Corrections example](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/tree/main/examples/ZED-F9P/Example19_LBand_Corrections_with_NEO-D9S) for more details.
+v2.2.1 also supports L-band correction services using the new u-blox NEO-D9S correction data receiver. Please see the new [L-band Corrections example](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/tree/main/examples/ZED-F9P/Example19_LBand_Corrections_with_NEO-D9S) for more details.
 
 Other RTK NTRIP corrections services often require you to send them your location in NMEA GPGGA format. v2.2 of the library makes this easy by providing get functions and automatic callbacks
 for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback. No more polling, no more parsing!
