@@ -3265,8 +3265,12 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
     // Note: length is variable with version 0x01
     // Note: the field positions depend on the version
     {
-      // Parse various byte fields into storage - but only if we have memory allocated for it
-      if ((packetUBXRXMPMP != NULL) && (packetUBXRXMPMP->callbackData != NULL))
+      // Parse various byte fields into storage - but only if we have memory allocated for it.
+      // By default, new PMP data will always overwrite 'old' data (data which is valid but which has not yet been read by the callback).
+      // To prevent this, uncomment the line two lines below
+      if ((packetUBXRXMPMP != NULL) && (packetUBXRXMPMP->callbackData != NULL)
+          //&& (packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
+          )
       {
         packetUBXRXMPMP->callbackData->version = extractByte(msg, 0);
         packetUBXRXMPMP->callbackData->numBytesUserData = extractInt(msg, 2);
@@ -3298,8 +3302,12 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
       }
 
-      // Full PMP message
-      if ((packetUBXRXMPMPmessage != NULL) && (packetUBXRXMPMPmessage->callbackData != NULL))
+      // Full PMP message, including Class, ID and checksum
+      // By default, new PMP data will always overwrite 'old' data (data which is valid but which has not yet been read by the callback).
+      // To prevent this, uncomment the line two lines below
+      if ((packetUBXRXMPMPmessage != NULL) && (packetUBXRXMPMPmessage->callbackData != NULL)
+          //&& (packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
+          )
       {
         packetUBXRXMPMPmessage->callbackData->sync1 = UBX_SYNCH_1;
         packetUBXRXMPMPmessage->callbackData->sync2 = UBX_SYNCH_2;
