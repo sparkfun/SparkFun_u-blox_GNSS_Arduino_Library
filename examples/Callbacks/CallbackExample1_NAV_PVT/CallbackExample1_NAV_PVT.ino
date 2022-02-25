@@ -33,38 +33,38 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 /               _____ You can use any name you like for the struct
 //        |                 |              /
 //        |                 |              |
-void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
+void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("Time: ")); // Print the time
-    uint8_t hms = ubxDataStruct.hour; // Print the hours
+    uint8_t hms = ubxDataStruct->hour; // Print the hours
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = ubxDataStruct.min; // Print the minutes
+    hms = ubxDataStruct->min; // Print the minutes
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = ubxDataStruct.sec; // Print the seconds
+    hms = ubxDataStruct->sec; // Print the seconds
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F("."));
-    unsigned long millisecs = ubxDataStruct.iTOW % 1000; // Print the milliseconds
+    unsigned long millisecs = ubxDataStruct->iTOW % 1000; // Print the milliseconds
     if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
     if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
 
-    long latitude = ubxDataStruct.lat; // Print the latitude
+    long latitude = ubxDataStruct->lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = ubxDataStruct.lon; // Print the longitude
+    long longitude = ubxDataStruct->lon; // Print the longitude
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
+    long altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
     Serial.println(F(" (mm)"));
@@ -91,7 +91,7 @@ void setup()
 
   myGNSS.setNavigationFrequency(2); //Produce two solutions per second
 
-  myGNSS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 }
 
 void loop()

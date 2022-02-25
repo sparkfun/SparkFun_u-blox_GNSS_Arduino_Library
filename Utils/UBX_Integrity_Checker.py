@@ -102,7 +102,6 @@ if (repairFile):
 
 processed = -1 # The number of bytes processed
 messages = {} # The collected message types
-longest = 0 # The length of the longest UBX message
 keepGoing = True
 
 # Sync 'state machine'
@@ -132,6 +131,8 @@ ubx_checksum_A = 0
 ubx_checksum_B = 0
 ubx_expected_checksum_A = 0
 ubx_expected_checksum_B = 0
+longest_UBX = 0 # The length of the longest UBX message
+longest_UBX_candidate = 0 # Candidate for the length of the longest valid UBX message
 
 # Storage for NMEA messages
 nmea_length = 0
@@ -145,8 +146,9 @@ nmea_csum1 = 0
 nmea_csum2 = 0
 nmea_expected_csum1 = 0
 nmea_expected_csum2 = 0
+longest_NMEA = 0 # The length of the longest valid NMEA message
 
-max_nmea_len = 100 # Maximum length for an NMEA message: use this to detect if we have lost sync while receiving an NMEA message
+max_nmea_len = 128 # Maximum length for an NMEA message: use this to detect if we have lost sync while receiving an NMEA message
 sync_lost_at = -1 # Record where we lost sync
 rewind_to = -1 # Keep a note of where we should rewind to if sync is lost
 rewind_attempts = 0 # Keep a note of how many rewinds have been attempted
@@ -257,8 +259,7 @@ try:
             ubx_length = ubx_length + (c * 256) # Add the length MSB
             ubx_expected_checksum_A = ubx_expected_checksum_A + c # Update the expected checksum
             ubx_expected_checksum_B = ubx_expected_checksum_B + ubx_expected_checksum_A
-            if (ubx_length > longest): # Update the longest UBX message length    
-                longest = ubx_length
+            longest_UBX_candidate = ubx_length + 8 # Update the longest UBX message length candidate. Include the header, class, ID, length and checksum bytes
             rewind_to = processed # If we lose sync due to dropped bytes then rewind to here
             ubx_nmea_state = processing_payload # Now look for payload bytes (length: ubx_length)
         elif (ubx_nmea_state == processing_payload):
@@ -287,6 +288,8 @@ try:
                     messages[message_type] += 1 # if we have, increment its count
                 else:
                     messages[message_type] = 1 # if we have not, set its count to 1
+                if (longest_UBX_candidate > longest_UBX): # Update the longest UBX message length
+                    longest_UBX = longest_UBX_candidate
                 rewind_in_progress = False # Clear rewind_in_progress
                 rewind_to = -1
                 if (resync_in_progress == True): # Check if we are resyncing
@@ -330,6 +333,8 @@ try:
                 else: # ubx_length == 5
                     nmea_char_5 = c
                     message_type = chr(nmea_char_1) + chr(nmea_char_2) + chr(nmea_char_3) + chr(nmea_char_4) + chr(nmea_char_5) # Record the message type
+                    if (message_type == "PUBX,"): # Remove the comma from PUBX
+                        message_type = "PUBX"
             # Now check if this is an '*'
             if (c == 0x2A):
                 # Asterix received
@@ -389,6 +394,8 @@ try:
                     messages[message_type] += 1 # if we have, increment its count
                 else:
                     messages[message_type] = 1 # if we have not, set its count to 1
+                if (nmea_length > longest_NMEA): # Update the longest NMEA message length
+                    longest_NMEA = nmea_length
                 # LF was received so go back to looking for B5 or a $
                 ubx_nmea_state = looking_for_B5_dollar
                 rewind_in_progress = False # Clear rewind_in_progress
@@ -441,7 +448,9 @@ finally:
     print('File size was',filesize)
     if (processed != filesize):
         print('FILE SIZE MISMATCH!!')
-    print('Longest UBX message was %i data bytes'%longest)
+    print('Longest valid UBX message was %i bytes'%longest_UBX)
+    if (containsNMEA == True):
+        print('Longest valid NMEA message was %i characters'%longest_NMEA)
     if len(messages) > 0:
         print('Message types and totals were:')
         for key in messages.keys():

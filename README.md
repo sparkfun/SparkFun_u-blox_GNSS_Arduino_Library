@@ -21,12 +21,35 @@ u-blox makes some incredible GNSS receivers covering everything from low-cost, h
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun u-blox GNSS**.
 
-## v2.0
+## Automatic support for correction services like PointPerfect (u-blox), RTK2go, Emlid Caster and Skylark (Swift Navigation)
+
+u-blox's PointPerfect GNSS augmentation service uses the secure MQTT protocol to download SPARTN format correction data, providing "3-6 cm accuracy and convergence within seconds". Please see the new [PointPerfect Client example](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/tree/main/examples/ZED-F9P/Example18_PointPerfectClient) for more details.
+
+v2.2.1 also supports L-band correction services using the new u-blox NEO-D9S correction data receiver. Please see the new [L-band Corrections example](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/tree/main/examples/ZED-F9P/Example19_LBand_Corrections_with_NEO-D9S) for more details.
+
+Other RTK NTRIP corrections services often require you to send them your location in NMEA GPGGA format. v2.2 of the library makes this easy by providing get functions and automatic callbacks
+for both GPGGA and GNGGA messages. You can now instruct your module to output GPGGA (e.g.) every 10 seconds and then push it to the correction server directly from the callback. No more polling, no more parsing!
+
+v2.2 also includes two new functions useful for correction services:
+
+* ```setMainTalkerID``` : lets you change the NMEA Talker ID (prefix) from "GN" to "GP" - just in case your correction service really does need GPGGA, not GNGGA
+* ```setHighPrecisionMode``` : adds extra decimal places in the GGA messages, increasing the resolution of latitude, longitude and altitude
+
+Please see the new [Automatic_NMEA examples](./examples/Automatic_NMEA) for more details.
+
+We've also added a new [NTRIP Caster Client example](./examples/ZED-F9P/Example17_NTRIPClient_With_GGA_Callback) showing how to use these new features to full effect.
+
+## AssistNow<sup>TM</sup>
+
+v2.1 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS (A-GNSS) which can dramatically reduce the time-to-first-fix. You can find further details in the [AssistNow Examples folder](./examples/AssistNow).
+
+## v2 vs. v1
 
 This library is the new and improved version of the very popular SparkFun u-blox GNSS Arduino Library. v2.0 contains some big changes and improvements:
 
 * Seamless support for "automatic" message delivery:
-  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**23 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
+  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**26 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity, attitude and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
+  * Don't see the message you really need? [Adding_New_Messages](./Adding_New_Messages.md) provides details on how to add "auto" support for your favourite message.
 * Dynamic memory allocation with clearly-defined data storage structs for each message:
   * There are no static 'global' variables to eat up your RAM. v2.0 automatically allocates memory for the automatic messages when they are enabled. You may find your total RAM use is lower with v2.0 than with v1.8.
   * Each "auto" message has a clearly-defined [data storage struct](./src/u-blox_structs.h) which follows the u-blox protocol specification precisely.
@@ -52,6 +75,8 @@ Migrating to v2.0 is easy. There are two small changes all users will need to ma
   * to: ```#include <SparkFun_u-blox_GNSS_Arduino_Library.h>```
 
 If you are using the Dead Reckoning Sensor Fusion or High Dynamic Rate messages, you will need to make more small changes to your code. Please see the [dead reckoning examples](./examples/Dead_Reckoning) for more details. There is more detail available in [Theory.md](./Theory.md#migrating-your-code-to-v20) if you need it.
+
+There is a [new example](./examples/Dead_Reckoning/Example8_getNAVPVAT) showing how to read the UBX-NAV-PVAT (Position, Velocity, Attitude, Time) with a single function call. UBX-NAV-PVAT has full "auto" callback and data-logging support too!
 
 ## Memory Usage
 
@@ -79,9 +104,13 @@ The SPI examples have their [own folder](./examples/SPI).
 
 Please check the module datasheets for details on what clock speeds and data rates each module supports. The maximum clock speed is typically 5.5MHz and the maximum transfer rate is typically 125kBytes/s.
 
-## Max (400kHz) I<sup>2</sup>C Support
+## I<sup>2</sup>C Support
 
-To achieve 400kHz I<sup>2</sup>C speed please be sure to remove all pull-ups on the I<sup>2</sup>C bus. Most, if not all, u-blox modules include internal pull ups on the I<sup>2</sup>C lines (sometimes called DDC in their manuals). Cut all I<sup>2</sup>C pull up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. If possible, run the I<sup>2</sup>C bus at 100kHz.
+For I<sup>2</sup>C communication, please be sure to remove all additional pull-ups on the I<sup>2</sup>C bus. u-blox modules include internal pull-ups on the I<sup>2</sup>C lines (sometimes called DDC in their manuals). Cut all I<sup>2</sup>C pull-up jumpers and/or remove them from peripheral boards. Otherwise, various data glitches can occur. See issues [38](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/38) and [40](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/40) for more information. We recommend running the I<sup>2</sup>C bus at 100kHz.
+
+## Compatibility
+
+v2 of the library provides support for generation 8, 9 and 10 u-blox GNSS modules. For generation 6 and 7, please see [this example (depricated)](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/tree/master/examples/Series_6_7/Example1_GetPositionAndTime_Series_6_7).
 
 ## Contributing
 
