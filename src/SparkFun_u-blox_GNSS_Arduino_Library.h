@@ -1476,7 +1476,6 @@ public:
   NMEA_GNGGA_t *storageNMEAGNGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
   uint16_t rtcmFrameCounter = 0; // Tracks the type of incoming byte inside RTCM frame
->>>>>>> origin/main
 
 private:
   // Depending on the sentence type the processor will load characters into different arrays
