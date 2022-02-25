@@ -16,6 +16,9 @@
   This is a proof of concept to show how to connect to a caster via HTTP. Using WiFi for a rover
   is generally a bad idea because of limited WiFi range in the field.
 
+  For more information about NTRIP Clients and the differences between Rev1 and Rev2 of the protocol
+  please see: https://www.use-snip.com/kb/knowledge-base/ntrip-rev1-versus-rev2-formats/
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/16481
@@ -50,7 +53,7 @@ int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame af
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("NTRIP testing");
+  Serial.println(F("NTRIP testing"));
 
   Wire.begin(); //Start I2C
 
@@ -66,15 +69,15 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Set output in Hz.
 
-  Serial.print("Connecting to local WiFi");
+  Serial.print(F("Connecting to local WiFi"));
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print(F("."));
   }
   Serial.println();
 
-  Serial.print("WiFi connected with IP: ");
+  Serial.print(F("WiFi connected with IP: "));
   Serial.println(WiFi.localIP());
 
   while (Serial.available()) Serial.read();
@@ -82,7 +85,11 @@ void setup()
 
 void loop()
 {
-  if (Serial.available()) beginClient();
+  if (Serial.available())
+  {
+    beginClient();
+    while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  }
 
   Serial.println(F("Press any key to start NTRIP Client."));
 
@@ -95,36 +102,37 @@ void beginClient()
   WiFiClient ntripClient;
   long rtcmCount = 0;
 
-  Serial.println("Subscribing to Caster. Press key to stop");
+  Serial.println(F("Subscribing to Caster. Press key to stop"));
   delay(10); //Wait for any serial to arrive
   while (Serial.available()) Serial.read(); //Flush
 
   while (Serial.available() == 0)
   {
-    //Connect if we are not already
+    //Connect if we are not already. Limit to 5s between attempts.
     if (ntripClient.connected() == false)
     {
-      Serial.print("Opening socket to");
+      Serial.print(F("Opening socket to "));
       Serial.println(casterHost);
 
       if (ntripClient.connect(casterHost, casterPort) == false) //Attempt connection
       {
-        Serial.println("Connection to caster failed");
+        Serial.println(F("Connection to caster failed"));
+        return;
       }
       else
       {
-        Serial.print("Connected to ");
+        Serial.print(F("Connected to "));
         Serial.print(casterHost);
-        Serial.print(": ");
+        Serial.print(F(": "));
         Serial.println(casterPort);
 
-        Serial.print("Requesting NTRIP Data from mount point ");
+        Serial.print(F("Requesting NTRIP Data from mount point "));
         Serial.println(mountPoint);
 
         const int SERVER_BUFFER_SIZE  = 512;
         char serverRequest[SERVER_BUFFER_SIZE];
 
-        snprintf(serverRequest, SERVER_BUFFER_SIZE, "GET /%s HTTP/1.0\r\nUser-Agent: SparkFun u-blox NTRIPClient v1.0\r\n",
+        snprintf(serverRequest, SERVER_BUFFER_SIZE, "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun u-blox Client v1.0\r\n",
                  mountPoint);
 
         char credentials[512];
@@ -138,7 +146,7 @@ void beginClient()
           char userCredentials[sizeof(casterUser) + sizeof(casterUserPW) + 1]; //The ':' takes up a spot
           snprintf(userCredentials, sizeof(userCredentials), "%s:%s", casterUser, casterUserPW);
 
-          Serial.print("Sending credentials: ");
+          Serial.print(F("Sending credentials: "));
           Serial.println(userCredentials);
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -158,13 +166,13 @@ void beginClient()
         strncat(serverRequest, credentials, SERVER_BUFFER_SIZE);
         strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE);
 
-        Serial.print("serverRequest size: ");
+        Serial.print(F("serverRequest size: "));
         Serial.print(strlen(serverRequest));
-        Serial.print(" of ");
+        Serial.print(F(" of "));
         Serial.print(sizeof(serverRequest));
-        Serial.println(" bytes available");
+        Serial.println(F(" bytes available"));
 
-        Serial.println("Sending server request:");
+        Serial.println(F("Sending server request:"));
         Serial.println(serverRequest);
         ntripClient.write(serverRequest, strlen(serverRequest));
 
@@ -174,7 +182,7 @@ void beginClient()
         {
           if (millis() - timeout > 5000)
           {
-            Serial.println("Mountpoint timed out!");
+            Serial.println(F("Caster timed out!"));
             ntripClient.stop();
             return;
           }
@@ -194,23 +202,26 @@ void beginClient()
             connectionSuccess = true;
           if (strstr(response, "401") > 0) //Look for '401 Unauthorized'
           {
-            Serial.println("Hey - your credentials look bad! Check you caster username and password.");
+            Serial.println(F("Hey - your credentials look bad! Check you caster username and password."));
             connectionSuccess = false;
           }
         }
         response[responseSpot] = '\0';
 
+        Serial.print(F("Caster responded with: "));
+        Serial.println(response);
+
         if (connectionSuccess == false)
         {
-          Serial.print("Failed to connect to ");
+          Serial.print(F("Failed to connect to "));
           Serial.print(casterHost);
-          Serial.print(": ");
+          Serial.print(F(": "));
           Serial.println(response);
-          delay(5000); //Don't spam with lots of connection attempts
+          return;
         }
         else
         {
-          Serial.print("Connected to ");
+          Serial.print(F("Connected to "));
           Serial.println(casterHost);
           lastReceivedRTCM_ms = millis(); //Reset timeout
         }
@@ -236,7 +247,7 @@ void beginClient()
 
         //Push RTCM to GNSS module over I2C
         myGNSS.pushRawData(rtcmData, rtcmCount, false);
-        Serial.print("RTCM pushed to ZED: ");
+        Serial.print(F("RTCM pushed to ZED: "));
         Serial.println(rtcmCount);
       }
     }
@@ -244,7 +255,7 @@ void beginClient()
     //Close socket if we don't have new data for 10s
     if (millis() - lastReceivedRTCM_ms > maxTimeBeforeHangup_ms)
     {
-      Serial.println("RTCM timeout. Disconnecting...");
+      Serial.println(F("RTCM timeout. Disconnecting..."));
       if (ntripClient.connected() == true)
         ntripClient.stop();
       return;
@@ -253,9 +264,7 @@ void beginClient()
     delay(10);
   }
 
-  Serial.println("User pressed a key");
-  Serial.println("Disconnecting...");
+  Serial.println(F("User pressed a key"));
+  Serial.println(F("Disconnecting..."));
   ntripClient.stop();
-
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

@@ -34,9 +34,7 @@
   Insert a formatted micro-SD card into the socket on the Carrier Board.
   Connect the Carrier Board to your computer using a USB-C cable.
   Ensure you have the SparkFun Apollo3 boards installed: http://boardsmanager/All#SparkFun_Apollo3
-  This code has been tested using version 2.1.0 of the Apollo3 boards on Arduino IDE 1.8.13.
-   - Version 2.1.1 of Apollo3 contains a feature which makes I2C communication with u-blox modules problematic
-   - We recommend using v2.1.0 of Apollo3 until v2.2.0 is released
+  This code has been tested using version 2.2.0 of the Apollo3 boards on Arduino IDE 1.8.13.
   Select "Artemis MicroMod Processor" as the board type.
   Press upload to upload the code onto the Artemis.
   Open the Serial Monitor at 115200 baud to see the output.
@@ -76,6 +74,7 @@ File myFile; //File that all GNSS data is written to
 
 #define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
 #define fileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
+uint8_t *myBuffer; // Use myBuffer to hold the data while we write it to SD card
 
 unsigned long lastPrint; // Record when the last Serial print took place
 
@@ -90,10 +89,10 @@ int numRAWX = 0; // Keep count of how many RAWX message groups have been receive
 // See u-blox_structs.h for the full definition of UBX_RXMSFRBX_data_t
 //         _____  You can use any name you like for the callback. Use the same name when you call setAutoRXMSFRBXcallback
 //        /                  _____  This _must_ be UBX_RXM_SFRBX_data_t
-//        |                 /                   _____ You can use any name you like for the struct
-//        |                 |                  /
-//        |                 |                  |
-void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void newSFRBX(UBX_RXM_SFRBX_data_t *ubxDataStruct)
 {
   numSFRBX++; // Increment the count
 }
@@ -105,7 +104,7 @@ void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
 //        |            /                _____ You can use any name you like for the struct
 //        |            |               /
 //        |            |               |
-void newRAWX(UBX_RXM_RAWX_data_t ubxDataStruct)
+void newRAWX(UBX_RXM_RAWX_data_t *ubxDataStruct)
 {
   numRAWX++; // Increment the count
 }
@@ -202,13 +201,15 @@ void setup()
 
   myGNSS.setNavigationFrequency(1); //Produce one navigation solution per second (that's plenty for Precise Point Positioning)
 
-  myGNSS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
+  myGNSS.setAutoRXMSFRBXcallbackPtr(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
 
   myGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
 
-  myGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
+  myGNSS.setAutoRXMRAWXcallbackPtr(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
 
   myGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
+
+  myBuffer = new uint8_t[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card  
 
   Serial.println(F("Press any key to stop logging."));
 
@@ -228,9 +229,7 @@ void loop()
   {
     digitalWrite(LED_BUILTIN, HIGH); // Flash LED_BUILTIN each time we write to the SD card
 
-    uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
-
-    myGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+    myGNSS.extractFileBufferData(myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
     myFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
@@ -273,15 +272,13 @@ void loop()
     {
       digitalWrite(LED_BUILTIN, HIGH); // Flash LED_BUILTIN while we write to the SD card
 
-      uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
-
       uint16_t bytesToWrite = remainingBytes; // Write the remaining bytes to SD card sdWriteSize bytes at a time
       if (bytesToWrite > sdWriteSize)
       {
         bytesToWrite = sdWriteSize;
       }
 
-      myGNSS.extractFileBufferData((uint8_t *)&myBuffer, bytesToWrite); // Extract bytesToWrite bytes from the UBX file buffer and put them into myBuffer
+      myGNSS.extractFileBufferData(myBuffer, bytesToWrite); // Extract bytesToWrite bytes from the UBX file buffer and put them into myBuffer
 
       myFile.write(myBuffer, bytesToWrite); // Write bytesToWrite bytes from myBuffer to the ubxDataFile on the SD card
 

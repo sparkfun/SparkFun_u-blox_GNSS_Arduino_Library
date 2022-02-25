@@ -38,39 +38,39 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 /                   _____ You can use any name you like for the struct
 //        |                 |                  /
 //        |                 |                  |
-void printHNRATTdata(UBX_HNR_ATT_data_t ubxDataStruct)
+void printHNRATTdata(UBX_HNR_ATT_data_t *ubxDataStruct)
 {
   Serial.println();
   Serial.print(F("Roll: ")); // Print selected data
-  Serial.print((float)ubxDataStruct.roll / 100000.0, 2); // Convert roll to degrees
+  Serial.print((float)ubxDataStruct->roll / 100000.0, 2); // Convert roll to degrees
   Serial.print(F(" Pitch: "));
-  Serial.print((float)ubxDataStruct.pitch / 100000.0, 2); // Convert pitch to degrees
+  Serial.print((float)ubxDataStruct->pitch / 100000.0, 2); // Convert pitch to degrees
   Serial.print(F(" Heading: "));
-  Serial.println((float)ubxDataStruct.heading / 100000.0, 2); // Convert heading to degrees
+  Serial.println((float)ubxDataStruct->heading / 100000.0, 2); // Convert heading to degrees
 }
 
 // Callback: printHNRINSdata will be called when new HNR INS data arrives
 // See u-blox_structs.h for the full definition of UBX_HNR_INS_data_t
-void printHNRINSdata(UBX_HNR_INS_data_t ubxDataStruct)
+void printHNRINSdata(UBX_HNR_INS_data_t *ubxDataStruct)
 {
   Serial.print(F("xAccel: ")); // Print selected data
-  Serial.print(ubxDataStruct.xAccel);
+  Serial.print(ubxDataStruct->xAccel);
   Serial.print(F(" yAccel: "));
-  Serial.print(ubxDataStruct.yAccel);
+  Serial.print(ubxDataStruct->yAccel);
   Serial.print(F(" zAccel: "));
-  Serial.println(ubxDataStruct.zAccel);
+  Serial.println(ubxDataStruct->zAccel);
 }
 
 // Callback: printHNRPVTdata will be called when new HNR PVT data arrives
 // See u-blox_structs.h for the full definition of UBX_HNR_PVT_data_t
-void printHNRPVTdata(UBX_HNR_PVT_data_t ubxDataStruct)
+void printHNRPVTdata(UBX_HNR_PVT_data_t *ubxDataStruct)
 {
   Serial.print(F("ns: ")); // Print selected data
-  Serial.print(ubxDataStruct.nano);
+  Serial.print(ubxDataStruct->nano);
   Serial.print(F(" Lat: "));
-  Serial.print(ubxDataStruct.lat);
+  Serial.print(ubxDataStruct->lat);
   Serial.print(F(" Lon: "));
-  Serial.println(ubxDataStruct.lon);
+  Serial.println(ubxDataStruct->lon);
 }
 
 void setup()
@@ -97,13 +97,13 @@ void setup()
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
 
-  if (myGNSS.setAutoHNRATTcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
+  if (myGNSS.setAutoHNRATTcallbackPtr(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
     Serial.println(F("setAutoHNRATTcallback successful"));
 
-  if (myGNSS.setAutoHNRINScallback(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
+  if (myGNSS.setAutoHNRINScallbackPtr(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
     Serial.println(F("setAutoHNRINScallback successful"));
 
-  if (myGNSS.setAutoHNRPVTcallback(&printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
+  if (myGNSS.setAutoHNRPVTcallbackPtr(&printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
     Serial.println(F("setAutoHNRPVTcallback successful"));
 }
 
