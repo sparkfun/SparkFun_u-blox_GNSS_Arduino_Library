@@ -6620,6 +6620,15 @@ bool SFE_UBLOX_GNSS::disableNMEAMessage(uint8_t msgID, uint8_t portID, uint16_t 
   return (enableNMEAMessage(msgID, portID, 0, maxWait));
 }
 
+bool SFE_UBLOX_GNSS::enablePUBXMessage(uint8_t msgID, uint8_t portID, uint8_t rate, uint16_t maxWait)
+{
+  return (configureMessage(UBX_CLASS_PUBX, msgID, portID, rate, maxWait));
+}
+bool SFE_UBLOX_GNSS::disablePUBXMessage(uint8_t msgID, uint8_t portID, uint16_t maxWait)
+{
+  return (enablePUBXMessage(msgID, portID, 0, maxWait));
+}
+
 // Given a message number turns on a message ID for output over a given portID (UART, I2C, SPI, USB, etc)
 // To disable a message, set secondsBetween messages to 0
 // Note: This function will return false if the message is already enabled

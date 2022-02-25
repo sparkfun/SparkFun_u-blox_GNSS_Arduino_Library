@@ -177,21 +177,22 @@ const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
 
 // The following are UBX Class IDs. Descriptions taken from ZED-F9P Interface Description Document page 32, NEO-M8P Interface Description page 145
-const uint8_t UBX_CLASS_NAV = 0x01;  // Navigation Results Messages: Position, Speed, Time, Acceleration, Heading, DOP, SVs used
-const uint8_t UBX_CLASS_RXM = 0x02;  // Receiver Manager Messages: Satellite Status, RTC Status
-const uint8_t UBX_CLASS_INF = 0x04;  // Information Messages: Printf-Style Messages, with IDs such as Error, Warning, Notice
-const uint8_t UBX_CLASS_ACK = 0x05;  // Ack/Nak Messages: Acknowledge or Reject messages to UBX-CFG input messages
-const uint8_t UBX_CLASS_CFG = 0x06;  // Configuration Input Messages: Configure the receiver.
-const uint8_t UBX_CLASS_UPD = 0x09;  // Firmware Update Messages: Memory/Flash erase/write, Reboot, Flash identification, etc.
-const uint8_t UBX_CLASS_MON = 0x0A;  // Monitoring Messages: Communication Status, CPU Load, Stack Usage, Task Status
-const uint8_t UBX_CLASS_AID = 0x0B;  //(NEO-M8P ONLY!!!) AssistNow Aiding Messages: Ephemeris, Almanac, other A-GPS data input
-const uint8_t UBX_CLASS_TIM = 0x0D;  // Timing Messages: Time Pulse Output, Time Mark Results
-const uint8_t UBX_CLASS_ESF = 0x10;  //(NEO-M8P ONLY!!!) External Sensor Fusion Messages: External Sensor Measurements and Status Information
-const uint8_t UBX_CLASS_MGA = 0x13;  // Multiple GNSS Assistance Messages: Assistance data for various GNSS
-const uint8_t UBX_CLASS_LOG = 0x21;  // Logging Messages: Log creation, deletion, info and retrieval
-const uint8_t UBX_CLASS_SEC = 0x27;  // Security Feature Messages
-const uint8_t UBX_CLASS_HNR = 0x28;  //(NEO-M8P ONLY!!!) High Rate Navigation Results Messages: High rate time, position speed, heading
+const uint8_t UBX_CLASS_NAV  = 0x01; // Navigation Results Messages: Position, Speed, Time, Acceleration, Heading, DOP, SVs used
+const uint8_t UBX_CLASS_RXM  = 0x02; // Receiver Manager Messages: Satellite Status, RTC Status
+const uint8_t UBX_CLASS_INF  = 0x04; // Information Messages: Printf-Style Messages, with IDs such as Error, Warning, Notice
+const uint8_t UBX_CLASS_ACK  = 0x05; // Ack/Nak Messages: Acknowledge or Reject messages to UBX-CFG input messages
+const uint8_t UBX_CLASS_CFG  = 0x06; // Configuration Input Messages: Configure the receiver.
+const uint8_t UBX_CLASS_UPD  = 0x09; // Firmware Update Messages: Memory/Flash erase/write, Reboot, Flash identification, etc.
+const uint8_t UBX_CLASS_MON  = 0x0A; // Monitoring Messages: Communication Status, CPU Load, Stack Usage, Task Status
+const uint8_t UBX_CLASS_AID  = 0x0B; //(NEO-M8P ONLY!!!) AssistNow Aiding Messages: Ephemeris, Almanac, other A-GPS data input
+const uint8_t UBX_CLASS_TIM  = 0x0D; // Timing Messages: Time Pulse Output, Time Mark Results
+const uint8_t UBX_CLASS_ESF  = 0x10; //(NEO-M8P ONLY!!!) External Sensor Fusion Messages: External Sensor Measurements and Status Information
+const uint8_t UBX_CLASS_MGA  = 0x13; // Multiple GNSS Assistance Messages: Assistance data for various GNSS
+const uint8_t UBX_CLASS_LOG  = 0x21; // Logging Messages: Log creation, deletion, info and retrieval
+const uint8_t UBX_CLASS_SEC  = 0x27; // Security Feature Messages
+const uint8_t UBX_CLASS_HNR  = 0x28; //(NEO-M8P ONLY!!!) High Rate Navigation Results Messages: High rate time, position speed, heading
 const uint8_t UBX_CLASS_NMEA = 0xF0; // NMEA Strings: standard NMEA strings
+const uint8_t UBX_CLASS_PUBX = 0xF1; // Proprietary messages defined by u-blox
 
 // Class: CFG
 // The following are used for configuration. Descriptions are from the ZED-F9P Interface Description pg 33-34 and NEO-M9N Interface Description pg 47-48
@@ -254,6 +255,14 @@ const uint8_t UBX_NMEA_TXT = 0x41; // GxTXT (text transmission)
 const uint8_t UBX_NMEA_VLW = 0x0F; // GxVLW (dual ground/water distance)
 const uint8_t UBX_NMEA_VTG = 0x05; // GxVTG (course over ground and Ground speed)
 const uint8_t UBX_NMEA_ZDA = 0x08; // GxZDA (Time and Date)
+
+// Class: PUBX
+// The following are used to enable PUBX messages. https://www.u-blox.com/en/docs/UBX-13003221 used for reference
+const uint8_t UBX_PUBX_CONFIG   = 0x41; // Set protocols and baud rate
+const uint8_t UBX_PUBX_POSITION = 0x00; // Lat/Long position data
+const uint8_t UBX_PUBX_RATE     = 0x40; // Set/get NMEA message output rate
+const uint8_t UBX_PUBX_SVSTATUS = 0x03; // Satellite status
+const uint8_t UBX_PUBX_TIME     = 0x04; // Time of day and clock information
 
 // The following are used to configure the NMEA protocol main talker ID and GSV talker ID
 const uint8_t UBX_NMEA_MAINTALKERID_NOTOVERRIDDEN = 0x00; // main talker ID is system dependent
@@ -829,6 +838,8 @@ public:
   bool disableMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint16_t maxWait = defaultMaxWait);
   bool enableNMEAMessage(uint8_t msgID, uint8_t portID, uint8_t sendRate = 1, uint16_t maxWait = defaultMaxWait);
   bool disableNMEAMessage(uint8_t msgID, uint8_t portID, uint16_t maxWait = defaultMaxWait);
+  bool enablePUBXMessage(uint8_t msgID, uint8_t portID, uint8_t sendRate = 1, uint16_t maxWait = defaultMaxWait);
+  bool disablePUBXMessage(uint8_t msgID, uint8_t portID, uint16_t maxWait = defaultMaxWait);
   bool enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t sendRate, uint16_t maxWait = defaultMaxWait); // Given a message number turns on a message ID for output over given PortID
   bool disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = defaultMaxWait);                  // Turn off given RTCM message from a given port
 
