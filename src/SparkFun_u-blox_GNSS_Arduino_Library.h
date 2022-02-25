@@ -625,7 +625,7 @@ public:
 #define defaultMaxWait 1100
 #endif
 
-  //New in v2.0: allow the payload size for packetCfg to be changed
+  // New in v2.0: allow the payload size for packetCfg to be changed
   bool setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
   // Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
@@ -859,14 +859,12 @@ public:
   // Storage for the geofence parameters. RAM is allocated for this if/when required.
   geofenceParams_t *currentGeofenceParams = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
-  //Power save / power management configuration / power off
+  // Power save / off
   bool powerSaveMode(bool power_save = true, uint16_t maxWait = defaultMaxWait);
   uint8_t getPowerSaveMode(uint16_t maxWait = defaultMaxWait); // Returns 255 if the sendCommand fails
-  bool configurePowerManagement(UBX_CFG_PM2_data_t* data = NULL, uint16_t maxWait = defaultMaxWait);
-  UBX_CFG_PM2_data_t getPowerManagementConfiguration(uint16_t maxWait = defaultMaxWait);
   bool powerOff(uint32_t durationInMs, uint16_t maxWait = defaultMaxWait);
   bool powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources = VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0, bool forceWhileUsb = true, uint16_t maxWait = defaultMaxWait);
-  
+
   // Change the dynamic platform model using UBX-CFG-NAV5
   bool setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = defaultMaxWait);
   uint8_t getDynamicModel(uint16_t maxWait = defaultMaxWait); // Get the dynamic model - returns 255 if the sendCommand fails
