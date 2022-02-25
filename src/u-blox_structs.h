@@ -1542,6 +1542,28 @@ typedef struct
 
 // CFG-specific structs
 
+// UBX-CFG-PM2 (0x06 0x3B): Extended power management configuration
+const uint16_t UBX_CFG_PM2_LEN = 44;
+
+typedef struct
+{
+  uint8_t  maxStartupStateDur;
+  uint8_t  flagExtintSel;
+  uint8_t  flagExtintWake;
+  uint8_t  flagExtintBackup;
+  uint8_t  flagLimitPeakCurr;
+  uint8_t  flagWaitTimeFix;
+  uint8_t  flagUpdateRTC;
+  uint8_t  flagUpdateEPH;
+  uint8_t  flagDoNotEnterOff;
+  uint8_t  flagMode;
+  uint32_t updatePeriod;
+  uint32_t searchPeriod;
+  uint32_t gridOffset;
+  uint16_t onTime;
+  uint16_t minAcqTime;
+} UBX_CFG_PM2_data_t;
+
 // UBX-CFG-PRT (0x06 0x00): Port configuration
 // The content changes depending on which port type is being configured
 // This struct defines the common structure

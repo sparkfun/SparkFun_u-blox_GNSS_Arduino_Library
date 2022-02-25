@@ -8356,6 +8356,115 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset16(uint32_t key, uint16_t value)
   return (true);
 }
 
+// Extended power management configuration
+// Sends the UBX-CFG-PM2 message to configure extended power management
+// Note: Section 32.10.23 of the u-blox 8 / u-blox M8 Receiver description document gives three different versions
+// of this message. Version 0x01 is implemented here since it is the most widely supported version
+bool SFE_UBLOX_GNSS::configurePowerManagement(UBX_CFG_PM2_data_t* data, uint16_t maxWait)
+{
+  if (data == NULL) // If the user forgot to include the data pointer, bail
+    return (false);
+
+  packetCfg.cls          = UBX_CLASS_CFG;
+  packetCfg.id           = UBX_CFG_PM2;
+  packetCfg.len          = UBX_CFG_PM2_LEN;
+  packetCfg.startingSpot = 0;
+
+  // Insert the data, converting multi-byte values to little endian
+
+  memset(payloadCfg, 0, UBX_CFG_PM2_LEN);
+
+  payloadCfg[ 0] = 0x01;  // Message version
+  payloadCfg[ 1] = 0;     // Reserved
+  payloadCfg[ 2] = data->maxStartupStateDur;
+  payloadCfg[ 3] = 0;     // Reserved
+
+  // Some MCUs don't support larger uints, so break flags into separate uint8s
+  uint8_t flags_0 = 0;
+  uint8_t flags_1 = 0;
+  uint8_t flags_2 = 0;
+  uint8_t flags_3 = 0;
+  flags_0 = flags_0 | (data->flagExtintSel     <<  4);
+  flags_0 = flags_0 | (data->flagExtintWake    <<  5);
+  flags_0 = flags_0 | (data->flagExtintBackup  <<  6);
+  flags_1 = flags_1 | (data->flagLimitPeakCurr <<  0);  // Uses bits 8 and 9
+  flags_1 = flags_1 | (data->flagWaitTimeFix   <<  2);
+  flags_1 = flags_1 | (data->flagUpdateRTC     <<  3);
+  flags_1 = flags_1 | (data->flagUpdateEPH     <<  4);
+  flags_2 = flags_2 | (data->flagDoNotEnterOff <<  0);
+  flags_2 = flags_2 | (data->flagMode          <<  1);  // Uses bits 17 and 18
+
+  payloadCfg[ 4] = flags_0;
+  payloadCfg[ 5] = flags_1;
+  payloadCfg[ 6] = flags_2;
+  payloadCfg[ 7] = flags_3;
+
+  payloadCfg[ 8] = (data->updatePeriod >> (8 * 0)) & 0xFF;
+  payloadCfg[ 9] = (data->updatePeriod >> (8 * 1)) & 0xFF;
+  payloadCfg[10] = (data->updatePeriod >> (8 * 2)) & 0xFF;
+  payloadCfg[11] = (data->updatePeriod >> (8 * 3)) & 0xFF;
+
+  payloadCfg[12] = (data->searchPeriod >> (8 * 0)) & 0xFF;
+  payloadCfg[13] = (data->searchPeriod >> (8 * 1)) & 0xFF;
+  payloadCfg[14] = (data->searchPeriod >> (8 * 2)) & 0xFF;
+  payloadCfg[15] = (data->searchPeriod >> (8 * 3)) & 0xFF;
+
+  payloadCfg[16] = (data->gridOffset   >> (8 * 0)) & 0xFF;
+  payloadCfg[17] = (data->gridOffset   >> (8 * 1)) & 0xFF;
+  payloadCfg[18] = (data->gridOffset   >> (8 * 2)) & 0xFF;
+  payloadCfg[19] = (data->gridOffset   >> (8 * 3)) & 0xFF;
+
+  payloadCfg[20] = (data->onTime       >> (8 * 0)) & 0xFF;
+  payloadCfg[21] = (data->onTime       >> (8 * 1)) & 0xFF;
+
+  payloadCfg[22] = (data->minAcqTime   >> (8 * 0)) & 0xFF;
+  payloadCfg[23] = (data->minAcqTime   >> (8 * 1)) & 0xFF;
+
+  // Bytes 24 through (UBX_CFG_PM2_LEN-1) are reserved
+
+  bool cfg_result = sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
+
+  return (cfg_result); // We are only expecting an ACK
+}
+
+UBX_CFG_PM2_data_t SFE_UBLOX_GNSS::getPowerManagementConfiguration(uint16_t maxWait)
+{
+  packetCfg.cls          = UBX_CLASS_CFG;
+  packetCfg.id           = UBX_CFG_PM2;
+  packetCfg.len          = 0;
+  packetCfg.startingSpot = 0;
+
+  // Don't setup any payload items; we're just reading the current configuration
+  // Instead, clear the structure since it will be read into
+  memset(payloadCfg, 0, UBX_CFG_PM2_LEN);
+
+  // Not sure where it happens, but after sending the PM2 command to read the configuration data, the data is read into packetCfg
+  sendCommand(&packetCfg, maxWait);
+
+  // Interpret the config data read back
+  UBX_CFG_PM2_data_t data_read;
+
+  memcpy(&data_read.maxStartupStateDur, &payloadCfg[ 2], sizeof(data_read.maxStartupStateDur));
+
+  data_read.flagExtintSel      = (payloadCfg[4] >> 4) & 0b01;
+  data_read.flagExtintWake     = (payloadCfg[4] >> 5) & 0b01;
+  data_read.flagExtintBackup   = (payloadCfg[4] >> 6) & 0b01;
+  data_read.flagLimitPeakCurr  = (payloadCfg[5] >> 0) & 0b11;
+  data_read.flagWaitTimeFix    = (payloadCfg[5] >> 2) & 0b01;
+  data_read.flagUpdateRTC      = (payloadCfg[5] >> 3) & 0b01;
+  data_read.flagUpdateEPH      = (payloadCfg[5] >> 4) & 0b01;
+  data_read.flagDoNotEnterOff  = (payloadCfg[6] >> 0) & 0b01;
+  data_read.flagMode           = (payloadCfg[6] >> 1) & 0b11;
+
+  memcpy(&data_read.updatePeriod, &payloadCfg[ 8], sizeof(data_read.updatePeriod));
+  memcpy(&data_read.searchPeriod, &payloadCfg[12], sizeof(data_read.searchPeriod));
+  memcpy(&data_read.gridOffset,   &payloadCfg[16], sizeof(data_read.gridOffset));
+  memcpy(&data_read.onTime,       &payloadCfg[20], sizeof(data_read.onTime));
+  memcpy(&data_read.minAcqTime,   &payloadCfg[22], sizeof(data_read.minAcqTime));
+
+  return (data_read);
+}
+
 // Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
 // This function takes a full 32-bit key and 8-bit value
 uint8_t SFE_UBLOX_GNSS::addCfgValset8(uint32_t key, uint8_t value)
