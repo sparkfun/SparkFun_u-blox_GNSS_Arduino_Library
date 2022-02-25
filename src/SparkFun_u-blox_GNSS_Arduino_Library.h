@@ -176,6 +176,7 @@ typedef enum
 const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
 
+// The following are UBX Class IDs. Descriptions taken from ZED-F9P Interface Description Document page 32, NEO-M8P Interface Description page 145
 const uint8_t UBX_CLASS_NAV  = 0x01; // Navigation Results Messages: Position, Speed, Time, Acceleration, Heading, DOP, SVs used
 const uint8_t UBX_CLASS_RXM  = 0x02; // Receiver Manager Messages: Satellite Status, RTC Status
 const uint8_t UBX_CLASS_INF  = 0x04; // Information Messages: Printf-Style Messages, with IDs such as Error, Warning, Notice
@@ -191,7 +192,6 @@ const uint8_t UBX_CLASS_LOG  = 0x21; // Logging Messages: Log creation, deletion
 const uint8_t UBX_CLASS_SEC  = 0x27; // Security Feature Messages
 const uint8_t UBX_CLASS_HNR  = 0x28; //(NEO-M8P ONLY!!!) High Rate Navigation Results Messages: High rate time, position speed, heading
 const uint8_t UBX_CLASS_NMEA = 0xF0; // NMEA Strings: standard NMEA strings
-const uint8_t UBX_CLASS_PUBX = 0xF1; // Proprietary messages defined by u-blox
 const uint8_t UBX_CLASS_PUBX = 0xF1; // Proprietary messages defined by u-blox
 
 // Class: CFG
