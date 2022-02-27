@@ -835,8 +835,8 @@ public:
   // Functions used for RTK and base station setup
   // It is probably safe to assume that users of the RTK will be using I2C / Qwiic. So let's leave maxWait set to 250ms.
   bool getSurveyMode(uint16_t maxWait = 250);                                                                 // Get the current TimeMode3 settings
-  bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); // Control survey in mode
-  bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);            // Begin Survey-In for NEO-M8P
+  bool setSurveyMode(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); // Control survey in mode
+  bool enableSurveyMode(uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);            // Begin Survey-In for NEO-M8P
   bool disableSurveyMode(uint16_t maxWait = 250);                                                             // Stop Survey-In mode
   // Given coordinates, put receiver into static position. Set latlong to true to pass in lat/long values instead of ecef.
   // For ECEF the units are: cm, 0.1mm, cm, 0.1mm, cm, 0.1mm
