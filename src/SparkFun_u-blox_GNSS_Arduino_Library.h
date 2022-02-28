@@ -269,11 +269,11 @@ const uint8_t UBX_NMEA_GSVTALKERID_MAIN = 0x01;           // use the main Talker
 // Class: PUBX
 // The following are used to enable PUBX messages with configureMessage
 // See the M8 receiver description & protocol specification for more details
-const uint8_t UBX_PUBX_CONFIG   = 0x41; // Set protocols and baud rate
+const uint8_t UBX_PUBX_CONFIG = 0x41;   // Set protocols and baud rate
 const uint8_t UBX_PUBX_POSITION = 0x00; // Lat/Long position data
-const uint8_t UBX_PUBX_RATE     = 0x40; // Set/get NMEA message output rate
+const uint8_t UBX_PUBX_RATE = 0x40;     // Set/get NMEA message output rate
 const uint8_t UBX_PUBX_SVSTATUS = 0x03; // Satellite status
-const uint8_t UBX_PUBX_TIME     = 0x04; // Time of day and clock information
+const uint8_t UBX_PUBX_TIME = 0x04;     // Time of day and clock information
 
 // Class: HNR
 // The following are used to configure the HNR message rates
@@ -844,10 +844,12 @@ public:
 
   // Functions used for RTK and base station setup
   // It is probably safe to assume that users of the RTK will be using I2C / Qwiic. So let's leave maxWait set to 250ms.
-  bool getSurveyMode(uint16_t maxWait = 250);                                                                 // Get the current TimeMode3 settings
-  bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); // Control survey in mode
-  bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);            // Begin Survey-In for NEO-M8P
-  bool disableSurveyMode(uint16_t maxWait = 250);                                                             // Stop Survey-In mode
+  bool getSurveyMode(uint16_t maxWait = 250);                                                                     // Get the current TimeMode3 settings
+  bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);     // Control survey in mode
+  bool setSurveyModeFull(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); // Control survey in mode
+  bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);                // Begin Survey-In for NEO-M8P / ZED-F9x
+  bool enableSurveyModeFull(uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);            // Begin Survey-In for NEO-M8P / ZED-F9x
+  bool disableSurveyMode(uint16_t maxWait = 250);                                                                 // Stop Survey-In mode
   // Given coordinates, put receiver into static position. Set latlong to true to pass in lat/long values instead of ecef.
   // For ECEF the units are: cm, 0.1mm, cm, 0.1mm, cm, 0.1mm
   // For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
@@ -1362,8 +1364,9 @@ public:
 
   bool getSurveyInActive(uint16_t maxWait = defaultMaxWait);
   bool getSurveyInValid(uint16_t maxWait = defaultMaxWait);
-  uint16_t getSurveyInObservationTime(uint16_t maxWait = defaultMaxWait); // Truncated to 65535 seconds
-  float getSurveyInMeanAccuracy(uint16_t maxWait = defaultMaxWait);       // Returned as m
+  uint16_t getSurveyInObservationTime(uint16_t maxWait = defaultMaxWait);     // Truncated to 65535 seconds
+  uint32_t getSurveyInObservationTimeFull(uint16_t maxWait = defaultMaxWait); // Return the full uint32_t
+  float getSurveyInMeanAccuracy(uint16_t maxWait = defaultMaxWait);           // Returned as m
 
   // Helper functions for TIMELS
 
