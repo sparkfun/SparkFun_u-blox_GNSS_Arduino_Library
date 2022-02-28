@@ -192,6 +192,7 @@ const uint8_t UBX_CLASS_LOG = 0x21;  // Logging Messages: Log creation, deletion
 const uint8_t UBX_CLASS_SEC = 0x27;  // Security Feature Messages
 const uint8_t UBX_CLASS_HNR = 0x28;  //(NEO-M8P ONLY!!!) High Rate Navigation Results Messages: High rate time, position speed, heading
 const uint8_t UBX_CLASS_NMEA = 0xF0; // NMEA Strings: standard NMEA strings
+const uint8_t UBX_CLASS_PUBX = 0xF1; // Proprietary NMEA-format messages defined by u-blox
 
 // Class: CFG
 // The following are used for configuration. Descriptions are from the ZED-F9P Interface Description pg 33-34 and NEO-M9N Interface Description pg 47-48
@@ -264,6 +265,15 @@ const uint8_t UBX_NMEA_MAINTALKERID_GA = 0x04;            // main talker ID is G
 const uint8_t UBX_NMEA_MAINTALKERID_GB = 0x05;            // main talker ID is BeiDou
 const uint8_t UBX_NMEA_GSVTALKERID_GNSS = 0x00;           // GNSS specific Talker ID (as defined by NMEA)
 const uint8_t UBX_NMEA_GSVTALKERID_MAIN = 0x01;           // use the main Talker ID
+
+// Class: PUBX
+// The following are used to enable PUBX messages with configureMessage
+// See the M8 receiver description & protocol specification for more details
+const uint8_t UBX_PUBX_CONFIG   = 0x41; // Set protocols and baud rate
+const uint8_t UBX_PUBX_POSITION = 0x00; // Lat/Long position data
+const uint8_t UBX_PUBX_RATE     = 0x40; // Set/get NMEA message output rate
+const uint8_t UBX_PUBX_SVSTATUS = 0x03; // Satellite status
+const uint8_t UBX_PUBX_TIME     = 0x04; // Time of day and clock information
 
 // Class: HNR
 // The following are used to configure the HNR message rates
