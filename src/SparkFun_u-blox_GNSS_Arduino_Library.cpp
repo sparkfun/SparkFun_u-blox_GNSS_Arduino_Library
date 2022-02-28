@@ -6660,7 +6660,7 @@ bool SFE_UBLOX_GNSS::getSurveyMode(uint16_t maxWait)
 }
 
 // Control Survey-In for NEO-M8P
-bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait)
 {
   if (getSurveyMode(maxWait) == false) // Ask module for the current TimeMode3 settings. Loads into payloadCfg.
     return (false);
@@ -6673,11 +6673,11 @@ bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint32_t observationTime, float
   // payloadCfg should be loaded with poll response. Now modify only the bits we care about
   payloadCfg[2] = mode; // Set mode. Survey-In and Disabled are most common. Use ECEF (not LAT/LON/ALT).
 
-  // svinMinDur is U4 (uint32_t) in seconds
+  // svinMinDur is U4 (uint32_t) but we'll only use a uint16_t (waiting more than 65535 seconds seems excessive!)
   payloadCfg[24] = observationTime & 0xFF; // svinMinDur in seconds
   payloadCfg[25] = observationTime >> 8;   // svinMinDur in seconds
-  payloadCfg[26] = observationTime >> 16; 
-  payloadCfg[27] = observationTime >> 24; 
+  payloadCfg[26] = 0;                      // Truncate to 16 bits
+  payloadCfg[27] = 0;                      // Truncate to 16 bits
 
   // svinAccLimit is U4 (uint32_t) in 0.1mm.
   uint32_t svinAccLimit = (uint32_t)(requiredAccuracy * 10000.0); // Convert m to 0.1mm
@@ -6690,7 +6690,7 @@ bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint32_t observationTime, float
 }
 
 // Begin Survey-In for NEO-M8P
-bool SFE_UBLOX_GNSS::enableSurveyMode(uint32_t observationTime, float requiredAccuracy, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait)
 {
   return (setSurveyMode(SVIN_MODE_ENABLE, observationTime, requiredAccuracy, maxWait));
 }
