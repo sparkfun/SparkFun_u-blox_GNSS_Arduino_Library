@@ -6662,6 +6662,10 @@ bool SFE_UBLOX_GNSS::getSurveyMode(uint16_t maxWait)
 // Control Survey-In for NEO-M8P
 bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait)
 {
+  return (setSurveyModeFull(mode, (uint32_t)observationTime, requiredAccuracy, maxWait));
+}
+bool SFE_UBLOX_GNSS::setSurveyModeFull(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait)
+{
   if (getSurveyMode(maxWait) == false) // Ask module for the current TimeMode3 settings. Loads into payloadCfg.
     return (false);
 
@@ -6673,18 +6677,18 @@ bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint16_t observationTime, float
   // payloadCfg should be loaded with poll response. Now modify only the bits we care about
   payloadCfg[2] = mode; // Set mode. Survey-In and Disabled are most common. Use ECEF (not LAT/LON/ALT).
 
-  // svinMinDur is U4 (uint32_t) but we'll only use a uint16_t (waiting more than 65535 seconds seems excessive!)
+  // svinMinDur is U4 (uint32_t) in seconds
   payloadCfg[24] = observationTime & 0xFF; // svinMinDur in seconds
-  payloadCfg[25] = observationTime >> 8;   // svinMinDur in seconds
-  payloadCfg[26] = 0;                      // Truncate to 16 bits
-  payloadCfg[27] = 0;                      // Truncate to 16 bits
+  payloadCfg[25] = (observationTime >> 8) & 0xFF;
+  payloadCfg[26] = (observationTime >> 16) & 0xFF;
+  payloadCfg[27] = (observationTime >> 24) & 0xFF;
 
   // svinAccLimit is U4 (uint32_t) in 0.1mm.
   uint32_t svinAccLimit = (uint32_t)(requiredAccuracy * 10000.0); // Convert m to 0.1mm
   payloadCfg[28] = svinAccLimit & 0xFF;                           // svinAccLimit in 0.1mm increments
-  payloadCfg[29] = svinAccLimit >> 8;
-  payloadCfg[30] = svinAccLimit >> 16;
-  payloadCfg[31] = svinAccLimit >> 24;
+  payloadCfg[29] = (svinAccLimit >> 8) & 0xFF;
+  payloadCfg[30] = (svinAccLimit >> 16) & 0xFF;
+  payloadCfg[31] = (svinAccLimit >> 24) & 0xFF;
 
   return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
@@ -6692,7 +6696,11 @@ bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint16_t observationTime, float
 // Begin Survey-In for NEO-M8P
 bool SFE_UBLOX_GNSS::enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait)
 {
-  return (setSurveyMode(SVIN_MODE_ENABLE, observationTime, requiredAccuracy, maxWait));
+  return (setSurveyModeFull(SVIN_MODE_ENABLE, (uint32_t)observationTime, requiredAccuracy, maxWait));
+}
+bool SFE_UBLOX_GNSS::enableSurveyModeFull(uint32_t observationTime, float requiredAccuracy, uint16_t maxWait)
+{
+  return (setSurveyModeFull(SVIN_MODE_ENABLE, observationTime, requiredAccuracy, maxWait));
 }
 
 // Stop Survey-In for NEO-M8P
@@ -15554,7 +15562,7 @@ bool SFE_UBLOX_GNSS::getSurveyInValid(uint16_t maxWait)
   return ((bool)packetUBXNAVSVIN->data.valid);
 }
 
-uint16_t SFE_UBLOX_GNSS::getSurveyInObservationTime(uint16_t maxWait) // Truncated to 65535 seconds
+uint32_t SFE_UBLOX_GNSS::getSurveyInObservationTimeFull(uint16_t maxWait) // Return the full uint32_t
 {
   if (packetUBXNAVSVIN == NULL)
     initPacketUBXNAVSVIN();     // Check that RAM has been allocated for the SVIN data
@@ -15566,9 +15574,13 @@ uint16_t SFE_UBLOX_GNSS::getSurveyInObservationTime(uint16_t maxWait) // Truncat
   packetUBXNAVSVIN->moduleQueried.moduleQueried.bits.dur = false; // Since we are about to give this to user, mark this data as stale
   packetUBXNAVSVIN->moduleQueried.moduleQueried.bits.all = false;
 
-  // dur (Passed survey-in observation time) is U4 (uint32_t) seconds. We truncate to 16 bits
-  //(waiting more than 65535 seconds (18.2 hours) seems excessive!)
-  uint32_t tmpObsTime = packetUBXNAVSVIN->data.dur;
+  return (packetUBXNAVSVIN->data.dur);
+}
+
+uint16_t SFE_UBLOX_GNSS::getSurveyInObservationTime(uint16_t maxWait) // Truncated to 65535 seconds
+{
+  // dur (Passed survey-in observation time) is U4 (uint32_t) seconds. Here we truncate to 16 bits
+  uint32_t tmpObsTime = getSurveyInObservationTimeFull(maxWait);
   if (tmpObsTime <= 0xFFFF)
   {
     return ((uint16_t)tmpObsTime);
