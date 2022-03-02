@@ -57,9 +57,9 @@
 #include "u-blox_structs.h"
 
 // Uncomment the next line (or add SFE_UBLOX_REDUCED_PROG_MEM as a compiler directive) to reduce the amount of program memory used by the library
-//#define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages to save memory
+//#define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages and disable auto-NMEA support to save memory
 
-// The code just about fills the program memory on the ATmega328P (Arduino Uno), so let's delete the minor debug messages anyway
+// The code just about fills the program memory on the ATmega328P (Arduino Uno), so let's delete the minor debug messages and disable auto-NMEA support anyway
 #if !defined(SFE_UBLOX_REDUCED_PROG_MEM) && defined(ARDUINO_ARCH_AVR)
 #define SFE_UBLOX_REDUCED_PROG_MEM
 #endif
@@ -1431,6 +1431,7 @@ public:
   void setProcessNMEAMask(uint32_t messages = SFE_UBLOX_FILTER_NMEA_ALL); // Control which NMEA messages are passed to processNMEA. Default to passing ALL messages
   uint32_t getProcessNMEAMask();                                          // Return which NMEA messages are passed to processNMEA
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   // Support for "auto" storage of NMEA messages
   uint8_t getLatestNMEAGPGGA(NMEA_GGA_data_t *data);                           // Return the most recent GPGGA: 0 = no data, 1 = stale data, 2 = fresh data
   bool setNMEAGPGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t));         // Enable a callback on the arrival of a GPGGA message
@@ -1456,6 +1457,7 @@ public:
   uint8_t getLatestNMEAGNZDA(NMEA_ZDA_data_t *data);                           // Return the most recent GNZDA: 0 = no data, 1 = stale data, 2 = fresh data
   bool setNMEAGNZDAcallback(void (*callbackPointer)(NMEA_ZDA_data_t));         // Enable a callback on the arrival of a GNZDA message
   bool setNMEAGNZDAcallbackPtr(void (*callbackPointerPtr)(NMEA_ZDA_data_t *)); // Enable a callback on the arrival of a GNZDA message
+#endif
 
   // Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
   // From v2.0: These are public. The user can call these to extract data from custom packets
@@ -1511,6 +1513,7 @@ public:
   UBX_MGA_ACK_DATA0_t *packetUBXMGAACK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_MGA_DBD_t *packetUBXMGADBD = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   NMEA_GPGGA_t *storageNMEAGPGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   NMEA_GNGGA_t *storageNMEAGNGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   NMEA_GPVTG_t *storageNMEAGPVTG = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1519,6 +1522,7 @@ public:
   NMEA_GNRMC_t *storageNMEAGNRMC = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   NMEA_GPZDA_t *storageNMEAGPZDA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   NMEA_GNZDA_t *storageNMEAGNZDA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+#endif
 
   uint16_t rtcmFrameCounter = 0; // Tracks the type of incoming byte inside RTCM frame
 
@@ -1602,6 +1606,7 @@ private:
   bool initPacketUBXMGAACK();        // Allocate RAM for packetUBXMGAACK and initialize it
   bool initPacketUBXMGADBD();        // Allocate RAM for packetUBXMGADBD and initialize it
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   bool initStorageNMEAGPGGA(); // Allocate RAM for incoming NMEA GPGGA messages and initialize it
   bool initStorageNMEAGNGGA(); // Allocate RAM for incoming NMEA GNGGA messages and initialize it
   bool initStorageNMEAGPVTG(); // Allocate RAM for incoming NMEA GPVTG messages and initialize it
@@ -1610,6 +1615,7 @@ private:
   bool initStorageNMEAGNRMC(); // Allocate RAM for incoming NMEA GNRMC messages and initialize it
   bool initStorageNMEAGPZDA(); // Allocate RAM for incoming NMEA GPZDA messages and initialize it
   bool initStorageNMEAGNZDA(); // Allocate RAM for incoming NMEA GNZDA messages and initialize it
+#endif
 
   // Variables
   TwoWire *_i2cPort;              // The generic connection to user's chosen I2C hardware

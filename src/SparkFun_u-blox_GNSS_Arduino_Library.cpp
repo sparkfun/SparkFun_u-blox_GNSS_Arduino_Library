@@ -422,6 +422,7 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXHNRPVT = NULL; // Redundant?
   }
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   if (storageNMEAGPGGA != NULL)
   {
     if (storageNMEAGPGGA->callbackCopy != NULL)
@@ -501,6 +502,7 @@ void SFE_UBLOX_GNSS::end(void)
     delete storageNMEAGNZDA;
     storageNMEAGNZDA = NULL; // Redundant?
   }
+#endif
 }
 
 // Allow the user to change packetCfgPayloadSize. Handy if you want to process big messages like RAWX
@@ -1861,6 +1863,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         _signsOfLife = isNMEAHeaderValid();
       }
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
       // Check if we have automatic storage for this message
       if (isThisNMEAauto())
       {
@@ -1872,6 +1875,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         memcpy(nmeaPtr, &nmeaAddressField[0], 6); // Copy the start character and address field into the working copy
       }
       else
+#endif
       {
         // if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         // {
@@ -1898,6 +1902,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if ((nmeaByteCounter > 5) || (nmeaByteCounter < 0)) // Should we add incoming to the file buffer and/or pass it to processNMEA?
     {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
       if (isThisNMEAauto())
       {
         uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
@@ -1909,15 +1914,14 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
           *lengthPtr = *lengthPtr + 1;        // Increment the length
           if (*lengthPtr == nmeaMaxLength)
           {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
             if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
             {
               _debugSerial->println(F("process: NMEA buffer is full!"));
             }
-#endif
           }
         }
       }
+#endif
       if (logThisNMEA())
         storeFileBytes(&incoming, 1); // Add incoming to the file buffer
       if (processThisNMEA())
@@ -1934,6 +1938,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if (nmeaByteCounter == 0) // Check if we are done
     {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
       if (isThisNMEAauto())
       {
         uint8_t *workingLengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
@@ -1988,7 +1993,6 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
           }
           else
           {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
             if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
             {
               _debugSerial->print(F("process: NMEA checksum fail (2)! Expected "));
@@ -1999,19 +2003,17 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
               _debugSerial->write(*(workingNMEAPtr + charsChecked + 1));
               _debugSerial->println();
             }
-#endif
           }
         }
         else
         {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
           if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
           {
             _debugSerial->println(F("process: NMEA checksum fail (1)!"));
           }
-#endif
         }
       }
+#endif
       currentSentence = NONE; // All done!
     }
   }
@@ -2192,6 +2194,7 @@ void SFE_UBLOX_GNSS::processNMEA(char incoming)
     _nmeaOutputPort->write(incoming); // Echo this byte to the serial port
 }
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
 // Check if the NMEA message (in nmeaAddressField) is "auto" (i.e. has RAM allocated for it)
 bool SFE_UBLOX_GNSS::isThisNMEAauto()
 {
@@ -2763,6 +2766,7 @@ nmeaAutomaticFlags *SFE_UBLOX_GNSS::getNMEAFlagsPtr()
 
   return NULL;
 }
+#endif
 
 // We need to be able to identify an RTCM packet and then the length
 // so that we know when the RTCM message is completely received and we then start
@@ -5564,6 +5568,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
   if ((storageNMEAGPGGA != NULL)                                               // If RAM has been allocated for message storage
       && (storageNMEAGPGGA->callbackCopy != NULL)                              // If RAM has been allocated for the copy of the data
       && (storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid == 1)) // If the copy of the data is valid
@@ -5715,6 +5720,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     }
     storageNMEAGNZDA->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
   }
+#endif
 
   checkCallbacksReentrant = false;
 }
@@ -14812,6 +14818,7 @@ uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
   return (_processNMEA.all);
 }
 
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
 // Initiate automatic storage of NMEA GPGGA messages
 
 // Get the most recent GPGGA message
@@ -15234,7 +15241,7 @@ bool SFE_UBLOX_GNSS::initStorageNMEAGNVTG()
   return (true);
 }
 
-// Initiate automatic storage of NMEA GPVTG messages
+// Initiate automatic storage of NMEA GPRMC messages
 
 // Get the most recent GPRMC message
 // Return 0 if the message has not been received from the module
@@ -15655,6 +15662,7 @@ bool SFE_UBLOX_GNSS::initStorageNMEAGNZDA()
 
   return (true);
 }
+#endif
 
 // ***** CFG RATE Helper Functions
 
