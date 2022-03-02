@@ -16,6 +16,10 @@ UBX_ESF_MEAS_sensorData_t	KEYWORD1
 UBX_ESF_RAW_sensorData_t	KEYWORD1
 UBX_ESF_STATUS_sensorStatus_t	KEYWORD1
 
+UBX_CFG_ITFM_data_t	KEYWORD1
+UBX_MON_RF_data_t	KEYWORD1
+UBX_MON_HW_data_t	KEYWORD1
+
 UBX_NAV_POSECEF_data_t	KEYWORD1
 UBX_NAV_STATUS_data_t	KEYWORD1
 UBX_NAV_DOP_data_t	KEYWORD1
@@ -51,6 +55,9 @@ UBX_HNR_ATT_data_t	KEYWORD1
 UBX_HNR_INS_data_t	KEYWORD1
 
 NMEA_GGA_data_t	KEYWORD1
+NMEA_VTG_data_t	KEYWORD1
+NMEA_RMC_data_t	KEYWORD1
+NMEA_ZDA_data_t	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -181,6 +188,13 @@ setESFAutoAlignment	KEYWORD2
 
 getTimePulseParameters	KEYWORD2
 setTimePulseParameters	KEYWORD2
+
+getJammingConfiguration	KEYWORD2
+setJammingConfiguration	KEYWORD2
+
+getRFinformation	KEYWORD2
+
+getHWstatus	KEYWORD2
 
 getAckAiding	KEYWORD2
 setAckAiding	KEYWORD2
@@ -617,6 +631,27 @@ setNMEAGPGGAcallbackPtr	KEYWORD2
 getLatestNMEAGNGGA	KEYWORD2
 setNMEAGNGGAcallback	KEYWORD2
 setNMEAGNGGAcallbackPtr	KEYWORD2
+
+getLatestNMEAGPVTG	KEYWORD2
+setNMEAGPVTGcallback	KEYWORD2
+setNMEAGPVTGcallbackPtr	KEYWORD2
+getLatestNMEAGNVTG	KEYWORD2
+setNMEAGNVTGcallback	KEYWORD2
+setNMEAGNVTGcallbackPtr	KEYWORD2
+
+getLatestNMEAGPRMC	KEYWORD2
+setNMEAGPRMCcallback	KEYWORD2
+setNMEAGPRMCcallbackPtr	KEYWORD2
+getLatestNMEAGNRMC	KEYWORD2
+setNMEAGNRMCcallback	KEYWORD2
+setNMEAGNRMCcallbackPtr	KEYWORD2
+
+getLatestNMEAGPZDA	KEYWORD2
+setNMEAGPZDAcallback	KEYWORD2
+setNMEAGPZDAcallbackPtr	KEYWORD2
+getLatestNMEAGNZDA	KEYWORD2
+setNMEAGNZDAcallback	KEYWORD2
+setNMEAGNZDAcallbackPtr	KEYWORD2
 
 extractLong	KEYWORD2
 extractSignedLong	KEYWORD2

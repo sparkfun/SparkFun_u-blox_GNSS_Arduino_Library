@@ -901,6 +901,16 @@ public:
   bool getTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the time pulse parameters using UBX_CFG_TP5
   bool setTimePulseParameters(UBX_CFG_TP5_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Set the time pulse parameters using UBX_CFG_TP5
 
+  // Jamming/interference monitor configuration
+  bool getJammingConfiguration(UBX_CFG_ITFM_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the jamming/interference monitor configuration using UBX_CFG_ITFM
+  bool setJammingConfiguration(UBX_CFG_ITFM_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Set the jamming/interference monitor configuration using UBX_CFG_ITFM
+
+  // RF Information (including jamming) - ZED-F9 only
+  bool getRFinformation(UBX_MON_RF_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the RF information using UBX_MON_RF
+
+  // Hardware status (including jamming)
+  bool getHWstatus(UBX_MON_HW_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the hardware status using UBX_MON_HW
+
   // UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
   uint8_t getAckAiding(uint16_t maxWait = defaultMaxWait);                 // Get the ackAiding byte - returns 255 if the sendCommand fails
   bool setAckAiding(uint8_t ackAiding, uint16_t maxWait = defaultMaxWait); // Set the ackAiding byte
@@ -1428,6 +1438,24 @@ public:
   uint8_t getLatestNMEAGNGGA(NMEA_GGA_data_t *data);                           // Return the most recent GNGGA: 0 = no data, 1 = stale data, 2 = fresh data
   bool setNMEAGNGGAcallback(void (*callbackPointer)(NMEA_GGA_data_t));         // Enable a callback on the arrival of a GNGGA message
   bool setNMEAGNGGAcallbackPtr(void (*callbackPointerPtr)(NMEA_GGA_data_t *)); // Enable a callback on the arrival of a GNGGA message
+  uint8_t getLatestNMEAGPVTG(NMEA_VTG_data_t *data);                           // Return the most recent GPVTG: 0 = no data, 1 = stale data, 2 = fresh data
+  bool setNMEAGPVTGcallback(void (*callbackPointer)(NMEA_VTG_data_t));         // Enable a callback on the arrival of a GPVTG message
+  bool setNMEAGPVTGcallbackPtr(void (*callbackPointerPtr)(NMEA_VTG_data_t *)); // Enable a callback on the arrival of a GPVTG message
+  uint8_t getLatestNMEAGNVTG(NMEA_VTG_data_t *data);                           // Return the most recent GNVTG: 0 = no data, 1 = stale data, 2 = fresh data
+  bool setNMEAGNVTGcallback(void (*callbackPointer)(NMEA_VTG_data_t));         // Enable a callback on the arrival of a GNVTG message
+  bool setNMEAGNVTGcallbackPtr(void (*callbackPointerPtr)(NMEA_VTG_data_t *)); // Enable a callback on the arrival of a GNVTG message
+  uint8_t getLatestNMEAGPRMC(NMEA_RMC_data_t *data);                           // Return the most recent GPRMC: 0 = no data, 1 = stale data, 2 = fresh data
+  bool setNMEAGPRMCcallback(void (*callbackPointer)(NMEA_RMC_data_t));         // Enable a callback on the arrival of a GPRMC message
+  bool setNMEAGPRMCcallbackPtr(void (*callbackPointerPtr)(NMEA_RMC_data_t *)); // Enable a callback on the arrival of a GPRMC message
+  uint8_t getLatestNMEAGNRMC(NMEA_RMC_data_t *data);                           // Return the most recent GNRMC: 0 = no data, 1 = stale data, 2 = fresh data
+  bool setNMEAGNRMCcallback(void (*callbackPointer)(NMEA_RMC_data_t));         // Enable a callback on the arrival of a GNRMC message
+  bool setNMEAGNRMCcallbackPtr(void (*callbackPointerPtr)(NMEA_RMC_data_t *)); // Enable a callback on the arrival of a GNRMC message
+  uint8_t getLatestNMEAGPZDA(NMEA_ZDA_data_t *data);                           // Return the most recent GPZDA: 0 = no data, 1 = stale data, 2 = fresh data
+  bool setNMEAGPZDAcallback(void (*callbackPointer)(NMEA_ZDA_data_t));         // Enable a callback on the arrival of a GPZDA message
+  bool setNMEAGPZDAcallbackPtr(void (*callbackPointerPtr)(NMEA_ZDA_data_t *)); // Enable a callback on the arrival of a GPZDA message
+  uint8_t getLatestNMEAGNZDA(NMEA_ZDA_data_t *data);                           // Return the most recent GNZDA: 0 = no data, 1 = stale data, 2 = fresh data
+  bool setNMEAGNZDAcallback(void (*callbackPointer)(NMEA_ZDA_data_t));         // Enable a callback on the arrival of a GNZDA message
+  bool setNMEAGNZDAcallbackPtr(void (*callbackPointerPtr)(NMEA_ZDA_data_t *)); // Enable a callback on the arrival of a GNZDA message
 
   // Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
   // From v2.0: These are public. The user can call these to extract data from custom packets
@@ -1485,6 +1513,12 @@ public:
 
   NMEA_GPGGA_t *storageNMEAGPGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   NMEA_GNGGA_t *storageNMEAGNGGA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  NMEA_GPVTG_t *storageNMEAGPVTG = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  NMEA_GNVTG_t *storageNMEAGNVTG = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  NMEA_GPRMC_t *storageNMEAGPRMC = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  NMEA_GNRMC_t *storageNMEAGNRMC = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  NMEA_GPZDA_t *storageNMEAGPZDA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  NMEA_GNZDA_t *storageNMEAGNZDA = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
   uint16_t rtcmFrameCounter = 0; // Tracks the type of incoming byte inside RTCM frame
 
@@ -1570,6 +1604,12 @@ private:
 
   bool initStorageNMEAGPGGA(); // Allocate RAM for incoming NMEA GPGGA messages and initialize it
   bool initStorageNMEAGNGGA(); // Allocate RAM for incoming NMEA GNGGA messages and initialize it
+  bool initStorageNMEAGPVTG(); // Allocate RAM for incoming NMEA GPVTG messages and initialize it
+  bool initStorageNMEAGNVTG(); // Allocate RAM for incoming NMEA GNVTG messages and initialize it
+  bool initStorageNMEAGPRMC(); // Allocate RAM for incoming NMEA GPRMC messages and initialize it
+  bool initStorageNMEAGNRMC(); // Allocate RAM for incoming NMEA GNRMC messages and initialize it
+  bool initStorageNMEAGPZDA(); // Allocate RAM for incoming NMEA GPZDA messages and initialize it
+  bool initStorageNMEAGNZDA(); // Allocate RAM for incoming NMEA GNZDA messages and initialize it
 
   // Variables
   TwoWire *_i2cPort;              // The generic connection to user's chosen I2C hardware

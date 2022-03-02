@@ -1667,6 +1667,118 @@ typedef struct
   } flags;
 } UBX_CFG_TP5_data_t;
 
+// UBX-CFG-ITFM (0x06 0x39): Jamming/interference monitor configuration
+const uint16_t UBX_CFG_ITFM_LEN = 8;
+
+typedef struct
+{
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t bbThreshold : 4;    // Broadband jamming detection threshold
+      uint32_t cwThreshold : 5;    // CW jamming detection threshold
+      uint32_t algorithmBits : 22; // Reserved algorithm settings - should be set to 0x16B156 in hex for correct settings
+      uint32_t enable : 1;         // Enable interference detection
+    } bits;
+  } config;
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t generalBits : 12; // General settings - should be set to 0x31E in hex for correct setting
+      uint32_t antSetting : 2;   // Antenna setting, 0=unknown, 1=passive, 2=active
+      uint32_t enable2 : 1;      // Set to 1 to scan auxiliary bands (u-blox 8 / u-blox M8 only, otherwise ignored)
+    } bits;
+  } config2;
+} UBX_CFG_ITFM_data_t;
+
+// MON-specific structs
+
+// UBX-MON-HW (0x0A 0x09): Hardware status
+const uint16_t UBX_MON_HW_LEN = 60;
+
+typedef struct
+{
+  uint32_t pinSel; // Mask of pins set as peripheral/PIO
+  uint32_t pinBank; // Mask of pins set as bank A/B
+  uint32_t pinDir; // Mask of pins set as input/output
+  uint32_t pinVal; // Mask of pins value low/high
+  uint16_t noisePerMS; // Noise level as measured by the GPS core
+  uint16_t agcCnt; // AGC monitor (counts SIGHI xor SIGLO, range 0 to 8191)
+  uint8_t aStatus; // Status of the antenna supervisor state machine (0=INIT, 1=DONTKNOW, 2=OK, 3=SHORT, 4=OPEN)
+  uint8_t aPower; // Current power status of antenna (0=OFF, 1=ON, 2=DONTKNOW)
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t rtcCalib : 1; // RTC is calibrated
+      uint8_t safeBoot : 1; // Safeboot mode (0 = inactive, 1 = active)
+      uint8_t jammingState : 2; // Output from jamming/interference monitor (0 = unknown or feature disabled,
+                                // 1 = ok - no significant jamming,
+                                // 2 = warning - interference visible but fix OK,
+                                // 3 = critical - interference visible and no fix)
+      uint8_t xtalAbsent : 1; // RTC xtal has been determined to be absent
+    } bits;
+  } flags;
+  uint8_t reserved1; // Reserved
+  uint32_t usedMask; // Mask of pins that are used by the virtual pin manager
+  uint8_t VP[17]; // Array of pin mappings for each of the 17 physical pins
+  uint8_t jamInd; // CW jamming indicator, scaled (0 = no CW jamming, 255 = strong CW jamming)
+  uint8_t reserved2[2]; // Reserved
+  uint32_t pinIrq; // Mask of pins value using the PIO Irq
+  uint32_t pullH; // Mask of pins value using the PIO pull high resistor
+  uint8_t pullL; // Mask of pins value using the PIO pull low resistor
+} UBX_MON_HW_data_t;
+
+// UBX-MON-RF (0x0a 0x38): RF information
+const uint16_t UBX_MON_RF_MAX_BLOCKS = 2; // 0 = L1; 1 = L2 / L5
+const uint16_t UBX_MON_RF_MAX_LEN = 4 + (24 * UBX_MON_RF_MAX_BLOCKS);
+
+typedef struct
+{
+  uint8_t version; // Message version (0x00 for this version)
+  uint8_t nBlocks; // The number of RF blocks included
+  uint8_t reserved0[2];
+} UBX_MON_RF_header_t;
+
+typedef struct
+{
+  uint8_t blockId; // RF block ID (0 = L1 band, 1 = L2 or L5 band depending on product configuration)
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t jammingState : 2; // output from Jamming/Interference Monitor (0 = unknown or feature disabled,
+                                // 1 = ok - no significant jamming,
+                                // 2 = warning - interference visible but fix OK,
+                                // 3 = critical - interference visible and no fix)
+    } bits;
+  } flags;
+  uint8_t antStatus;    // Status of the antenna supervisor state machine (0x00=INIT, 0x01=DONTKNOW, 0x02=OK, 0x03=SHORT, 0x04=OPEN)
+  uint8_t antPower;     // Current power status of antenna (0x00=OFF, 0x01=ON, 0x02=DONTKNOW)
+  uint32_t postStatus;  // POST status word
+  uint8_t reserved1[4]; // Reserved
+  uint16_t noisePerMS;  // Noise level as measured by the GPS core
+  uint16_t agcCnt;      // AGC Monitor (counts SIGHI xor SIGLO, range 0 to 8191)
+  uint8_t jamInd;       // CW jamming indicator, scaled (0=no CW jamming, 255 = strong CW jamming)
+  int8_t ofsI;          // Imbalance of I-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
+  uint8_t magI;         // Magnitude of I-part of complex signal, scaled (0 = no signal, 255 = max.magnitude)
+  int8_t ofsQ;          // Imbalance of Q-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
+  uint8_t magQ;         // Magnitude of Q-part of complex signal, scaled (0 = no signal, 255 = max.magnitude)
+  uint8_t reserved2[3]; // Reserved
+} UBX_MON_RF_block_t;
+
+typedef struct
+{
+  UBX_MON_RF_header_t header;
+  UBX_MON_RF_block_t blocks[UBX_MON_RF_MAX_BLOCKS];
+} UBX_MON_RF_data_t;
+
 // TIM-specific structs
 
 // UBX-TIM-TM2 (0x0D 0x03): Time mark data
@@ -2422,5 +2534,89 @@ typedef struct
   void (*callbackPointerPtr)(NMEA_GGA_data_t *);
   NMEA_GGA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
 } NMEA_GNGGA_t;
+
+const uint8_t NMEA_VTG_MAX_LENGTH = 100;
+
+typedef struct
+{
+  uint8_t length; // The number of bytes in nmea
+  uint8_t nmea[NMEA_VTG_MAX_LENGTH];
+} NMEA_VTG_data_t;
+
+typedef struct
+{
+  nmeaAutomaticFlags automaticFlags;
+  NMEA_VTG_data_t workingCopy;  // Incoming data is added to the working copy
+  NMEA_VTG_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_VTG_data_t);
+  void (*callbackPointerPtr)(NMEA_VTG_data_t *);
+  NMEA_VTG_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GPVTG_t;
+
+typedef struct
+{
+  nmeaAutomaticFlags automaticFlags;
+  NMEA_VTG_data_t workingCopy;  // Incoming data is added to the working copy
+  NMEA_VTG_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_VTG_data_t);
+  void (*callbackPointerPtr)(NMEA_VTG_data_t *);
+  NMEA_VTG_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GNVTG_t;
+
+const uint8_t NMEA_RMC_MAX_LENGTH = 100;
+
+typedef struct
+{
+  uint8_t length; // The number of bytes in nmea
+  uint8_t nmea[NMEA_RMC_MAX_LENGTH];
+} NMEA_RMC_data_t;
+
+typedef struct
+{
+  nmeaAutomaticFlags automaticFlags;
+  NMEA_RMC_data_t workingCopy;  // Incoming data is added to the working copy
+  NMEA_RMC_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_RMC_data_t);
+  void (*callbackPointerPtr)(NMEA_RMC_data_t *);
+  NMEA_RMC_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GPRMC_t;
+
+typedef struct
+{
+  nmeaAutomaticFlags automaticFlags;
+  NMEA_RMC_data_t workingCopy;  // Incoming data is added to the working copy
+  NMEA_RMC_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_RMC_data_t);
+  void (*callbackPointerPtr)(NMEA_RMC_data_t *);
+  NMEA_RMC_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GNRMC_t;
+
+const uint8_t NMEA_ZDA_MAX_LENGTH = 50;
+
+typedef struct
+{
+  uint8_t length; // The number of bytes in nmea
+  uint8_t nmea[NMEA_ZDA_MAX_LENGTH];
+} NMEA_ZDA_data_t;
+
+typedef struct
+{
+  nmeaAutomaticFlags automaticFlags;
+  NMEA_ZDA_data_t workingCopy;  // Incoming data is added to the working copy
+  NMEA_ZDA_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_ZDA_data_t);
+  void (*callbackPointerPtr)(NMEA_ZDA_data_t *);
+  NMEA_ZDA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GPZDA_t;
+
+typedef struct
+{
+  nmeaAutomaticFlags automaticFlags;
+  NMEA_ZDA_data_t workingCopy;  // Incoming data is added to the working copy
+  NMEA_ZDA_data_t completeCopy; // The working copy is copied into the complete copy when all data has been received and the checksum is valid
+  void (*callbackPointer)(NMEA_ZDA_data_t);
+  void (*callbackPointerPtr)(NMEA_ZDA_data_t *);
+  NMEA_ZDA_data_t *callbackCopy; // The callback gets its own preserved copy of the complete copy
+} NMEA_GNZDA_t;
 
 #endif
