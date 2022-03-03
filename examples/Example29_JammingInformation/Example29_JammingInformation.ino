@@ -2,7 +2,7 @@
   Get the jamming state and indication
   By: Paul Clark
   SparkFun Electronics
-  Date: March 2nd, 2021
+  Date: March 2nd, 2022
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
@@ -73,7 +73,7 @@ void loop()
 
   if (myGNSS.getHWstatus(&hwStatus)) // Read the hardware status
   {
-    Serial.println(F("Hardware status (UBX_MON_RF):"));
+    Serial.println(F("Hardware status (UBX_MON_HW):"));
 
     Serial.print(F("Jamming state: "));
     Serial.print(hwStatus.flags.bits.jammingState);
