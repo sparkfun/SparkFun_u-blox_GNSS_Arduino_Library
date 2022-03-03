@@ -2,9 +2,11 @@
   Get the latest GPGGA / GNGGA NMEA sentence using callbacks
   By: Paul Clark
   SparkFun Electronics
-  Date: January 12th, 2021
+  Date: January 12th, 2022
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
+
+  ** Please note: this example will not run on Arduino Uno. See https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/blob/main/README.md#memory-usage
 
   This example shows how to turn on/off the NMEA sentences being output over I2C.
   It then demonstrates how to get the latest GPGGA or GNGGA message autonomously using callbacks.

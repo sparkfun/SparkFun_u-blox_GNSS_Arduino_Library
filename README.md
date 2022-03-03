@@ -80,14 +80,18 @@ There is a [new example](./examples/Dead_Reckoning/Example8_getNAVPVAT) showing 
 
 ## Memory Usage
 
-The u-blox GNSS library has grown considerably over the years and v2.0.8 came very close to completely filling the program memory on platforms like the ATmega328 (Arduino Uno).
-If you want to reduce the amount of memory used by the library, you can edit the header file (_SparkFun_u-blox_GNSS_Arduino_Library.h_) and uncomment line 60:
+The u-blox GNSS library has grown considerably over the years and now exceeds the available program memory on platforms like the ATmega328 (Arduino Uno).
+If you want to reduce the amount of memory used by the library, you can edit the header file (_SparkFun_u-blox_GNSS_Arduino_Library.h_) and uncomment lines 60 and 63:
 
 ```
 #define SFE_UBLOX_REDUCED_PROG_MEM // Uncommenting this line will delete the minor debug messages to save memory
 ```
 
-Doing this will save approximately 15% of the program memory used by the library. From v2.0.18 of the library, the debug messages are automatically deleted on ARDUINO_AVR_UNO platforms. For other platforms, you will need to uncomment that line manually.
+```
+#define SFE_UBLOX_DISABLE_AUTO_NMEA // Uncommenting this line will disable auto-NMEA support to save memory
+```
+
+**Please note:** the debug messages are automatically deleted and auto-NMEA support is automatically disabled on ARDUINO_AVR_UNO platforms. For other platforms, you will need to uncomment those lines manually.
 
 On Windows, you will normally find _SparkFun_u-blox_GNSS_Arduino_Library.h_ in:
 - Documents\Arduino\libraries\SparkFun_u-blox_GNSS_Arduino_Library\src

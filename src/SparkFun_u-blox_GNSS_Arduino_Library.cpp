@@ -422,7 +422,7 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXHNRPVT = NULL; // Redundant?
   }
 
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
   if (storageNMEAGPGGA != NULL)
   {
     if (storageNMEAGPGGA->callbackCopy != NULL)
@@ -1863,7 +1863,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
         _signsOfLife = isNMEAHeaderValid();
       }
 
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
       // Check if we have automatic storage for this message
       if (isThisNMEAauto())
       {
@@ -1902,7 +1902,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if ((nmeaByteCounter > 5) || (nmeaByteCounter < 0)) // Should we add incoming to the file buffer and/or pass it to processNMEA?
     {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
       if (isThisNMEAauto())
       {
         uint8_t *lengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
@@ -1938,7 +1938,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     if (nmeaByteCounter == 0) // Check if we are done
     {
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
       if (isThisNMEAauto())
       {
         uint8_t *workingLengthPtr = getNMEAWorkingLengthPtr(); // Get a pointer to the working copy length
@@ -2194,7 +2194,7 @@ void SFE_UBLOX_GNSS::processNMEA(char incoming)
     _nmeaOutputPort->write(incoming); // Echo this byte to the serial port
 }
 
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
 // Check if the NMEA message (in nmeaAddressField) is "auto" (i.e. has RAM allocated for it)
 bool SFE_UBLOX_GNSS::isThisNMEAauto()
 {
@@ -5568,7 +5568,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
   if ((storageNMEAGPGGA != NULL)                                               // If RAM has been allocated for message storage
       && (storageNMEAGPGGA->callbackCopy != NULL)                              // If RAM has been allocated for the copy of the data
       && (storageNMEAGPGGA->automaticFlags.flags.bits.callbackCopyValid == 1)) // If the copy of the data is valid
@@ -14818,7 +14818,7 @@ uint32_t SFE_UBLOX_GNSS::getProcessNMEAMask()
   return (_processNMEA.all);
 }
 
-#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+#ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
 // Initiate automatic storage of NMEA GPGGA messages
 
 // Get the most recent GPGGA message

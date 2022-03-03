@@ -56,6 +56,7 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
 - UBX-NAV-PVAT (0x01 0x17): Navigation position velocity attitude time solution (**only with ADR or UDR products**)
 - UBX-NAV-CLOCK (0x01 0x22): Clock solution
+- UBX-NAV-SAT (0x01 0x35): Satellite information
 - UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
 - UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
 - UBX-NAV-AOPSTATUS (0x01 0x60): AssistNow Autonomous status
