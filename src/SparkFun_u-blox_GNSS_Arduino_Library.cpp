@@ -16102,7 +16102,7 @@ int32_t SFE_UBLOX_GNSS::getNanosecond(uint16_t maxWait)
   return (packetUBXNAVPVT->data.nano);
 }
 
-// Get the current Unix epoch time rounded up to the nearest second
+// Get the current Unix epoch time rounded to the nearest second
 uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
 {
   if (packetUBXNAVPVT == NULL)
@@ -16119,16 +16119,16 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.min = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
-  // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
-  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) +
-                   DAYS_SINCE_MONTH[((uint32_t)packetUBXNAVPVT->data.year - 1970) & 3][(uint32_t)packetUBXNAVPVT->data.month] +
-                   ((uint32_t)packetUBXNAVPVT->data.day - 1)) *
-                      24 +
-                  (uint32_t)packetUBXNAVPVT->data.hour) *
-                     60 +
-                 (uint32_t)packetUBXNAVPVT->data.min) *
-                    60 +
-                (uint32_t)packetUBXNAVPVT->data.sec);
+  uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; // Jan 1st 2020 as days from Jan 1st 1970
+  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020]; // Add on the number of days since 2020
+  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
+  t += (uint32_t)packetUBXNAVPVT->data.day - 1; // Add on the number of days since the 1st of the month
+  t *= 24; // Convert to hours
+  t += (uint32_t)packetUBXNAVPVT->data.hour; // Add on the hour
+  t *= 60; // Convert to minutes
+  t += (uint32_t)packetUBXNAVPVT->data.min; // Add on the minute
+  t *= 60; // Convert to seconds
+  t += (uint32_t)packetUBXNAVPVT->data.sec; // Add on the second
   return t;
 }
 
@@ -16150,23 +16150,23 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t &microsecond, uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
-  // assemble time elements into time_t - credits to Thomas Roell @ https://github.com/GrumpyOldPizza
-  uint32_t t = ((((((((uint32_t)packetUBXNAVPVT->data.year - 1970) * 365) + ((((uint32_t)packetUBXNAVPVT->data.year - 1970) + 3) / 4)) +
-                   DAYS_SINCE_MONTH[((uint32_t)packetUBXNAVPVT->data.year - 1970) & 3][(uint32_t)packetUBXNAVPVT->data.month] +
-                   ((uint32_t)packetUBXNAVPVT->data.day - 1)) *
-                      24 +
-                  (uint32_t)packetUBXNAVPVT->data.hour) *
-                     60 +
-                 (uint32_t)packetUBXNAVPVT->data.min) *
-                    60 +
-                (uint32_t)packetUBXNAVPVT->data.sec);
-  int32_t us = packetUBXNAVPVT->data.nano / 1000;
-  microsecond = (uint32_t)us;
-  // adjust t if nano is negative
+  uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; // Jan 1st 2020 as days from Jan 1st 1970
+  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020]; // Add on the number of days since 2020
+  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
+  t += (uint32_t)packetUBXNAVPVT->data.day - 1; // Add on the number of days since the 1st of the month
+  t *= 24; // Convert to hours
+  t += (uint32_t)packetUBXNAVPVT->data.hour; // Add on the hour
+  t *= 60; // Convert to minutes
+  t += (uint32_t)packetUBXNAVPVT->data.min; // Add on the minute
+  t *= 60; // Convert to seconds
+  t += (uint32_t)packetUBXNAVPVT->data.sec; // Add on the second
+  int32_t us = packetUBXNAVPVT->data.nano / 1000; // Convert nanos to micros
+  microsecond = (uint32_t)us; // Could be -ve!
+  // Adjust t if nano is negative
   if (us < 0)
   {
-    microsecond = (uint32_t)(us + 1000000);
-    t--;
+    microsecond = (uint32_t)(us + 1000000); // Make nano +ve
+    t--; // Decrement t by 1 second
   }
   return t;
 }
