@@ -59,7 +59,7 @@ void setup()
   myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGNSS.saveConfiguration();        //Optional: Save the current settings to flash and BBR
 
-  Serial.println("Compare Unix Epoch given with reference one from https://www.epochconverter.com/");
+  Serial.println(F("Compare Unix Epoch given with reference one from https://www.epochconverter.com/"));
   
 }
 
@@ -75,66 +75,74 @@ void loop()
 
     uint32_t us;  //microseconds returned by getUnixEpoch()
     uint32_t epoch = myGNSS.getUnixEpoch();
-    Serial.print("Unix Epoch rounded: ");
+    Serial.print(F("Unix Epoch rounded: "));
     Serial.print(epoch, DEC);    
     epoch = myGNSS.getUnixEpoch(us);
-    Serial.print("  Exact Unix Epoch: ");
+    Serial.print(F("  Exact Unix Epoch: "));
     Serial.print(epoch, DEC);
-    Serial.print("  micros: ");
+    Serial.print(F("  micros: "));
     Serial.println(us, DEC);
     int32_t timeToLeapSecEvent;
     ntp_LI_e leapIndicator = (ntp_LI_e)myGNSS.getLeapIndicator(timeToLeapSecEvent);
-    Serial.print("NTP LI: ");
+    Serial.print(F("NTP LI: "));
     Serial.print(leapIndicator, DEC);
     switch (leapIndicator){
       case LI_NO_WARNING:
-        Serial.print(" - No event scheduled");
+        Serial.print(F(" - No event scheduled"));
         break;
       case LI_LAST_MINUTE_61_SEC:
-        Serial.print(" - last minute will end at 23:60");
+        Serial.print(F(" - last minute will end at 23:60"));
         break;
       case LI_LAST_MINUTE_59_SEC:
-        Serial.print(" - last minute will end at 23:58");
+        Serial.print(F(" - last minute will end at 23:58"));
         break; 
       case LI_ALARM_CONDITION:
       default:
-        Serial.print(" - Unknown (clock not synchronized)");
+        Serial.print(F(" - Unknown (clock not synchronized)"));
         break; 
     }
-    Serial.print(". Time to the next leap second event: ");
-    Serial.println(timeToLeapSecEvent, DEC);
+    if (timeToLeapSecEvent < 0)
+    {
+      Serial.print(F(". Time since the last leap second event: "));
+      Serial.println(timeToLeapSecEvent * -1, DEC);
+    }
+    else
+    {
+      Serial.print(F(". Time to the next leap second event: "));
+      Serial.println(timeToLeapSecEvent, DEC);
+    }
 
     sfe_ublox_ls_src_e leapSecSource;
-    Serial.print("Leap seconds since GPS Epoch (Jan 6th, 1980): ");
+    Serial.print(F("Leap seconds since GPS Epoch (Jan 6th, 1980): "));
     Serial.print(myGNSS.getCurrentLeapSeconds(leapSecSource), DEC);
     switch (leapSecSource){
       case SFE_UBLOX_LS_SRC_DEFAULT:
-        Serial.print(" - hardcoded");
+        Serial.print(F(" - hardcoded"));
         break;
       case SFE_UBLOX_LS_SRC_GLONASS:
-        Serial.print(" - derived from GPS and GLONASS time difference");
+        Serial.print(F(" - derived from GPS and GLONASS time difference"));
         break;
       case SFE_UBLOX_LS_SRC_GPS:
-        Serial.print(" - according to GPS");
+        Serial.print(F(" - according to GPS"));
         break; 
       case SFE_UBLOX_LS_SRC_SBAS:
-        Serial.print(" - according to SBAS");
+        Serial.print(F(" - according to SBAS"));
         break;
       case SFE_UBLOX_LS_SRC_BEIDOU:
-        Serial.print(" - according to BeiDou");
+        Serial.print(F(" - according to BeiDou"));
         break;
       case SFE_UBLOX_LS_SRC_GALILEO:
-        Serial.print(" - according to Galileo");
+        Serial.print(F(" - according to Galileo"));
         break;
       case SFE_UBLOX_LS_SRC_AIDED:
-        Serial.print(" - last minute will end at 23:58");
+        Serial.print(F(" - last minute will end at 23:58"));
         break; 
       case SFE_UBLOX_LS_SRC_CONFIGURED:
-        Serial.print(" - as configured)");
+        Serial.print(F(" - as configured)"));
         break;
       case SFE_UBLOX_LS_SRC_UNKNOWN:
       default:
-        Serial.print(" - source unknown");
+        Serial.print(F(" - source unknown"));
         break;
     }
     Serial.println();

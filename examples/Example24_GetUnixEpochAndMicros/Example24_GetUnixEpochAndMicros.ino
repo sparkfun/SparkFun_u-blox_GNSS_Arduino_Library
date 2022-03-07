@@ -54,7 +54,7 @@ void setup()
   myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   //myGNSS.saveConfiguration();        //Optional: Save the current settings to flash and BBR
 
-  Serial.println("Compare Unix Epoch given with reference one from https://www.epochconverter.com/");
+  Serial.println(F("Compare Unix Epoch given with reference one from https://www.epochconverter.com/"));
 
 }
 
@@ -70,45 +70,45 @@ void loop()
 
     uint32_t us;  //microseconds returned by getUnixEpoch()
     uint32_t epoch = myGNSS.getUnixEpoch();
-    Serial.print("Unix Epoch rounded: ");
+    Serial.print(F("Unix Epoch rounded: "));
     Serial.print(epoch, DEC);    
     epoch = myGNSS.getUnixEpoch(us);
-    Serial.print("  Exact Unix Epoch: ");
+    Serial.print(F("  Exact Unix Epoch: "));
     Serial.print(epoch, DEC);
-    Serial.print("  micros: ");
+    Serial.print(F("  micros: "));
     Serial.println(us, DEC);
 
     Serial.print(myGNSS.getYear());
-    Serial.print("-");
+    Serial.print(F("-"));
     Serial.print(myGNSS.getMonth());
-    Serial.print("-");
+    Serial.print(F("-"));
     Serial.print(myGNSS.getDay());
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(myGNSS.getHour());
-    Serial.print(":");
+    Serial.print(F(":"));
     Serial.print(myGNSS.getMinute());
-    Serial.print(":");
+    Serial.print(F(":"));
     Serial.print(myGNSS.getSecond());
     
-    Serial.print("  Time is ");
+    Serial.print(F("  Time is "));
     if (myGNSS.getTimeFullyResolved() == false)
     {
-      Serial.print("not fully resolved but ");
+      Serial.print(F("not fully resolved but "));
     } else {
-      Serial.print("fully resolved and ");
+      Serial.print(F("fully resolved and "));
     }
     if (myGNSS.getTimeValid() == false)
     {
-      Serial.print("not ");
+      Serial.print(F("not "));
     }
-    Serial.print("valid ");
+    Serial.print(F("valid "));
     if (myGNSS.getConfirmedTime() == false)
     {
-      Serial.print("but not ");
+      Serial.print(F("but not "));
     } else {
-      Serial.print("and ");
+      Serial.print(F("and "));
     }
-    Serial.print("confirmed");
+    Serial.print(F("confirmed"));
 
     byte SIV = myGNSS.getSIV();
     Serial.print(F("  SIV: "));
