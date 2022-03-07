@@ -19,6 +19,7 @@ UBX_ESF_STATUS_sensorStatus_t	KEYWORD1
 UBX_CFG_ITFM_data_t	KEYWORD1
 UBX_MON_RF_data_t	KEYWORD1
 UBX_MON_HW_data_t	KEYWORD1
+UBX_MON_HW2_data_t	KEYWORD1
 
 UBX_NAV_POSECEF_data_t	KEYWORD1
 UBX_NAV_STATUS_data_t	KEYWORD1
@@ -195,6 +196,7 @@ setJammingConfiguration	KEYWORD2
 getRFinformation	KEYWORD2
 
 getHWstatus	KEYWORD2
+getHW2status	KEYWORD2
 
 getAckAiding	KEYWORD2
 setAckAiding	KEYWORD2

@@ -928,6 +928,9 @@ public:
   // Hardware status (including jamming)
   bool getHWstatus(UBX_MON_HW_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the hardware status using UBX_MON_HW
 
+  // Extended hardware status
+  bool getHW2status(UBX_MON_HW2_data_t *data = NULL, uint16_t maxWait = defaultMaxWait); // Get the extended hardware status using UBX_MON_HW2
+
   // UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
   uint8_t getAckAiding(uint16_t maxWait = defaultMaxWait);                 // Get the ackAiding byte - returns 255 if the sendCommand fails
   bool setAckAiding(uint8_t ackAiding, uint16_t maxWait = defaultMaxWait); // Set the ackAiding byte

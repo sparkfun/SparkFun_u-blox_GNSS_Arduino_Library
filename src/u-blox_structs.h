@@ -1734,6 +1734,23 @@ typedef struct
   uint8_t pullL; // Mask of pins value using the PIO pull low resistor
 } UBX_MON_HW_data_t;
 
+// UBX-MON-HW2 (0x0A 0x0B): Extended hardware status
+const uint16_t UBX_MON_HW2_LEN = 28;
+
+typedef struct
+{
+  int8_t ofsI; // Imbalance of I-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
+  uint8_t magI; // Magnitude of I-part of complex signal, scaled (0 = no signal, 255 = max. magnitude)
+  int8_t ofsQ; // Imbalance of Q-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
+  uint8_t magQ; // Magnitude of Q-part of complex signal, scaled (0 = no signal, 255 = max. magnitude)
+  uint8_t cfgSource; // Source of low-level configuration (114 = ROM, 111 = OTP, 112 = config pins, 102 = flash image)
+  uint8_t reserved0[3];
+  uint32_t lowLevCfg; // Low-level configuration (obsolete for protocol versions greater than 15.00)
+  uint8_t reserved1[8];
+  uint32_t postStatus; // POST status word
+  uint8_t reserved2[4]; // Reserved
+} UBX_MON_HW2_data_t;
+
 // UBX-MON-RF (0x0a 0x38): RF information
 const uint16_t UBX_MON_RF_MAX_BLOCKS = 2; // 0 = L1; 1 = L2 / L5
 const uint16_t UBX_MON_RF_MAX_LEN = 4 + (24 * UBX_MON_RF_MAX_BLOCKS);
