@@ -138,6 +138,7 @@ void beginClient()
       wifiClient.setCACert(AWS_CERT_CA);
       wifiClient.setCertificate(AWS_CERT_CRT);
       wifiClient.setPrivateKey(AWS_CERT_PRIVATE);
+      mqttClient.setId(MQTT_CLIENT_ID);
       if (!mqttClient.connect(AWS_IOT_ENDPOINT, AWS_IOT_PORT)) {
         Serial.print(F("MQTT connection failed! Error code = "));
         Serial.println(mqttClient.connectError());
