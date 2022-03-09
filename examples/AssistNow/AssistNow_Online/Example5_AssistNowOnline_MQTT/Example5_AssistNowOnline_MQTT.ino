@@ -1,35 +1,28 @@
 /*
-  Use ESP32 WiFi to get SPARTN data from PointPerfect (broker) as a Client
-  By: u-blox AG / Michael Ammann
-  Date: January 27th, 2022
+  Use ESP32 WiFi to get AssistNow Online (MGA) data from PointPerfect (broker) as a Client using MQTT
+  By: Paul Clark / SparkFun
+  Date: March 9th, 2022
+  Based on original code by: u-blox AG / Michael Ammann
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to obtain SPARTN data from a PointPerfect Broker over WiFi
+  This example shows how to obtain AssistNow Online (MGA) data from a PointPerfect Broker over WiFi
   and push it over I2C to a ZED-F9x.
-  It's confusing, but the Arduino is acting as a 'client' to the PointPerfect SSR correction service.
+  It's confusing, but the Arduino is acting as a 'client' to the PointPerfect service.
 
   You will need to have a valid u-blox Thingstream account and have a PointPerfect Thing and payed plan. 
-  Thingstream offers SSR corrections to SPARTN capable RTK receivers such as the u-blox ZED-F9 series 
-  in continental Europe and US. Their Network is planned to be expanded to other regions over the next years. 
   To sign up, go to: https://portal.thingstream.io/app/location-services/things
 
-  This is a proof of concept to show how to connect via MQTT to get SPARTN SSR correction. 
-  Using WiFi for a rover is generally a bad idea because of limited WiFi range in the field. 
-  You may use this exmaple in combination with a cell phone with hotspot mode enabled. 
+  This is a proof of concept to show how to connect via MQTT to get AssistNow MGA data. 
 
   For more information about MQTT, SPARTN and PointPerfect Correction Services 
   please see: https://www.u-blox.com/en/product/pointperfect
   
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
-  ZED-F9P RTK2: https://www.sparkfun.com/products/16481
-  RTK Surveyor: https://www.sparkfun.com/products/18443
-  RTK Express: https://www.sparkfun.com/products/18442
-  
-  Recommended Hardware:
-  MicroMod GNSS Carrier Board: https://www.sparkfun.com/products/17722 
-  ESP32 Micromod https://www.sparkfun.com/products/16781
+  SparkFun Thing Plus - ESP32 WROOM:        https://www.sparkfun.com/products/15663
+  ZED-F9P RTK2:                             https://www.sparkfun.com/products/16481
+  SparkFun GPS Breakout - ZOE-M8Q (Qwiic):  https://www.sparkfun.com/products/15193
 
   Hardware Connections:
   Plug a Qwiic cable into the GNSS and a ESP32 Thing Plus
@@ -54,7 +47,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial);
-  Serial.println(F("PointPerfect testing"));
+  Serial.println(F("PointPerfect AssistNow testing"));
 
   Wire.begin(); //Start I2C
 
@@ -66,9 +59,10 @@ void setup()
  
   Serial.println(F("u-blox module connected"));
   myGNSS.setI2COutput(COM_TYPE_UBX); //Turn off NMEA noise
-  myGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_SPARTN); // Be sure SPARTN input is enabled.
+  myGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_SPARTN);
    
   myGNSS.setNavigationFrequency(1); //Set output in Hz.
+  
   Serial.print(F("Connecting to local WiFi"));
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -91,7 +85,7 @@ void loop()
     while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
   }
 
-  Serial.println(F("Press any key to start MQTT/SPARTN Client."));
+  Serial.println(F("Press any key to start MQTT Client."));
 
   delay(1000);
 }
@@ -100,8 +94,8 @@ WiFiClientSecure wifiClient = WiFiClientSecure();
 MqttClient mqttClient(wifiClient);
 
 void mqttMessageHandler(int messageSize) {
-  uint8_t spartnData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
-  int spartnCount = 0;
+  uint8_t mgaData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
+  int mgaCount = 0;
   Serial.print(F("Pushed data from "));
   Serial.print(mqttClient.messageTopic());
   Serial.println(F(" topic to ZED"));
@@ -109,20 +103,20 @@ void mqttMessageHandler(int messageSize) {
   {
     char ch = mqttClient.read();
     //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
-    spartnData[spartnCount++] = ch;
-    if (spartnCount == sizeof(spartnData)) 
+    mgaData[mgaCount++] = ch;
+    if (mgaCount == sizeof(mgaData)) 
       break;
   }
 
-  if (spartnCount > 0)
+  if (mgaCount > 0)
   {
-    //Push KEYS or SPARTN data to GNSS module over I2C
-    myGNSS.pushRawData(spartnData, spartnCount, false);
+    //Push MGA data to GNSS module over I2C
+    myGNSS.pushRawData(mgaData, mgaCount, false);
     lastReceived_ms = millis();
   }
 }
 
-//Connect to STARTN MQTT broker, receive RTCM, and push to ZED module over I2C
+//Connect to MQTT broker, receive MGA, and push to ZED module over I2C
 void beginClient()
 {
   Serial.println(F("Subscribing to Broker. Press key to stop"));
@@ -151,8 +145,7 @@ void beginClient()
         // Subscribe to MQTT and register a callback
         Serial.println(F("Subscribe to Topics")); 
         mqttClient.onMessage(mqttMessageHandler);
-        mqttClient.subscribe(MQTT_TOPIC_KEY);
-        mqttClient.subscribe(MQTT_TOPIC_SPARTN);
+        mqttClient.subscribe(MQTT_TOPIC_ASSISTNOW);
         lastReceived_ms = millis();
       } //End attempt to connect
     } //End connected == false
@@ -162,7 +155,7 @@ void beginClient()
     //Close socket if we don't have new data for 10s
     if (millis() - lastReceived_ms > maxTimeBeforeHangup_ms)
     {
-      Serial.println(F("SPARTN timeout. Disconnecting..."));
+      Serial.println(F("Timeout. Disconnecting..."));
       if (mqttClient.connected() == true)
         mqttClient.stop();
       return;

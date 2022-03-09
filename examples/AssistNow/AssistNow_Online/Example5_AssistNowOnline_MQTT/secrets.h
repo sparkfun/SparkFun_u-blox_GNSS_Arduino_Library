@@ -10,10 +10,8 @@ const char password[] =  "<YOUR PASSWORD>";
 // <Your PointPerfect Thing> -> Credentials -> Hostname
 const char AWS_IOT_ENDPOINT[]       = "pp.services.u-blox.com";
 const unsigned short AWS_IOT_PORT   = 8883;
-// <Your PointPerfect Thing> -> Credentials -> IP key distribution topic
-const char MQTT_TOPIC_KEY[]        = "/pp/key/ip";
-// <Your PointPerfect Thing> -> Credentials -> IP correction topic for EU/US region
-const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/us"; // choice of {eu, us}
+// <Your PointPerfect Thing> -> Credentials -> AssistNow (MGA) topic
+const char MQTT_TOPIC_ASSISTNOW[]     = "/pp/ubx/mga";
 
 // <Your PointPerfect Thing> -> Credentials -> Client Id
 static const char MQTT_CLIENT_ID[] = "<ADD YOUR CLIENT ID HERE>";

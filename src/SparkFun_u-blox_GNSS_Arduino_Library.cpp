@@ -8232,6 +8232,32 @@ bool SFE_UBLOX_GNSS::getHWstatus(UBX_MON_HW_data_t *data, uint16_t maxWait)
   return (true);
 }
 
+// Get the extended hardware status using UBX_MON_HW2
+bool SFE_UBLOX_GNSS::getHW2status(UBX_MON_HW2_data_t *data, uint16_t maxWait)
+{
+  if (data == NULL) // Check if the user forgot to include the data pointer
+    return (false); // Bail
+
+  packetCfg.cls = UBX_CLASS_MON;
+  packetCfg.id = UBX_MON_HW2;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Extract the data
+  data->ofsI = extractSignedChar(&packetCfg, 0);
+  data->magI = extractByte(&packetCfg, 1);
+  data->ofsQ = extractSignedChar(&packetCfg, 2);
+  data->magQ = extractByte(&packetCfg, 3);
+  data->cfgSource = extractByte(&packetCfg, 4);
+  data->lowLevCfg = extractLong(&packetCfg, 8); // Low-level configuration (obsolete for protocol versions greater than 15.00)
+  data->postStatus = extractLong(&packetCfg, 20);
+
+  return (true);
+}
+
 // UBX-CFG-NAVX5 - get/set the ackAiding byte. If ackAiding is 1, UBX-MGA-ACK messages will be sent by the module to acknowledge the MGA data
 uint8_t SFE_UBLOX_GNSS::getAckAiding(uint16_t maxWait) // Get the ackAiding byte - returns 255 if the sendCommand fails
 {
