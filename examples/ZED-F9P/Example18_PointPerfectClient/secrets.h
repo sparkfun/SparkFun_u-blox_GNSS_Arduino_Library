@@ -16,7 +16,7 @@ const char MQTT_TOPIC_KEY[]        = "/pp/key/ip";
 const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/us"; // choice of {eu, us}
 
 // <Your PointPerfect Thing> -> Credentials -> Client Id
-static const char MQTT_CLIENT_ID = "<ADD YOUR CLIENT ID HERE>";
+static const char MQTT_CLIENT_ID[] = "<ADD YOUR CLIENT ID HERE>";
 
 // <Your PointPerfect Thing> -> Credentials -> Amazon Root Certificate
 static const char AWS_CERT_CA[] PROGMEM = R"EOF(
