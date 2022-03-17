@@ -10,7 +10,7 @@
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/16481
-  NEO-D9S: Coming soon!
+  NEO-D9S Correction Data Receiver: https://www.sparkfun.com/products/19390
 
   Hardware Connections:
   Use a Qwiic cable to connect the NEO-D9S L-Band corection data receiver to your board
