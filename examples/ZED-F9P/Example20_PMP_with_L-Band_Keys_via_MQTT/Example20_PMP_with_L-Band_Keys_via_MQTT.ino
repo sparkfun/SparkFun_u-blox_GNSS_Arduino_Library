@@ -59,6 +59,13 @@ const uint32_t myLBandFreq = 1556290000; // Uncomment this line to use the US SP
 #define OK(ok) (ok ? F("  ->  OK") : F("  ->  ERROR!")) // Convert uint8_t into OK/ERROR
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    
+//Global variables
+
+long lastReceived_ms = 0; //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 // Callback: pushRXMPMP will be called when new PMP data arrives
 // See u-blox_structs.h for the full definition of UBX_RXM_PMP_message_data_t
@@ -143,11 +150,65 @@ void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    
-//Global variables
 
-long lastReceived_ms = 0; //5 RTCM messages take approximately ~300ms to arrive at 115200bps
-int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
+// Callback: printRXMCOR will be called when new RXM COR data arrives
+// See u-blox_structs.h for the full definition of UBX_RXM_COR_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setRXMCORcallbackPtr
+//        /                  _____  This _must_ be UBX_RXM_COR_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void printRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
+{
+  Serial.print(F("UBX-RXM-COR:  ebno: "));
+  Serial.print(ubxDataStruct->ebno);
+
+  Serial.print(F("  protocol: "));
+  if (ubxDataStruct->statusInfo.bits.protocol == 1)
+    Serial.print(F("RTCM3"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 2)
+    Serial.print(F("SPARTN"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 29)
+    Serial.print(F("PMP (SPARTN)"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 30)
+    Serial.print(F("QZSSL6"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  errStatus: "));
+  if (ubxDataStruct->statusInfo.bits.errStatus == 1)
+    Serial.print(F("Error-free"));
+  else if (ubxDataStruct->statusInfo.bits.errStatus == 2)
+    Serial.print(F("Erroneous"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgUsed: "));
+  if (ubxDataStruct->statusInfo.bits.msgUsed == 1)
+    Serial.print(F("Not used"));
+  else if (ubxDataStruct->statusInfo.bits.msgUsed == 2)
+    Serial.print(F("Used"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgEncrypted: "));
+  if (ubxDataStruct->statusInfo.bits.msgEncrypted == 1)
+    Serial.print(F("Not encrypted"));
+  else if (ubxDataStruct->statusInfo.bits.msgEncrypted == 2)
+    Serial.print(F("Encrypted"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgDecrypted: "));
+  if (ubxDataStruct->statusInfo.bits.msgDecrypted == 1)
+    Serial.print(F("Not decrypted"));
+  else if (ubxDataStruct->statusInfo.bits.msgDecrypted == 2)
+    Serial.print(F("Successfully decrypted"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.println();
+}
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -180,12 +241,16 @@ void setup()
   
   if (ok) ok = myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
   
+  if (ok) ok = myGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
+  
   //if (ok) ok = myGNSS.saveConfiguration(VAL_CFG_SUBSEC_IOPORT | VAL_CFG_SUBSEC_MSGCONF); //Optional: Save the ioPort and message settings to NVM
   
   Serial.print(F("GNSS: configuration "));
   Serial.println(OK(ok));
 
   myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata so we can watch the carrier solution go to fixed
+
+  myGNSS.setRXMCORcallbackPtr(&printRXMCOR); // Print the contents of UBX-RXM-COR messages so we can check if the PMP data is being decrypted successfully
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Begin and configure the NEO-D9S L-Band receiver
