@@ -45,10 +45,135 @@
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
     
-//Global variables
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//Global variables
+
 long lastReceived_ms = 0; //5 RTCM messages take approximately ~300ms to arrive at 115200bps
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// Callback: printPVTdata will be called when new NAV PVT data arrives
+// See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoPVTcallbackPtr
+//        /                  _____  This _must_ be UBX_NAV_PVT_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
+{
+  double latitude = ubxDataStruct->lat; // Print the latitude
+  Serial.print(F("Lat: "));
+  Serial.print(latitude / 10000000.0, 7);
+
+  double longitude = ubxDataStruct->lon; // Print the longitude
+  Serial.print(F("  Long: "));
+  Serial.print(longitude / 10000000.0, 7);
+
+  double altitude = ubxDataStruct->hMSL; // Print the height above mean sea level
+  Serial.print(F("  Height: "));
+  Serial.print(altitude / 1000.0, 3);
+
+  uint8_t fixType = ubxDataStruct->fixType; // Print the fix type
+  Serial.print(F("  Fix: "));
+  Serial.print(fixType);
+  if (fixType == 0)
+    Serial.print(F(" (None)"));
+  else if (fixType == 1)
+    Serial.print(F(" (Dead Reckoning)"));
+  else if (fixType == 2)
+    Serial.print(F(" (2D)"));
+  else if (fixType == 3)
+    Serial.print(F(" (3D)"));
+  else if (fixType == 3)
+    Serial.print(F(" (GNSS + Dead Reckoning)"));
+  else if (fixType == 5)
+    Serial.print(F(" (Time Only)"));
+  else
+    Serial.print(F(" (UNKNOWN)"));
+
+  uint8_t carrSoln = ubxDataStruct->flags.bits.carrSoln; // Print the carrier solution
+  Serial.print(F("  Carrier Solution: "));
+  Serial.print(carrSoln);
+  if (carrSoln == 0)
+    Serial.print(F(" (None)"));
+  else if (carrSoln == 1)
+    Serial.print(F(" (Floating)"));
+  else if (carrSoln == 2)
+    Serial.print(F(" (Fixed)"));
+  else
+    Serial.print(F(" (UNKNOWN)"));
+
+  uint32_t hAcc = ubxDataStruct->hAcc; // Print the horizontal accuracy estimate
+  Serial.print(F("  Horizontal Accuracy Estimate: "));
+  Serial.print(hAcc);
+  Serial.print(F(" (mm)"));
+
+  Serial.println();    
+}
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// Callback: printRXMCOR will be called when new RXM COR data arrives
+// See u-blox_structs.h for the full definition of UBX_RXM_COR_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setRXMCORcallbackPtr
+//        /                  _____  This _must_ be UBX_RXM_COR_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void printRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
+{
+  Serial.print(F("UBX-RXM-COR:  ebno: "));
+  Serial.print(ubxDataStruct->ebno);
+
+  Serial.print(F("  protocol: "));
+  if (ubxDataStruct->statusInfo.bits.protocol == 1)
+    Serial.print(F("RTCM3"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 2)
+    Serial.print(F("SPARTN"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 29)
+    Serial.print(F("PMP (SPARTN)"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 30)
+    Serial.print(F("QZSSL6"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  errStatus: "));
+  if (ubxDataStruct->statusInfo.bits.errStatus == 1)
+    Serial.print(F("Error-free"));
+  else if (ubxDataStruct->statusInfo.bits.errStatus == 2)
+    Serial.print(F("Erroneous"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgUsed: "));
+  if (ubxDataStruct->statusInfo.bits.msgUsed == 1)
+    Serial.print(F("Not used"));
+  else if (ubxDataStruct->statusInfo.bits.msgUsed == 2)
+    Serial.print(F("Used"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgEncrypted: "));
+  if (ubxDataStruct->statusInfo.bits.msgEncrypted == 1)
+    Serial.print(F("Not encrypted"));
+  else if (ubxDataStruct->statusInfo.bits.msgEncrypted == 2)
+    Serial.print(F("Encrypted"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgDecrypted: "));
+  if (ubxDataStruct->statusInfo.bits.msgDecrypted == 1)
+    Serial.print(F("Not decrypted"));
+  else if (ubxDataStruct->statusInfo.bits.msgDecrypted == 2)
+    Serial.print(F("Successfully decrypted"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.println();
+}
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void setup()
@@ -58,6 +183,8 @@ void setup()
   Serial.println(F("PointPerfect testing"));
 
   Wire.begin(); //Start I2C
+
+  //myGNSS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
   if (myGNSS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -73,6 +200,11 @@ void setup()
   myGNSS.setNavigationFrequency(1); //Set output in Hz.
   myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 0); // Use IP source (default). Change this to 1 for L-Band (PMP)
   
+  myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata so we can watch the carrier solution go to fixed
+
+  myGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
+  myGNSS.setRXMCORcallbackPtr(&printRXMCOR); // Print the contents of UBX-RXM-COR messages so we can check if the SPARTN data is being decrypted successfully
+
   Serial.print(F("Connecting to local WiFi"));
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -85,6 +217,9 @@ void setup()
   Serial.println(WiFi.localIP());
   
   while (Serial.available()) Serial.read();
+
+  Serial.println(F("Press any key to start MQTT/SPARTN Client."));
+  
 }
 
 void loop()
@@ -92,12 +227,14 @@ void loop()
   if (Serial.available())
   {
     beginClient();
+
     while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+    
+    Serial.println(F("Press any key to start MQTT/SPARTN Client."));
   }
 
-  Serial.println(F("Press any key to start MQTT/SPARTN Client."));
-
-  delay(1000);
+  myGNSS.checkUblox(); // Check for the arrival of new GNSS data and process it.
+  myGNSS.checkCallbacks(); // Check if any GNSS callbacks are waiting to be processed.
 }
 
 WiFiClientSecure wifiClient = WiFiClientSecure();
@@ -163,6 +300,7 @@ void beginClient()
     else {
       mqttClient.poll();
     }
+    
     //Close socket if we don't have new data for 10s
     if (millis() - lastReceived_ms > maxTimeBeforeHangup_ms)
     {
@@ -171,6 +309,9 @@ void beginClient()
         mqttClient.stop();
       return;
     }
+
+    myGNSS.checkUblox(); // Check for the arrival of new GNSS data and process it.
+    myGNSS.checkCallbacks(); // Check if any GNSS callbacks are waiting to be processed.
 
     delay(10);
   }
