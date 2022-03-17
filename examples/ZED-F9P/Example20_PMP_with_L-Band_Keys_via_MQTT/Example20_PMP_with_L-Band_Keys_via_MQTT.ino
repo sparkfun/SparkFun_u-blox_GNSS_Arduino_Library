@@ -372,7 +372,8 @@ void mqttMessageHandler(int messageSize) {
         Serial.print(F("Key: \""));
         for (uint8_t digit = 0; digit < keyLengthBytes; digit++)
         {
-          Serial.print(spartnData[keyStart + digit], HEX); // Print the key as ASCII Hex
+          Serial.print(spartnData[keyStart + digit] >> 4, HEX); // Print the key as ASCII Hex
+          Serial.print(spartnData[keyStart + digit] & 0x0F, HEX); // Print the key as ASCII Hex
         }
         Serial.println(F("\""));
         keyStart += keyLengthBytes; // Update keyStart for the next key
