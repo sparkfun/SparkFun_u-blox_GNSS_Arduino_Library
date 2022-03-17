@@ -294,6 +294,7 @@ void beginClient()
         mqttClient.onMessage(mqttMessageHandler);
         mqttClient.subscribe(MQTT_TOPIC_KEY);
         mqttClient.subscribe(MQTT_TOPIC_SPARTN);
+        mqttClient.subscribe(MQTT_TOPIC_ASSISTNOW);
         lastReceived_ms = millis();
       } //End attempt to connect
     } //End connected == false
