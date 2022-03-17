@@ -71,7 +71,7 @@ void setup()
 
   myGNSS.setDGNSSConfiguration(SFE_UBLOX_DGNSS_MODE_FIXED); // Set the differential mode - ambiguities are fixed whenever possible
   myGNSS.setNavigationFrequency(1); //Set output in Hz.
-  myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 0); // use IP source (default)
+  myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 0); // Use IP source (default). Change this to 1 for L-Band (PMP)
   
   Serial.print(F("Connecting to local WiFi"));
   WiFi.begin(ssid, password);
@@ -155,7 +155,7 @@ void beginClient()
         // Subscribe to MQTT and register a callback
         Serial.println(F("Subscribe to Topics")); 
         mqttClient.onMessage(mqttMessageHandler);
-        //mqttClient.subscribe(MQTT_TOPIC_KEY); // The ZED does not need the keys in this example. SPARTN is delivered via secure MQTT
+        mqttClient.subscribe(MQTT_TOPIC_KEY);
         mqttClient.subscribe(MQTT_TOPIC_SPARTN);
         lastReceived_ms = millis();
       } //End attempt to connect

@@ -14,7 +14,8 @@ const unsigned short AWS_IOT_PORT   = 8883;
 const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/ip"; // This topic provides the IP only dynamic keys in UBX format
 //const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/Lb"; // This topic provides the L-Band + IP dynamic keys in UBX format
 // <Your PointPerfect Thing> -> Credentials -> IP correction topic for EU/US region
-const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/us"; // choice of {eu, us}
+const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/us"; // This topic provides the SPARTN corrections for IP only: choice of {eu, us}
+//const char MQTT_TOPIC_SPARTN[]     = "/pp/Lb/us"; // This topic provides the SPARTN corrections for L-Band and L-Band + IP: choice of {eu, us}
 
 // <Your PointPerfect Thing> -> Credentials -> Client Id
 static const char MQTT_CLIENT_ID[] = "<ADD YOUR CLIENT ID HERE>";
