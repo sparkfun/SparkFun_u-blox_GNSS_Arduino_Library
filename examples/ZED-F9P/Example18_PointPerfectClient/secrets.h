@@ -11,7 +11,8 @@ const char password[] =  "<YOUR PASSWORD>";
 const char AWS_IOT_ENDPOINT[]       = "pp.services.u-blox.com";
 const unsigned short AWS_IOT_PORT   = 8883;
 // <Your PointPerfect Thing> -> Credentials -> IP key distribution topic
-const char MQTT_TOPIC_KEY[]        = "/pp/key/ip";
+const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/ip"; // This topic provides the IP only dynamic keys in UBX format
+//const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/Lb"; // This topic provides the L-Band + IP dynamic keys in UBX format
 // <Your PointPerfect Thing> -> Credentials -> IP correction topic for EU/US region
 const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/us"; // choice of {eu, us}
 
