@@ -294,6 +294,16 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXRXMPMPmessage = NULL; // Redundant?
   }
 
+  if (packetUBXRXMCOR != NULL)
+  {
+    if (packetUBXRXMCOR->callbackData != NULL)
+    {
+      delete packetUBXRXMCOR->callbackData;
+    }
+    delete packetUBXRXMCOR;
+    packetUBXRXMCOR = NULL; // Redundant?
+  }
+
   if (packetUBXRXMSFRBX != NULL)
   {
     if (packetUBXRXMSFRBX->callbackData != NULL)
@@ -1333,6 +1343,10 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
       if ((packetUBXRXMPMP != NULL) || (packetUBXRXMPMPmessage != NULL))
         result = true;
       break;
+    case UBX_RXM_COR:
+      if (packetUBXRXMCOR != NULL)
+        result = true;
+      break;
     }
   }
   break;
@@ -1503,6 +1517,9 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
       break;
     case UBX_RXM_PMP:
       maxSize = UBX_RXM_PMP_MAX_LEN;
+      break;
+    case UBX_RXM_COR:
+      maxSize = UBX_RXM_COR_LEN;
       break;
     }
   }
@@ -3772,6 +3789,22 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
       }
     }
+    else if (msg->id == UBX_RXM_COR)
+    {
+      // Parse various byte fields into storage - but only if we have memory allocated for it
+      if ((packetUBXRXMCOR != NULL) && (packetUBXRXMCOR->callbackData != NULL)
+          //&& (packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
+          )
+      {
+        packetUBXRXMCOR->callbackData->version = extractByte(msg, 0);
+        packetUBXRXMCOR->callbackData->ebno = extractByte(msg, 1);
+        packetUBXRXMCOR->callbackData->statusInfo.all = extractLong(msg, 4);
+        packetUBXRXMCOR->callbackData->msgType = extractInt(msg, 8);
+        packetUBXRXMCOR->callbackData->msgSubType = extractInt(msg, 10);
+
+        packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
+      }
+    }
     else if (msg->id == UBX_RXM_SFRBX)
     // Note: length is variable
     // Note: on protocol version 17: numWords is (0..16)
@@ -5357,6 +5390,17 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP message"));
     packetUBXRXMPMPmessage->callbackPointerPtr(packetUBXRXMPMPmessage->callbackData); // Call the callback
     packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXRXMCOR != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXRXMCOR->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXRXMCOR->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+      && (packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM COR"));
+    packetUBXRXMCOR->callbackPointerPtr(packetUBXRXMCOR->callbackData); // Call the callback
+    packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
   if ((packetUBXRXMSFRBX != NULL)                                                  // If RAM has been allocated for message storage
@@ -12313,6 +12357,49 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMPMPmessage()
   packetUBXRXMPMPmessage->automaticFlags.flags.all = 0;
   packetUBXRXMPMPmessage->callbackPointerPtr = NULL;
   packetUBXRXMPMPmessage->callbackData = NULL;
+  return (true);
+}
+
+bool SFE_UBLOX_GNSS::setRXMCORcallbackPtr(void (*callbackPointer)(UBX_RXM_COR_data_t *))
+{
+  if (packetUBXRXMCOR == NULL)
+    initPacketUBXRXMCOR();     // Check that RAM has been allocated for the data
+  if (packetUBXRXMCOR == NULL) // Only attempt this if RAM allocation was successful
+    return false;
+
+  if (packetUBXRXMCOR->callbackData == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMCOR->callbackData = new UBX_RXM_COR_data_t; // Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMCOR->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRXMCORcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXRXMCOR->callbackPointerPtr = callbackPointer;
+  return (true);
+}
+
+// PRIVATE: Allocate RAM for packetUBXRXMCOR and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXRXMCOR()
+{
+  packetUBXRXMCOR = new UBX_RXM_COR_t; // Allocate RAM for the main struct
+  if (packetUBXRXMCOR == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXRXMCOR: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+  packetUBXRXMCOR->automaticFlags.flags.all = 0;
+  packetUBXRXMCOR->callbackPointerPtr = NULL;
+  packetUBXRXMCOR->callbackData = NULL;
   return (true);
 }
 

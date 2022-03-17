@@ -1159,6 +1159,8 @@ public:
   bool setRXMPMPcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_PMP_data_t *));                // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
   bool setRXMPMPmessageCallbackPtr(void (*callbackPointerPtr)(UBX_RXM_PMP_message_data_t *)); // Use this if you want all of the PMP message (including sync chars, checksum, etc.) to push to a GNSS
 
+  bool setRXMCORcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_COR_data_t *)); // RXM COR
+
   bool getRXMSFRBX(uint16_t maxWait = defaultMaxWait);                                                                    // RXM SFRBX
   bool setAutoRXMSFRBX(bool enabled, uint16_t maxWait = defaultMaxWait);                                                  // Enable/disable automatic RXM SFRBX reports at the navigation frequency
   bool setAutoRXMSFRBX(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                             // Enable/disable automatic RXM SFRBX reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -1512,6 +1514,7 @@ public:
 
   UBX_RXM_PMP_t *packetUBXRXMPMP = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_PMP_message_t *packetUBXRXMPMPmessage = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_COR_t *packetUBXRXMCOR = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL;            // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL;              // Pointer to struct. RAM will be allocated for this if/when necessary
 
@@ -1610,6 +1613,7 @@ private:
   bool initPacketUBXNAVAOPSTATUS();  // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
   bool initPacketUBXRXMPMP();        // Allocate RAM for packetUBXRXMPMP and initialize it
   bool initPacketUBXRXMPMPmessage(); // Allocate RAM for packetUBXRXMPMPRaw and initialize it
+  bool initPacketUBXRXMCOR();        // Allocate RAM for packetUBXRXMCOR and initialize it
   bool initPacketUBXRXMSFRBX();      // Allocate RAM for packetUBXRXMSFRBX and initialize it
   bool initPacketUBXRXMRAWX();       // Allocate RAM for packetUBXRXMRAWX and initialize it
   bool initPacketUBXCFGPRT();        // Allocate RAM for packetUBXCFGPRT and initialize it
