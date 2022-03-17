@@ -3,7 +3,7 @@ const char ssid[] = "<YOUR SSID>";
 const char password[] =  "<YOUR PASSWORD>";
 
 // Below infomation you can set after signing up with u-blox Thingstream portal 
-// and after add a new New PointPerfect Thing
+// and after add a new New PointPerfect Thing (L-Band or L-Band + IP)
 // https://portal.thingstream.io/app/location-services/things
 // in the new PointPerfect Thing you go to the credentials page and copy paste the values and certificate into this.  
 
@@ -11,10 +11,12 @@ const char password[] =  "<YOUR PASSWORD>";
 const char AWS_IOT_ENDPOINT[]       = "pp.services.u-blox.com";
 const unsigned short AWS_IOT_PORT   = 8883;
 // <Your PointPerfect Thing> -> Credentials -> IP key distribution topic
-const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/ip"; // This topic provides the IP only dynamic keys in UBX format
-//const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/Lb"; // This topic provides the L-Band + IP dynamic keys in UBX format
+//const char MQTT_TOPIC_KEY[]        = "/pp/key/ip"; // This topic provides the IP only dynamic keys in JSON format
+//const char MQTT_TOPIC_KEY[]        = "/pp/key/Lb"; // This topic provides the L-Band + IP dynamic keys in JSON format
+//const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/ip"; // This topic provides the IP only dynamic keys in UBX format
+const char MQTT_TOPIC_KEY[]        = "/pp/ubx/0236/Lb"; // This topic provides the L-Band + IP dynamic keys in UBX format
 // <Your PointPerfect Thing> -> Credentials -> IP correction topic for EU/US region
-const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/us"; // choice of {eu, us}
+const char MQTT_TOPIC_SPARTN[]     = "/pp/ip/eu"; // choice of {eu, us}
 
 // <Your PointPerfect Thing> -> Credentials -> Client Id
 static const char MQTT_CLIENT_ID[] = "<ADD YOUR CLIENT ID HERE>";

@@ -1,32 +1,55 @@
 /*
-  Use the NEO-D9S L-Band receiver to provide corrections to a ZED-F9x via UBX-RXM-PMP messages
-  By: SparkFun Electronics / Paul Clark
+  Use ESP32 WiFi to get the L-Band dynamic keys from PointPerfect, allowing a ZED-F9x to use
+  the PMP data from a NEO-D9S correction data receiver.
+  By: SparkFun / Paul Clark
   Based on original code by: u-blox AG / Michael Ammann
-  Date: February 7th, 2022
+  Date: March 17th, 2022
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to obtain SPARTN correction data from a NEO-D9S L-Band receiver and push it over I2C to a ZED-F9x.
+  This example shows how to obtain the L-Band dynamic keys from PointPerfect over ESP32 WiFi
+  and push them over I2C to a ZED-F9x. The ZED will then be able to decrypt the PMP correction data
+  from a NEO-D9S correction data receiver.
 
-  This is a proof of concept to show how the UBX-RXM-PMP corrections control the accuracy.
+  You can copy the keys directly from the Thingstream portal and paste them into your code - the
+  previous example shows how to do this - but calculating the "valid from" week and time is a chore.
+  This example requests the keys for you (using your client key and certificates) via MQTT.
+  It prints them too, so you can copy and paste them into the previous example if you wish.
 
-  You will need a Thingstream PointPerfect account to be able to access the SPARTN Credentials (L-Band or L-Band + IP Dynamic Keys).
-  Copy and paste the Current Key and Next Key into secrets.h.
+  You will need to have a valid u-blox Thingstream account and have a PointPerfect L-Band or L-Band + IP
+  Location Thing and payed plan.
+  
+  Thingstream offers SSR corrections to SPARTN capable RTK receivers such as the u-blox ZED-F9 series 
+  in continental Europe and US. Their Network is planned to be expanded to other regions over the next years. 
+  To sign up, go to: https://portal.thingstream.io/app/location-services/things
 
+  For more information about MQTT, SPARTN and PointPerfect Correction Services 
+  please see: https://www.u-blox.com/en/product/pointperfect
+  
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/16481
-  NEO-D9S: Coming soon!
+  NEO-D9S Correction Data Receiver: https://www.sparkfun.com/products/19390
+  
+  RTK Surveyor: https://www.sparkfun.com/products/18443
+  RTK Express: https://www.sparkfun.com/products/18442
+  
+  Recommended Hardware:
+  MicroMod GNSS Carrier Board: https://www.sparkfun.com/products/17722 
+  ESP32 Micromod https://www.sparkfun.com/products/16781
 
   Hardware Connections:
-  Use Qwiic cables to connect the NEO-D9S and ZED-F9x GNSS to your board
+  Plug a Qwiic cable into the GNSS and a ESP32 Thing Plus
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include "secrets.h" // <- Copy and paste the Current Key and Next Key into secrets.h
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoMqttClient.h> // Click here to get the library: http://librarymanager/All#ArduinoMqttClient
+#include "secrets.h"
 
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS; // ZED-F9x
 SFE_UBLOX_GNSS myLBand; // NEO-D9S
 
@@ -120,10 +143,18 @@ void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    
+//Global variables
+
+long lastReceived_ms = 0; //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void setup()
 {
   Serial.begin(115200);
+  while (!Serial);
   Serial.println(F("NEO-D9S SPARTN Corrections"));
 
   Wire.begin(); //Start I2C
@@ -149,14 +180,6 @@ void setup()
   
   if (ok) ok = myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
   
-  //Configure the SPARTN IP Dynamic Keys
-  //"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
-  //"Every time the 'current' key is expired, 'next' takes its place."
-  //"Therefore the host should then retrieve the new 'next' key and send only that." - Use setDynamicSPARTNKey for this.
-  // The key can be provided in binary (uint8_t) format or in ASCII Hex (char) format, but in both cases keyLengthBytes _must_ represent the binary key length in bytes.
-  if (ok) ok = myGNSS.setDynamicSPARTNKeys(currentKeyLengthBytes, currentKeyGPSWeek, currentKeyGPSToW, currentDynamicKey,
-                                           nextKeyLengthBytes, nextKeyGPSWeek, nextKeyGPSToW, nextDynamicKey);
-
   //if (ok) ok = myGNSS.saveConfiguration(VAL_CFG_SUBSEC_IOPORT | VAL_CFG_SUBSEC_MSGCONF); //Optional: Save the ioPort and message settings to NVM
   
   Serial.print(F("GNSS: configuration "));
@@ -199,15 +222,156 @@ void setup()
 
   myLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
 
-}
+  //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Connect to WiFi so we can request the dynamic keys via MQTT
+  
+  Serial.print(F("Connecting to local WiFi"));
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(F("."));
+  }
+  Serial.println();
 
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Serial.print(F("WiFi connected with IP: "));
+  Serial.println(WiFi.localIP());
+  
+  while (Serial.available()) Serial.read();
+
+  Serial.println(F("Press any key to start MQTT Client."));
+
+}
 
 void loop()
 {
+  if (Serial.available())
+  {
+    beginClient();
+
+    while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+
+    Serial.println(F("Press any key to start MQTT Client."));
+  }
+
   myGNSS.checkUblox(); // Check for the arrival of new GNSS data and process it.
   myGNSS.checkCallbacks(); // Check if any GNSS callbacks are waiting to be processed.
 
   myLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
   myLBand.checkCallbacks(); // Check if any LBand callbacks are waiting to be processed.
+}
+
+WiFiClientSecure wifiClient = WiFiClientSecure();
+MqttClient mqttClient(wifiClient);
+
+void mqttMessageHandler(int messageSize) {
+  uint8_t spartnData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
+  int spartnCount = 0;
+  Serial.print(F("Pushed data from "));
+  Serial.print(mqttClient.messageTopic());
+  Serial.println(F(" topic to ZED"));
+  while (mqttClient.available())
+  {
+    char ch = mqttClient.read();
+    //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
+    spartnData[spartnCount++] = ch;
+    if (spartnCount == sizeof(spartnData)) 
+      break;
+  }
+
+  if (spartnCount > 0)
+  {
+    //Push KEYS or SPARTN data to GNSS module over I2C
+    myGNSS.pushRawData(spartnData, spartnCount, false);
+    lastReceived_ms = millis();
+
+    if ((spartnData[0] == 0xB5) // Check if this is UBX-RXM-SPARTNKEY
+     && (spartnData[1] == 0x62)
+     && (spartnData[2] == 0x02) // Class: RXM
+     && (spartnData[3] == 0x36)) // ID: SPARTNKEY
+    {
+      uint8_t numKeys = spartnData[7]; // Get the number of keys
+      uint8_t keyStart = 10 + (numKeys * 8); // Point to the start of the first key
+      for (uint8_t key = 0; key < numKeys; key++)
+      {
+        Serial.print(F("SPARTNKEY: "));
+        Serial.println(key);
+        Serial.print(F("Valid from GPS week number: "));
+        uint16_t validFromWno = ((uint16_t)spartnData[12 + (key * 8)]) | ((uint16_t)spartnData[13 + (key * 8)] << 8); // Little endian
+        Serial.println(validFromWno);
+        Serial.print(F("Valid from GPS time of week: "));
+        uint32_t validFromTow = ((uint32_t)spartnData[14 + (key * 8)]) | ((uint32_t)spartnData[15 + (key * 8)] << 8) | ((uint32_t)spartnData[16 + (key * 8)] << 16) | ((uint32_t)spartnData[17 + (key * 8)] << 24);
+        Serial.println(validFromTow);
+        uint8_t keyLengthBytes = spartnData[11 + (key * 8)];
+        Serial.print(F("Key length (bytes): "));
+        Serial.println(keyLengthBytes);
+        Serial.print(F("Key: \""));
+        for (uint8_t digit = 0; digit < keyLengthBytes; digit++)
+        {
+          Serial.print(spartnData[keyStart + digit], HEX); // Print the key as ASCII Hex
+        }
+        Serial.println(F("\""));
+        keyStart += keyLengthBytes; // Update keyStart for the next key
+      }
+    }
+  }
+}
+
+//Connect to MQTT broker, receive dynamic keys and push to ZED module over I2C
+void beginClient()
+{
+  Serial.println(F("Subscribing to Broker. Press key to stop"));
+  delay(10); //Wait for any serial to arrive
+  while (Serial.available()) Serial.read(); //Flush
+
+  while (Serial.available() == 0)
+  {
+    //Connect if we are not already
+    if (wifiClient.connected() == false)
+    {
+      // Connect to AWS IoT
+      wifiClient.setCACert(AWS_CERT_CA);
+      wifiClient.setCertificate(AWS_CERT_CRT);
+      wifiClient.setPrivateKey(AWS_CERT_PRIVATE);
+      mqttClient.setId(MQTT_CLIENT_ID);
+      mqttClient.setKeepAliveInterval(60*1000);
+      mqttClient.setConnectionTimeout( 5*1000);
+      if (!mqttClient.connect(AWS_IOT_ENDPOINT, AWS_IOT_PORT)) {
+        Serial.print(F("MQTT connection failed! Error code = "));
+        Serial.println(mqttClient.connectError());
+        return;
+      } else {
+        Serial.println(F("You're connected to the PointPerfect MQTT broker: "));
+        Serial.println(AWS_IOT_ENDPOINT);
+        // Subscribe to MQTT and register a callback
+        Serial.println(F("Subscribe to Topics")); 
+        mqttClient.onMessage(mqttMessageHandler);
+        mqttClient.subscribe(MQTT_TOPIC_KEY);
+        lastReceived_ms = millis();
+      } //End attempt to connect
+    } //End connected == false
+    else {
+      mqttClient.poll();
+    }
+    
+    //Close socket if we don't have new data for 10s
+    if (millis() - lastReceived_ms > maxTimeBeforeHangup_ms)
+    {
+      Serial.println(F("MQTT timeout. Disconnecting..."));
+      if (mqttClient.connected() == true)
+        mqttClient.stop();
+      return;
+    }
+
+    myGNSS.checkUblox(); // Check for the arrival of new GNSS data and process it.
+    myGNSS.checkCallbacks(); // Check if any GNSS callbacks are waiting to be processed.
+  
+    myLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
+    myLBand.checkCallbacks(); // Check if any LBand callbacks are waiting to be processed.
+
+    delay(10);
+  }
+
+  Serial.println(F("User pressed a key"));
+  Serial.println(F("Disconnecting..."));
+  wifiClient.stop();
 }
