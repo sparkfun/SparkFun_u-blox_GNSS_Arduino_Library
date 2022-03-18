@@ -328,58 +328,74 @@ void loop()
 WiFiClientSecure wifiClient = WiFiClientSecure();
 MqttClient mqttClient(wifiClient);
 
-void mqttMessageHandler(int messageSize) {
-  uint8_t spartnData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
-  int spartnCount = 0;
-  Serial.print(F("Pushed data from "));
-  Serial.print(mqttClient.messageTopic());
-  Serial.println(F(" topic to ZED"));
-  while (mqttClient.available())
+void mqttMessageHandler(int messageSize)
+{
+  const uint16_t mqttLimit = 512;
+  uint8_t *mqttData = new uint8_t[mqttLimit]; // Allocate memory to hold the MQTT data
+  if (mqttData == NULL)
   {
-    char ch = mqttClient.read();
-    //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
-    spartnData[spartnCount++] = ch;
-    if (spartnCount == sizeof(spartnData)) 
-      break;
+    Serial.println(F("Memory allocation for mqttData failed!"));
+    return;
   }
 
-  if (spartnCount > 0)
-  {
-    //Push KEYS or SPARTN data to GNSS module over I2C
-    myGNSS.pushRawData(spartnData, spartnCount, false);
-    lastReceived_ms = millis();
+  Serial.print(F("Pushing data from "));
+  Serial.print(mqttClient.messageTopic());
+  Serial.println(F(" topic to ZED"));
 
-    if ((spartnData[0] == 0xB5) // Check if this is UBX-RXM-SPARTNKEY
-     && (spartnData[1] == 0x62)
-     && (spartnData[2] == 0x02) // Class: RXM
-     && (spartnData[3] == 0x36)) // ID: SPARTNKEY
+  while (mqttClient.available())
+  {
+    uint16_t mqttCount = 0;
+
+    while (mqttClient.available())
     {
-      uint8_t numKeys = spartnData[7]; // Get the number of keys
-      uint8_t keyStart = 10 + (numKeys * 8); // Point to the start of the first key
-      for (uint8_t key = 0; key < numKeys; key++)
+      char ch = mqttClient.read();
+      //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
+      mqttData[mqttCount++] = ch;
+    
+      if (mqttCount == mqttLimit)
+        break;
+    }
+
+    if (mqttCount > 0)
+    {
+      //Push KEYS or SPARTN data to GNSS module over I2C
+      myGNSS.pushRawData(mqttData, mqttCount, false);
+      lastReceived_ms = millis();
+
+      if ((mqttData[0] == 0xB5) // Check if this is UBX-RXM-SPARTNKEY
+       && (mqttData[1] == 0x62)
+       && (mqttData[2] == 0x02) // Class: RXM
+       && (mqttData[3] == 0x36)) // ID: SPARTNKEY
       {
-        Serial.print(F("SPARTNKEY: "));
-        Serial.println(key);
-        Serial.print(F("Valid from GPS week number: "));
-        uint16_t validFromWno = ((uint16_t)spartnData[12 + (key * 8)]) | ((uint16_t)spartnData[13 + (key * 8)] << 8); // Little endian
-        Serial.println(validFromWno);
-        Serial.print(F("Valid from GPS time of week: "));
-        uint32_t validFromTow = ((uint32_t)spartnData[14 + (key * 8)]) | ((uint32_t)spartnData[15 + (key * 8)] << 8) | ((uint32_t)spartnData[16 + (key * 8)] << 16) | ((uint32_t)spartnData[17 + (key * 8)] << 24);
-        Serial.println(validFromTow);
-        uint8_t keyLengthBytes = spartnData[11 + (key * 8)];
-        Serial.print(F("Key length (bytes): "));
-        Serial.println(keyLengthBytes);
-        Serial.print(F("Key: \""));
-        for (uint8_t digit = 0; digit < keyLengthBytes; digit++)
+        uint8_t numKeys = mqttData[7]; // Get the number of keys
+        uint8_t keyStart = 10 + (numKeys * 8); // Point to the start of the first key
+        for (uint8_t key = 0; key < numKeys; key++)
         {
-          Serial.print(spartnData[keyStart + digit] >> 4, HEX); // Print the key as ASCII Hex
-          Serial.print(spartnData[keyStart + digit] & 0x0F, HEX); // Print the key as ASCII Hex
+          Serial.print(F("SPARTNKEY: "));
+          Serial.println(key);
+          Serial.print(F("Valid from GPS week number: "));
+          uint16_t validFromWno = ((uint16_t)mqttData[12 + (key * 8)]) | ((uint16_t)mqttData[13 + (key * 8)] << 8); // Little endian
+          Serial.println(validFromWno);
+          Serial.print(F("Valid from GPS time of week: "));
+          uint32_t validFromTow = ((uint32_t)mqttData[14 + (key * 8)]) | ((uint32_t)mqttData[15 + (key * 8)] << 8) | ((uint32_t)mqttData[16 + (key * 8)] << 16) | ((uint32_t)mqttData[17 + (key * 8)] << 24);
+          Serial.println(validFromTow);
+          uint8_t keyLengthBytes = mqttData[11 + (key * 8)];
+          Serial.print(F("Key length (bytes): "));
+          Serial.println(keyLengthBytes);
+          Serial.print(F("Key: \""));
+          for (uint8_t digit = 0; digit < keyLengthBytes; digit++)
+          {
+            Serial.print(mqttData[keyStart + digit] >> 4, HEX); // Print the key as ASCII Hex
+            Serial.print(mqttData[keyStart + digit] & 0x0F, HEX); // Print the key as ASCII Hex
+          }
+          Serial.println(F("\""));
+          keyStart += keyLengthBytes; // Update keyStart for the next key
         }
-        Serial.println(F("\""));
-        keyStart += keyLengthBytes; // Update keyStart for the next key
       }
     }
   }
+
+  delete[] mqttData;
 }
 
 //Connect to MQTT broker, receive dynamic keys and push to ZED module over I2C
