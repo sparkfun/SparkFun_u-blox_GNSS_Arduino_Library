@@ -10,7 +10,7 @@
 
   This is a proof of concept to show how the UBX-RXM-PMP corrections control the accuracy.
 
-  You will need a Thingstream PointPerfect account to be able to access the SPARTN Credentials (IP Dynamic Keys).
+  You will need a Thingstream PointPerfect account to be able to access the SPARTN Credentials (L-Band or L-Band + IP Dynamic Keys).
   Copy and paste the Current Key and Next Key into secrets.h.
 
   Feel like supporting open source hardware?
@@ -121,6 +121,67 @@ void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+// Callback: printRXMCOR will be called when new RXM COR data arrives
+// See u-blox_structs.h for the full definition of UBX_RXM_COR_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setRXMCORcallbackPtr
+//        /                  _____  This _must_ be UBX_RXM_COR_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
+void printRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
+{
+  Serial.print(F("UBX-RXM-COR:  ebno: "));
+  Serial.print(ubxDataStruct->ebno);
+
+  Serial.print(F("  protocol: "));
+  if (ubxDataStruct->statusInfo.bits.protocol == 1)
+    Serial.print(F("RTCM3"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 2)
+    Serial.print(F("SPARTN"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 29)
+    Serial.print(F("PMP (SPARTN)"));
+  else if (ubxDataStruct->statusInfo.bits.protocol == 30)
+    Serial.print(F("QZSSL6"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  errStatus: "));
+  if (ubxDataStruct->statusInfo.bits.errStatus == 1)
+    Serial.print(F("Error-free"));
+  else if (ubxDataStruct->statusInfo.bits.errStatus == 2)
+    Serial.print(F("Erroneous"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgUsed: "));
+  if (ubxDataStruct->statusInfo.bits.msgUsed == 1)
+    Serial.print(F("Not used"));
+  else if (ubxDataStruct->statusInfo.bits.msgUsed == 2)
+    Serial.print(F("Used"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgEncrypted: "));
+  if (ubxDataStruct->statusInfo.bits.msgEncrypted == 1)
+    Serial.print(F("Not encrypted"));
+  else if (ubxDataStruct->statusInfo.bits.msgEncrypted == 2)
+    Serial.print(F("Encrypted"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.print(F("  msgDecrypted: "));
+  if (ubxDataStruct->statusInfo.bits.msgDecrypted == 1)
+    Serial.print(F("Not decrypted"));
+  else if (ubxDataStruct->statusInfo.bits.msgDecrypted == 2)
+    Serial.print(F("Successfully decrypted"));
+  else
+    Serial.print(F("Unknown"));
+
+  Serial.println();
+}
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 void setup()
 {
   Serial.begin(115200);
@@ -148,6 +209,8 @@ void setup()
   if (ok) ok = myGNSS.setNavigationFrequency(1); //Set output in Hz.
   
   if (ok) ok = myGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
+
+  if (ok) ok = myGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
   
   //Configure the SPARTN IP Dynamic Keys
   //"When the receiver boots, the host should send 'current' and 'next' keys in one message." - Use setDynamicSPARTNKeys for this.
@@ -163,6 +226,8 @@ void setup()
   Serial.println(OK(ok));
 
   myGNSS.setAutoPVTcallbackPtr(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata so we can watch the carrier solution go to fixed
+
+  myGNSS.setRXMCORcallbackPtr(&printRXMCOR); // Print the contents of UBX-RXM-COR messages so we can check if the PMP data is being decrypted successfully
 
   //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Begin and configure the NEO-D9S L-Band receiver

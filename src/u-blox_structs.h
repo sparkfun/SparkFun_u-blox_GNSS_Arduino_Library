@@ -1484,6 +1484,66 @@ typedef struct
   UBX_RXM_RAWX_data_t *callbackData;
 } UBX_RXM_RAWX_t;
 
+// UBX-RXM-COR (0x02 0x34): Differential correction input status
+const uint16_t UBX_RXM_COR_LEN = 12;
+
+typedef struct
+{
+  uint8_t version;      // Message version (0x01 for this version)
+  uint8_t ebno;         // Energy per bit to noise power spectral density ratio (Eb/N0): 2^-3 dB
+                        // 0: unknown. Reported only for protocol UBX-RXM-PMP (SPARTN) to monitor signal quality.
+  uint8_t reserved0[2]; // Reserved
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t protocol : 5;        // Input correction data protocol:
+                                    // 0: Unknown
+                                    // 1: RTCM3
+                                    // 2: SPARTN (Secure Position Augmentation for Real Time Navigation)
+                                    // 29: UBX-RXM-PMP (SPARTN)
+                                    // 30: UBX-RXM-QZSSL6
+      uint32_t errStatus : 2;       // Error status of the received correction message content based on possibly available error codes or checksums:
+                                    // 0: Unknown
+                                    // 1: Error-free
+                                    // 2: Erroneous
+      uint32_t msgUsed : 2;         // Status of receiver using the input message:
+                                    // 0: Unknown
+                                    // 1: Not used
+                                    // 2: Used
+      uint32_t correctionId : 16;   // Identifier for the correction stream:
+                                    // For RTCM 3: Reference station ID (DF003) of the received RTCM input message.
+                                    // Valid range 0-4095.
+                                    // For all other messages, reports 0xFFFF.
+                                    // For other correction protocols 0xFFFF.
+      uint32_t msgTypeValid : 1;    // Validity of the msgType field. Set to False e.g. if the protocol does not define msgType.
+      uint32_t msgSubTypeValid : 1; // Validity of the msgSubType field. Set to False e.g. if the protocol does not define subtype for the msgType.
+      uint32_t msgInputHandle : 1;  // Input handling support of the input message:
+                                    // 0: Receiver does not have input handling support for this message
+                                    // 1: Receiver has input handling support for this message
+      uint32_t msgEncrypted : 2;    // Encryption status of the input message:
+                                    // 0: Unknown
+                                    // 1: Not encrypted
+                                    // 2: Encrypted
+      uint32_t msgDecrypted : 2;    // Decryption status of the input message:
+                                    // 0: Unknown
+                                    // 1: Not decrypted
+                                    // 2: Successfully decrypted
+    } bits;
+  } statusInfo;
+  uint16_t msgType;    // Message type
+  uint16_t msgSubType; // Message subtype
+} UBX_RXM_COR_data_t;
+
+// The COR data can only be accessed via a callback. COR cannot be polled.
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  void (*callbackPointerPtr)(UBX_RXM_COR_data_t *);
+  UBX_RXM_COR_data_t *callbackData;
+} UBX_RXM_COR_t;
+
 // UBX-RXM-PMP (0x02 0x72): PMP raw data (D9 modules)
 // There are two versions of this message but, fortunately, both have a max len of 528
 const uint16_t UBX_RXM_PMP_MAX_USER_DATA = 504;
@@ -1702,36 +1762,36 @@ const uint16_t UBX_MON_HW_LEN = 60;
 
 typedef struct
 {
-  uint32_t pinSel; // Mask of pins set as peripheral/PIO
-  uint32_t pinBank; // Mask of pins set as bank A/B
-  uint32_t pinDir; // Mask of pins set as input/output
-  uint32_t pinVal; // Mask of pins value low/high
+  uint32_t pinSel;     // Mask of pins set as peripheral/PIO
+  uint32_t pinBank;    // Mask of pins set as bank A/B
+  uint32_t pinDir;     // Mask of pins set as input/output
+  uint32_t pinVal;     // Mask of pins value low/high
   uint16_t noisePerMS; // Noise level as measured by the GPS core
-  uint16_t agcCnt; // AGC monitor (counts SIGHI xor SIGLO, range 0 to 8191)
-  uint8_t aStatus; // Status of the antenna supervisor state machine (0=INIT, 1=DONTKNOW, 2=OK, 3=SHORT, 4=OPEN)
-  uint8_t aPower; // Current power status of antenna (0=OFF, 1=ON, 2=DONTKNOW)
+  uint16_t agcCnt;     // AGC monitor (counts SIGHI xor SIGLO, range 0 to 8191)
+  uint8_t aStatus;     // Status of the antenna supervisor state machine (0=INIT, 1=DONTKNOW, 2=OK, 3=SHORT, 4=OPEN)
+  uint8_t aPower;      // Current power status of antenna (0=OFF, 1=ON, 2=DONTKNOW)
   union
   {
     uint8_t all;
     struct
     {
-      uint8_t rtcCalib : 1; // RTC is calibrated
-      uint8_t safeBoot : 1; // Safeboot mode (0 = inactive, 1 = active)
+      uint8_t rtcCalib : 1;     // RTC is calibrated
+      uint8_t safeBoot : 1;     // Safeboot mode (0 = inactive, 1 = active)
       uint8_t jammingState : 2; // Output from jamming/interference monitor (0 = unknown or feature disabled,
                                 // 1 = ok - no significant jamming,
                                 // 2 = warning - interference visible but fix OK,
                                 // 3 = critical - interference visible and no fix)
-      uint8_t xtalAbsent : 1; // RTC xtal has been determined to be absent
+      uint8_t xtalAbsent : 1;   // RTC xtal has been determined to be absent
     } bits;
   } flags;
-  uint8_t reserved1; // Reserved
-  uint32_t usedMask; // Mask of pins that are used by the virtual pin manager
-  uint8_t VP[17]; // Array of pin mappings for each of the 17 physical pins
-  uint8_t jamInd; // CW jamming indicator, scaled (0 = no CW jamming, 255 = strong CW jamming)
+  uint8_t reserved1;    // Reserved
+  uint32_t usedMask;    // Mask of pins that are used by the virtual pin manager
+  uint8_t VP[17];       // Array of pin mappings for each of the 17 physical pins
+  uint8_t jamInd;       // CW jamming indicator, scaled (0 = no CW jamming, 255 = strong CW jamming)
   uint8_t reserved2[2]; // Reserved
-  uint32_t pinIrq; // Mask of pins value using the PIO Irq
-  uint32_t pullH; // Mask of pins value using the PIO pull high resistor
-  uint8_t pullL; // Mask of pins value using the PIO pull low resistor
+  uint32_t pinIrq;      // Mask of pins value using the PIO Irq
+  uint32_t pullH;       // Mask of pins value using the PIO pull high resistor
+  uint8_t pullL;        // Mask of pins value using the PIO pull low resistor
 } UBX_MON_HW_data_t;
 
 // UBX-MON-HW2 (0x0A 0x0B): Extended hardware status
@@ -1739,15 +1799,15 @@ const uint16_t UBX_MON_HW2_LEN = 28;
 
 typedef struct
 {
-  int8_t ofsI; // Imbalance of I-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
-  uint8_t magI; // Magnitude of I-part of complex signal, scaled (0 = no signal, 255 = max. magnitude)
-  int8_t ofsQ; // Imbalance of Q-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
-  uint8_t magQ; // Magnitude of Q-part of complex signal, scaled (0 = no signal, 255 = max. magnitude)
+  int8_t ofsI;       // Imbalance of I-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
+  uint8_t magI;      // Magnitude of I-part of complex signal, scaled (0 = no signal, 255 = max. magnitude)
+  int8_t ofsQ;       // Imbalance of Q-part of complex signal, scaled (-128 = max. negative imbalance, 127 = max. positive imbalance)
+  uint8_t magQ;      // Magnitude of Q-part of complex signal, scaled (0 = no signal, 255 = max. magnitude)
   uint8_t cfgSource; // Source of low-level configuration (114 = ROM, 111 = OTP, 112 = config pins, 102 = flash image)
   uint8_t reserved0[3];
   uint32_t lowLevCfg; // Low-level configuration (obsolete for protocol versions greater than 15.00)
   uint8_t reserved1[8];
-  uint32_t postStatus; // POST status word
+  uint32_t postStatus;  // POST status word
   uint8_t reserved2[4]; // Reserved
 } UBX_MON_HW2_data_t;
 

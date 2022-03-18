@@ -93,27 +93,43 @@ void loop()
 WiFiClientSecure wifiClient = WiFiClientSecure();
 MqttClient mqttClient(wifiClient);
 
-void mqttMessageHandler(int messageSize) {
-  uint8_t mgaData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
-  int mgaCount = 0;
-  Serial.print(F("Pushed data from "));
-  Serial.print(mqttClient.messageTopic());
-  Serial.println(F(" topic to ZED"));
-  while (mqttClient.available())
+void mqttMessageHandler(int messageSize)
+{
+  const uint16_t mqttLimit = 512;
+  uint8_t *mqttData = new uint8_t[mqttLimit]; // Allocate memory to hold the MQTT data
+  if (mqttData == NULL)
   {
-    char ch = mqttClient.read();
-    //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
-    mgaData[mgaCount++] = ch;
-    if (mgaCount == sizeof(mgaData)) 
-      break;
+    Serial.println(F("Memory allocation for mqttData failed!"));
+    return;
   }
 
-  if (mgaCount > 0)
+  Serial.print(F("Pushing data from "));
+  Serial.print(mqttClient.messageTopic());
+  Serial.println(F(" topic to ZED"));
+
+  while (mqttClient.available())
   {
-    //Push MGA data to GNSS module over I2C
-    myGNSS.pushRawData(mgaData, mgaCount, false);
-    lastReceived_ms = millis();
+    uint16_t mqttCount = 0;
+
+    while (mqttClient.available())
+    {
+      char ch = mqttClient.read();
+      //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
+      mqttData[mqttCount++] = ch;
+    
+      if (mqttCount == mqttLimit)
+        break;
+    }
+
+    if (mqttCount > 0)
+    {
+      //Push KEYS or SPARTN data to GNSS module over I2C
+      myGNSS.pushRawData(mqttData, mqttCount, false);
+      lastReceived_ms = millis();
+    }
   }
+
+  delete[] mqttData;
 }
 
 //Connect to MQTT broker, receive MGA, and push to ZED module over I2C
