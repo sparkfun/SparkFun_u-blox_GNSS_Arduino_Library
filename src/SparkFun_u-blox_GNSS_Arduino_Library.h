@@ -624,20 +624,19 @@ typedef struct
 
 const uint32_t SFE_UBLOX_DAYS_FROM_1970_TO_2020 = 18262; // Jan 1st 2020 Epoch = 1577836800 seconds
 const uint16_t SFE_UBLOX_DAYS_SINCE_2020[80] =
-{
-  0, 366, 731, 1096, 1461, 1827, 2192, 2557, 2922, 3288,
-  3653, 4018, 4383, 4749, 5114, 5479, 5844, 6210, 6575, 6940,
-  7305, 7671, 8036, 8401, 8766, 9132, 9497, 9862, 10227, 10593,
-  10958, 11323, 11688, 12054, 12419, 12784, 13149, 13515, 13880, 14245,
-  14610, 14976, 15341, 15706, 16071, 16437, 16802, 17167, 17532, 17898,
-  18263, 18628, 18993, 19359, 19724, 20089, 20454, 20820, 21185, 21550,
-  21915, 22281, 22646, 23011, 23376, 23742, 24107, 24472, 24837, 25203,
-  25568, 25933, 26298, 26664, 27029, 27394, 27759, 28125, 28490, 28855
-};
+    {
+        0, 366, 731, 1096, 1461, 1827, 2192, 2557, 2922, 3288,
+        3653, 4018, 4383, 4749, 5114, 5479, 5844, 6210, 6575, 6940,
+        7305, 7671, 8036, 8401, 8766, 9132, 9497, 9862, 10227, 10593,
+        10958, 11323, 11688, 12054, 12419, 12784, 13149, 13515, 13880, 14245,
+        14610, 14976, 15341, 15706, 16071, 16437, 16802, 17167, 17532, 17898,
+        18263, 18628, 18993, 19359, 19724, 20089, 20454, 20820, 21185, 21550,
+        21915, 22281, 22646, 23011, 23376, 23742, 24107, 24472, 24837, 25203,
+        25568, 25933, 26298, 26664, 27029, 27394, 27759, 28125, 28490, 28855};
 const uint16_t SFE_UBLOX_DAYS_SINCE_MONTH[2][12] =
-{
-  {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}, // Leap Year (Year % 4 == 0)
-  {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334}  // Normal Year
+    {
+        {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}, // Leap Year (Year % 4 == 0)
+        {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334}  // Normal Year
 };
 
 class SFE_UBLOX_GNSS
@@ -860,18 +859,17 @@ public:
   bool disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = defaultMaxWait);                  // Turn off given RTCM message from a given port
 
   // Functions used for RTK and base station setup
-  // It is probably safe to assume that users of the RTK will be using I2C / Qwiic. So let's leave maxWait set to 250ms.
-  bool getSurveyMode(uint16_t maxWait = 250);                                                                     // Get the current TimeMode3 settings
-  bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);     // Control survey in mode
-  bool setSurveyModeFull(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); // Control survey in mode
-  bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);                // Begin Survey-In for NEO-M8P / ZED-F9x
-  bool enableSurveyModeFull(uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);            // Begin Survey-In for NEO-M8P / ZED-F9x
-  bool disableSurveyMode(uint16_t maxWait = 250);                                                                 // Stop Survey-In mode
+  bool getSurveyMode(uint16_t maxWait = defaultMaxWait);                                                                     // Get the current TimeMode3 settings
+  bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);     // Control survey in mode
+  bool setSurveyModeFull(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait); // Control survey in mode
+  bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);                // Begin Survey-In for NEO-M8P / ZED-F9x
+  bool enableSurveyModeFull(uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);            // Begin Survey-In for NEO-M8P / ZED-F9x
+  bool disableSurveyMode(uint16_t maxWait = defaultMaxWait);                                                                 // Stop Survey-In mode
   // Given coordinates, put receiver into static position. Set latlong to true to pass in lat/long values instead of ecef.
   // For ECEF the units are: cm, 0.1mm, cm, 0.1mm, cm, 0.1mm
   // For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
-  bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = 250);
-  bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = 250);
+  bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = defaultMaxWait);
+  bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = defaultMaxWait);
   bool setDGNSSConfiguration(sfe_ublox_dgnss_mode_e dgnssMode = SFE_UBLOX_DGNSS_MODE_FIXED, uint16_t maxWait = defaultMaxWait); // Set the DGNSS differential mode
 
   // Read the module's protocol version
@@ -954,35 +952,33 @@ public:
 
   // General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
-  // It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.
-  // If they are using Serial then the higher baud rate will also help. So let's leave maxWait set to 250ms.
-  uint32_t createKey(uint16_t group, uint16_t id, uint8_t size);                                                       // Form 32-bit key from group/id/size
-  sfe_ublox_status_e getVal(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);                    // Load payload with response
-  uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);                              // Returns the value at a given key location
-  uint16_t getVal16(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);                            // Returns the value at a given key location
-  uint32_t getVal32(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);                            // Returns the value at a given key location
-  uint64_t getVal64(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);                            // Returns the value at a given key location
-  uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);   // Returns the value at a given group/id/size location
-  uint16_t getVal16(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250); // Returns the value at a given group/id/size location
-  uint32_t getVal32(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250); // Returns the value at a given group/id/size location
-  uint64_t getVal64(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250); // Returns the value at a given group/id/size location
-  uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);               // Sets the 16-bit value at a given group/id/size location
-  uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);               // Sets the 8-bit value at a given group/id/size location
-  uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);             // Sets the 16-bit value at a given group/id/size location
-  uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);             // Sets the 32-bit value at a given group/id/size location
-  uint8_t setVal64(uint32_t keyID, uint64_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);             // Sets the 64-bit value at a given group/id/size location
-  uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL);                                 // Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
-  uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL);                               // Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
-  uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL);                               // Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
-  uint8_t newCfgValset64(uint32_t keyID, uint64_t value, uint8_t layer = VAL_LAYER_ALL);                               // Define a new UBX-CFG-VALSET with the given KeyID and 64-bit value
-  uint8_t addCfgValset8(uint32_t keyID, uint8_t value);                                                                // Add a new KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket
-  uint8_t addCfgValset16(uint32_t keyID, uint16_t value);                                                              // Add a new KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket
-  uint8_t addCfgValset32(uint32_t keyID, uint32_t value);                                                              // Add a new KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket
-  uint8_t addCfgValset64(uint32_t keyID, uint64_t value);                                                              // Add a new KeyID and 64-bit value to an existing UBX-CFG-VALSET ubxPacket
-  uint8_t sendCfgValset8(uint32_t keyID, uint8_t value, uint16_t maxWait = 250);                                       // Add the final KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
-  uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = 250);                                     // Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
-  uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = 250);                                     // Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
-  uint8_t sendCfgValset64(uint32_t keyID, uint64_t value, uint16_t maxWait = 250);                                     // Add the final KeyID and 64-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+  uint32_t createKey(uint16_t group, uint16_t id, uint8_t size);                                                                  // Form 32-bit key from group/id/size
+  sfe_ublox_status_e getVal(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait);                    // Load payload with response
+  uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait);                              // Returns the value at a given key location
+  uint16_t getVal16(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait);                            // Returns the value at a given key location
+  uint32_t getVal32(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait);                            // Returns the value at a given key location
+  uint64_t getVal64(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait);                            // Returns the value at a given key location
+  uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait);   // Returns the value at a given group/id/size location
+  uint16_t getVal16(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait); // Returns the value at a given group/id/size location
+  uint32_t getVal32(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait); // Returns the value at a given group/id/size location
+  uint64_t getVal64(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = defaultMaxWait); // Returns the value at a given group/id/size location
+  uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);               // Sets the 16-bit value at a given group/id/size location
+  uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);               // Sets the 8-bit value at a given group/id/size location
+  uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);             // Sets the 16-bit value at a given group/id/size location
+  uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);             // Sets the 32-bit value at a given group/id/size location
+  uint8_t setVal64(uint32_t keyID, uint64_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);             // Sets the 64-bit value at a given group/id/size location
+  uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL);                                            // Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
+  uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL);                                          // Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
+  uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL);                                          // Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
+  uint8_t newCfgValset64(uint32_t keyID, uint64_t value, uint8_t layer = VAL_LAYER_ALL);                                          // Define a new UBX-CFG-VALSET with the given KeyID and 64-bit value
+  uint8_t addCfgValset8(uint32_t keyID, uint8_t value);                                                                           // Add a new KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket
+  uint8_t addCfgValset16(uint32_t keyID, uint16_t value);                                                                         // Add a new KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket
+  uint8_t addCfgValset32(uint32_t keyID, uint32_t value);                                                                         // Add a new KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket
+  uint8_t addCfgValset64(uint32_t keyID, uint64_t value);                                                                         // Add a new KeyID and 64-bit value to an existing UBX-CFG-VALSET ubxPacket
+  uint8_t sendCfgValset8(uint32_t keyID, uint8_t value, uint16_t maxWait = defaultMaxWait);                                       // Add the final KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+  uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = defaultMaxWait);                                     // Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+  uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = defaultMaxWait);                                     // Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+  uint8_t sendCfgValset64(uint32_t keyID, uint64_t value, uint16_t maxWait = defaultMaxWait);                                     // Add the final KeyID and 64-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 
   // get and set functions for all of the "automatic" message processing
 
