@@ -248,9 +248,11 @@ WiFiClientSecure wifiClient = WiFiClientSecure();
 MqttClient mqttClient(wifiClient);
 
 void mqttMessageHandler(int messageSize) {
-  uint8_t spartnData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
-  int spartnCount = 0;
-  Serial.print(F("Pushed data from "));
+  // Testing with /pp/ubx/0236/ip + /pp/ip/eu + /pp/ubx/mga shows the initial data length can be more than 13KBytes
+  const uint16_t spartnCountLimit = 16384;
+  uint8_t *spartnData = new uint8_t[spartnCountLimit];
+  uint16_t spartnCount = 0;
+  Serial.print(F("Pushing data from "));
   Serial.print(mqttClient.messageTopic());
   Serial.println(F(" topic to ZED"));
   while (mqttClient.available())
@@ -258,8 +260,22 @@ void mqttMessageHandler(int messageSize) {
     char ch = mqttClient.read();
     //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
     spartnData[spartnCount++] = ch;
-    if (spartnCount == sizeof(spartnData)) 
+    if (spartnCount == spartnCountLimit)
+    {
+      Serial.print(F("Warning!! MQTT data exceeded "));
+      Serial.print(spartnCountLimit);
+      Serial.println(F(" bytes!!"));
       break;
+    }
+  }
+
+  static uint16_t maxSpartnCount = 0;
+  if (spartnCount > maxSpartnCount)
+  {
+    maxSpartnCount = spartnCount;
+    Serial.print(F("Maximum MQTT data length is "));
+    Serial.print(maxSpartnCount);
+    Serial.println(F(" bytes"));
   }
 
   if (spartnCount > 0)
@@ -268,6 +284,8 @@ void mqttMessageHandler(int messageSize) {
     myGNSS.pushRawData(spartnData, spartnCount, false);
     lastReceived_ms = millis();
   }
+
+  delete[] spartnData;
 }
 
 //Connect to STARTN MQTT broker, receive RTCM, and push to ZED module over I2C

@@ -94,9 +94,10 @@ WiFiClientSecure wifiClient = WiFiClientSecure();
 MqttClient mqttClient(wifiClient);
 
 void mqttMessageHandler(int messageSize) {
-  uint8_t mgaData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
-  int mgaCount = 0;
-  Serial.print(F("Pushed data from "));
+  const uint16_t mgaCountLimit = 16384;
+  uint8_t *mgaData = new uint8_t[mgaCountLimit];
+  uint16_t mgaCount = 0;
+  Serial.print(F("Pushing data from "));
   Serial.print(mqttClient.messageTopic());
   Serial.println(F(" topic to ZED"));
   while (mqttClient.available())
@@ -104,8 +105,13 @@ void mqttMessageHandler(int messageSize) {
     char ch = mqttClient.read();
     //Serial.write(ch); //Pipe to serial port is fine but beware, it's a lot of binary data
     mgaData[mgaCount++] = ch;
-    if (mgaCount == sizeof(mgaData)) 
+    if (mgaCount == mgaCountLimit) 
+    {
+      Serial.print(F("Warning!! MQTT data exceeded "));
+      Serial.print(mgaCountLimit);
+      Serial.println(F(" bytes!!"));
       break;
+    }
   }
 
   if (mgaCount > 0)
@@ -114,6 +120,8 @@ void mqttMessageHandler(int messageSize) {
     myGNSS.pushRawData(mgaData, mgaCount, false);
     lastReceived_ms = millis();
   }
+
+  delete[] mgaData;
 }
 
 //Connect to MQTT broker, receive MGA, and push to ZED module over I2C
