@@ -1233,7 +1233,6 @@ typedef struct
   ubxAutomaticFlags automaticFlags;
   UBX_NAV_SVIN_data_t data;
   UBX_NAV_SVIN_moduleQueried_t moduleQueried;
-  void (*callbackPointer)(UBX_NAV_SVIN_data_t);
   void (*callbackPointerPtr)(UBX_NAV_SVIN_data_t *);
   UBX_NAV_SVIN_data_t *callbackData;
 } UBX_NAV_SVIN_t;
