@@ -15978,6 +15978,15 @@ uint8_t SFE_UBLOX_GNSS::getNavigationFrequency(uint16_t maxWait)
 
   uint16_t measurementRate = packetUBXCFGRATE->data.measRate;
 
+  if (measurementRate == 0)
+  {
+    #ifndef SFE_UBLOX_REDUCED_PROG_MEM
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+        _debugSerial->println(F("getNavigationFrequency: zero measRate!"));
+    #endif
+    return(0); // Avoid divide-by-zero error
+  }
+
   measurementRate = 1000 / measurementRate; // This may return an int when it's a float, but I'd rather not return 4 bytes
   return (measurementRate);
 }
