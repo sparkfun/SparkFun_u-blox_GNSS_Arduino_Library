@@ -3588,6 +3588,20 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
 
         // Mark all datums as fresh (not read before)
         packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        // Check if we need to copy the data for the callback
+        if ((packetUBXNAVSVIN->callbackData != NULL)                                     // If RAM has been allocated for the copy of the data
+            && (packetUBXNAVSVIN->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVSVIN->callbackData->version, &packetUBXNAVSVIN->data.version, sizeof(UBX_NAV_SVIN_data_t));
+          packetUBXNAVSVIN->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        // Check if we need to copy the data into the file buffer
+        if (packetUBXNAVSVIN->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storePacket(msg);
+        }
       }
     }
     else if (msg->id == UBX_NAV_SAT) // Note: length is variable
@@ -5311,6 +5325,19 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       packetUBXNAVCLOCK->callbackPointerPtr(packetUBXNAVCLOCK->callbackData); // Call the callback
     }
     packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXNAVSVIN != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXNAVSVIN->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXNAVSVIN->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    if (packetUBXNAVSVIN->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+    {
+      // if (_printDebug == true)
+      //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for NAV SVIN"));
+      packetUBXNAVSVIN->callbackPointerPtr(packetUBXNAVSVIN->callbackData); // Call the callback
+    }
+    packetUBXNAVSVIN->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
   if ((packetUBXNAVSAT != NULL)                                                  // If RAM has been allocated for message storage
@@ -11629,23 +11656,126 @@ bool SFE_UBLOX_GNSS::getSurveyStatus(uint16_t maxWait)
   if (packetUBXNAVSVIN == NULL) // Abort if the RAM allocation failed
     return (false);
 
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_SVIN;
-  packetCfg.len = 0;
-  packetCfg.startingSpot = 0;
-
-  // The data is parsed as part of processing the response
-  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
-
-  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
-    return (true);
-
-  if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+  if (packetUBXNAVSVIN->automaticFlags.flags.bits.automatic && packetUBXNAVSVIN->automaticFlags.flags.bits.implicitUpdate)
   {
-    return (true);
+    // The GPS is automatically reporting, we just check whether we got unread data
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_SVIN);
+    return packetUBXNAVSVIN->moduleQueried.moduleQueried.bits.all;
+  }
+  else if (packetUBXNAVSVIN->automaticFlags.flags.bits.automatic && !packetUBXNAVSVIN->automaticFlags.flags.bits.implicitUpdate)
+  {
+    // Someone else has to call checkUblox for us...
+    return (false);
+  }
+  else
+  {
+    // The GPS is not automatically reporting SVIN so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_SVIN;
+    packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
+
+    // The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
+    {
+      return (true);
+    }
+
+    return (false);
+  }
+}
+
+// Enable or disable automatic SVIN message generation by the GNSS. This changes the way getSurveyStatus
+// works.
+bool SFE_UBLOX_GNSS::setAutoNAVSVIN(bool enable, uint16_t maxWait)
+{
+  return setAutoNAVSVINrate(enable ? 1 : 0, true, maxWait);
+}
+
+// Enable or disable automatic SVIN message generation by the GNSS. This changes the way getSurveyStatus
+// works.
+bool SFE_UBLOX_GNSS::setAutoNAVSVIN(bool enable, bool implicitUpdate, uint16_t maxWait)
+{
+  return setAutoNAVSVINrate(enable ? 1 : 0, implicitUpdate, maxWait);
+}
+
+// Enable or disable automatic SVIN message generation by the GNSS. This changes the way getSurveyStatus
+// works.
+bool SFE_UBLOX_GNSS::setAutoNAVSVINrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
+{
+  if (packetUBXNAVSVIN == NULL)
+    initPacketUBXNAVSVIN();     // Check that RAM has been allocated for the data
+  if (packetUBXNAVSVIN == NULL) // Only attempt this if RAM allocation was successful
+    return false;
+
+  if (rate > 127)
+    rate = 127;
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_SVIN;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
+
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    packetUBXNAVSVIN->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXNAVSVIN->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  packetUBXNAVSVIN->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
+  return ok;
+}
+
+// Enable automatic navigation message generation by the GNSS.
+bool SFE_UBLOX_GNSS::setAutoNAVSVINcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_SVIN_data_t *), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  bool result = setAutoNAVSVIN(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVSVIN->callbackData == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVSVIN->callbackData = new UBX_NAV_SVIN_data_t; // Allocate RAM for the main struct
   }
 
-  return (false);
+  if (packetUBXNAVSVIN->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoNAVSVINcallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXNAVSVIN->callbackPointerPtr = callbackPointerPtr;
+  return (true);
+}
+
+// In case no config access to the GNSS is possible and SVIN is send cyclically already
+// set config to suitable parameters
+bool SFE_UBLOX_GNSS::assumeAutoNAVSVIN(bool enabled, bool implicitUpdate)
+{
+  if (packetUBXNAVSVIN == NULL)
+    initPacketUBXNAVSVIN();     // Check that RAM has been allocated for the SVIN data
+  if (packetUBXNAVSVIN == NULL) // Bail if the RAM allocation failed
+    return (false);
+
+  bool changes = packetUBXNAVSVIN->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVSVIN->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    packetUBXNAVSVIN->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVSVIN->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+  }
+  return changes;
 }
 
 // PRIVATE: Allocate RAM for packetUBXNAVSVIN and initialize it
@@ -11661,11 +11791,26 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVSVIN()
     return (false);
   }
   packetUBXNAVSVIN->automaticFlags.flags.all = 0;
-  packetUBXNAVSVIN->callbackPointer = NULL;
   packetUBXNAVSVIN->callbackPointerPtr = NULL;
   packetUBXNAVSVIN->callbackData = NULL;
   packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0;
   return (true);
+}
+
+// Mark all the data as read/stale
+void SFE_UBLOX_GNSS::flushNAVSVIN()
+{
+  if (packetUBXNAVSVIN == NULL)
+    return;                                               // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0; // Mark all datums as stale (read before)
+}
+
+// Log this data in file buffer
+void SFE_UBLOX_GNSS::logNAVSVIN(bool enabled)
+{
+  if (packetUBXNAVSVIN == NULL)
+    return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVSVIN->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV SAT automatic support
