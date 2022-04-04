@@ -1110,14 +1110,14 @@ public:
   void flushNAVCLOCK();                                                                                                   // Mark all the data as read/stale
   void logNAVCLOCK(bool enabled = true);                                                                                  // Log data to file buffer
 
-  bool getSurveyStatus(uint16_t maxWait = 2100);                                                                         // NAV SVIN - Reads survey in status
-  bool setAutoNAVSVIN(bool enabled, uint16_t maxWait = defaultMaxWait);                                                  // Enable/disable automatic survey in reports at the navigation frequency
-  bool setAutoNAVSVIN(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                             // Enable/disable automatic survey in reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-  bool setAutoNAVSVINrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait);                  // Set the rate for automatic SVIN reports
-  bool setAutoNAVSVINcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_SVIN_data_t *), uint16_t maxWait = defaultMaxWait);  // Enable automatic SVIN reports at the navigation frequency. Data is accessed from the callback.
-  bool assumeAutoNAVSVIN(bool enabled, bool implicitUpdate = true);                                                      // In case no config access to the GPS is possible and survey in is send cyclically already
-  void flushNAVSVIN();                                                                                                   // Mark all the data as read/stale
-  void logNAVSVIN(bool enabled = true);                                                                                  // Log data to file buffer
+  bool getSurveyStatus(uint16_t maxWait = 2100);                                                                        // NAV SVIN - Reads survey in status
+  bool setAutoNAVSVIN(bool enabled, uint16_t maxWait = defaultMaxWait);                                                 // Enable/disable automatic survey in reports at the navigation frequency
+  bool setAutoNAVSVIN(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                            // Enable/disable automatic survey in reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoNAVSVINrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait);                 // Set the rate for automatic SVIN reports
+  bool setAutoNAVSVINcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_SVIN_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic SVIN reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoNAVSVIN(bool enabled, bool implicitUpdate = true);                                                     // In case no config access to the GPS is possible and survey in is send cyclically already
+  void flushNAVSVIN();                                                                                                  // Mark all the data as read/stale
+  void logNAVSVIN(bool enabled = true);                                                                                 // Log data to file buffer
 
   // Add "auto" support for NAV TIMELS - to avoid needing 'global' storage
   bool getLeapSecondEvent(uint16_t maxWait = defaultMaxWait); // Reads leap second event info

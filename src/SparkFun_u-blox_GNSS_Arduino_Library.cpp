@@ -3749,7 +3749,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
       // To prevent this, uncomment the line two lines below
       if ((packetUBXRXMPMP != NULL) && (packetUBXRXMPMP->callbackData != NULL)
           //&& (packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
-          )
+      )
       {
         packetUBXRXMPMP->callbackData->version = extractByte(msg, 0);
         packetUBXRXMPMP->callbackData->numBytesUserData = extractInt(msg, 2);
@@ -3786,7 +3786,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
       // To prevent this, uncomment the line two lines below
       if ((packetUBXRXMPMPmessage != NULL) && (packetUBXRXMPMPmessage->callbackData != NULL)
           //&& (packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
-          )
+      )
       {
         packetUBXRXMPMPmessage->callbackData->sync1 = UBX_SYNCH_1;
         packetUBXRXMPMPmessage->callbackData->sync2 = UBX_SYNCH_2;
@@ -3808,7 +3808,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
       // Parse various byte fields into storage - but only if we have memory allocated for it
       if ((packetUBXRXMCOR != NULL) && (packetUBXRXMCOR->callbackData != NULL)
           //&& (packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
-          )
+      )
       {
         packetUBXRXMCOR->callbackData->version = extractByte(msg, 0);
         packetUBXRXMCOR->callbackData->ebno = extractByte(msg, 1);
@@ -5399,34 +5399,34 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
 
   if ((packetUBXRXMPMP != NULL)                                                  // If RAM has been allocated for message storage
       && (packetUBXRXMPMP->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
-      && (packetUBXRXMPMP->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+      && (packetUBXRXMPMP->callbackPointerPtr != NULL)                           // If the pointer to the callback has been defined
       && (packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP"));
-    packetUBXRXMPMP->callbackPointerPtr(packetUBXRXMPMP->callbackData); // Call the callback
+    packetUBXRXMPMP->callbackPointerPtr(packetUBXRXMPMP->callbackData);   // Call the callback
     packetUBXRXMPMP->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
   if ((packetUBXRXMPMPmessage != NULL)                                                  // If RAM has been allocated for message storage
       && (packetUBXRXMPMPmessage->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
-      && (packetUBXRXMPMPmessage->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+      && (packetUBXRXMPMPmessage->callbackPointerPtr != NULL)                           // If the pointer to the callback has been defined
       && (packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP message"));
     packetUBXRXMPMPmessage->callbackPointerPtr(packetUBXRXMPMPmessage->callbackData); // Call the callback
-    packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+    packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false;      // Mark the data as stale
   }
 
   if ((packetUBXRXMCOR != NULL)                                                  // If RAM has been allocated for message storage
       && (packetUBXRXMCOR->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
-      && (packetUBXRXMCOR->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
+      && (packetUBXRXMCOR->callbackPointerPtr != NULL)                           // If the pointer to the callback has been defined
       && (packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM COR"));
-    packetUBXRXMCOR->callbackPointerPtr(packetUBXRXMCOR->callbackData); // Call the callback
+    packetUBXRXMCOR->callbackPointerPtr(packetUBXRXMCOR->callbackData);   // Call the callback
     packetUBXRXMCOR->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
@@ -8468,7 +8468,7 @@ bool SFE_UBLOX_GNSS::setDynamicSPARTNKey(uint8_t keyLengthBytes, uint16_t validF
   }
 
   if (ok)
-    ok = setDynamicSPARTNKey(keyLengthBytes, validFromWno, validFromTow, (const uint8_t *)binaryKey); 
+    ok = setDynamicSPARTNKey(keyLengthBytes, validFromWno, validFromTow, (const uint8_t *)binaryKey);
 
   delete[] binaryKey; // Free the memory allocated for binaryKey
 
@@ -8617,7 +8617,7 @@ bool SFE_UBLOX_GNSS::setDynamicSPARTNKeys(uint8_t keyLengthBytes1, uint16_t vali
 
   if (ok)
     ok = setDynamicSPARTNKeys(keyLengthBytes1, validFromWno1, validFromTow1, (const uint8_t *)binaryKey1,
-                              keyLengthBytes2, validFromWno2, validFromTow2, (const uint8_t *)binaryKey2); 
+                              keyLengthBytes2, validFromWno2, validFromTow2, (const uint8_t *)binaryKey2);
 
   delete[] binaryKey1; // Free the memory allocated for binaryKey1
   delete[] binaryKey2; // Free the memory allocated for binaryKey2
@@ -11801,7 +11801,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVSVIN()
 void SFE_UBLOX_GNSS::flushNAVSVIN()
 {
   if (packetUBXNAVSVIN == NULL)
-    return;                                               // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+    return;                                              // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
   packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0; // Mark all datums as stale (read before)
 }
 
@@ -15980,11 +15980,11 @@ uint8_t SFE_UBLOX_GNSS::getNavigationFrequency(uint16_t maxWait)
 
   if (measurementRate == 0)
   {
-    #ifndef SFE_UBLOX_REDUCED_PROG_MEM
-      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-        _debugSerial->println(F("getNavigationFrequency: zero measRate!"));
-    #endif
-    return(0); // Avoid divide-by-zero error
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("getNavigationFrequency: zero measRate!"));
+#endif
+    return (0); // Avoid divide-by-zero error
   }
 
   measurementRate = 1000 / measurementRate; // This may return an int when it's a float, but I'd rather not return 4 bytes
@@ -16386,16 +16386,16 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.min = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
-  uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; // Jan 1st 2020 as days from Jan 1st 1970
-  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020]; // Add on the number of days since 2020
+  uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020;                                                                           // Jan 1st 2020 as days from Jan 1st 1970
+  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020];                                             // Add on the number of days since 2020
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
-  t += (uint32_t)packetUBXNAVPVT->data.day - 1; // Add on the number of days since the 1st of the month
-  t *= 24; // Convert to hours
-  t += (uint32_t)packetUBXNAVPVT->data.hour; // Add on the hour
-  t *= 60; // Convert to minutes
-  t += (uint32_t)packetUBXNAVPVT->data.min; // Add on the minute
-  t *= 60; // Convert to seconds
-  t += (uint32_t)packetUBXNAVPVT->data.sec; // Add on the second
+  t += (uint32_t)packetUBXNAVPVT->data.day - 1;                                                                            // Add on the number of days since the 1st of the month
+  t *= 24;                                                                                                                 // Convert to hours
+  t += (uint32_t)packetUBXNAVPVT->data.hour;                                                                               // Add on the hour
+  t *= 60;                                                                                                                 // Convert to minutes
+  t += (uint32_t)packetUBXNAVPVT->data.min;                                                                                // Add on the minute
+  t *= 60;                                                                                                                 // Convert to seconds
+  t += (uint32_t)packetUBXNAVPVT->data.sec;                                                                                // Add on the second
   return t;
 }
 
@@ -16417,23 +16417,23 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t &microsecond, uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
-  uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; // Jan 1st 2020 as days from Jan 1st 1970
-  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020]; // Add on the number of days since 2020
+  uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020;                                                                           // Jan 1st 2020 as days from Jan 1st 1970
+  t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020];                                             // Add on the number of days since 2020
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
-  t += (uint32_t)packetUBXNAVPVT->data.day - 1; // Add on the number of days since the 1st of the month
-  t *= 24; // Convert to hours
-  t += (uint32_t)packetUBXNAVPVT->data.hour; // Add on the hour
-  t *= 60; // Convert to minutes
-  t += (uint32_t)packetUBXNAVPVT->data.min; // Add on the minute
-  t *= 60; // Convert to seconds
-  t += (uint32_t)packetUBXNAVPVT->data.sec; // Add on the second
-  int32_t us = packetUBXNAVPVT->data.nano / 1000; // Convert nanos to micros
-  microsecond = (uint32_t)us; // Could be -ve!
+  t += (uint32_t)packetUBXNAVPVT->data.day - 1;                                                                            // Add on the number of days since the 1st of the month
+  t *= 24;                                                                                                                 // Convert to hours
+  t += (uint32_t)packetUBXNAVPVT->data.hour;                                                                               // Add on the hour
+  t *= 60;                                                                                                                 // Convert to minutes
+  t += (uint32_t)packetUBXNAVPVT->data.min;                                                                                // Add on the minute
+  t *= 60;                                                                                                                 // Convert to seconds
+  t += (uint32_t)packetUBXNAVPVT->data.sec;                                                                                // Add on the second
+  int32_t us = packetUBXNAVPVT->data.nano / 1000;                                                                          // Convert nanos to micros
+  microsecond = (uint32_t)us;                                                                                              // Could be -ve!
   // Adjust t if nano is negative
   if (us < 0)
   {
     microsecond = (uint32_t)(us + 1000000); // Make nano +ve
-    t--; // Decrement t by 1 second
+    t--;                                    // Decrement t by 1 second
   }
   return t;
 }
