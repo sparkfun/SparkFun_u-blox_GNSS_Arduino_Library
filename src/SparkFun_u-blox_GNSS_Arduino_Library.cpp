@@ -11458,7 +11458,7 @@ bool SFE_UBLOX_GNSS::setAutoNAVCLOCK(bool enable, bool implicitUpdate, uint16_t 
   return setAutoNAVCLOCKrate(enable ? 1 : 0, implicitUpdate, maxWait);
 }
 
-// Enable or disable automatic CLOCK attitude message generation by the GNSS. This changes the way getNAVCLOCK
+// Enable or disable automatic CLOCK message generation by the GNSS. This changes the way getNAVCLOCK
 // works.
 bool SFE_UBLOX_GNSS::setAutoNAVCLOCKrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
 {
@@ -11539,7 +11539,7 @@ bool SFE_UBLOX_GNSS::setAutoNAVCLOCKcallbackPtr(void (*callbackPointerPtr)(UBX_N
   return (true);
 }
 
-// In case no config access to the GNSS is possible and HNR attitude is send cyclically already
+// In case no config access to the GNSS is possible and NAV CLOCK is send cyclically already
 // set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVCLOCK(bool enabled, bool implicitUpdate)
 {
@@ -11872,7 +11872,7 @@ bool SFE_UBLOX_GNSS::setAutoNAVSAT(bool enable, bool implicitUpdate, uint16_t ma
   return setAutoNAVSATrate(enable ? 1 : 0, implicitUpdate, maxWait);
 }
 
-// Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getNAVSAT
+// Enable or disable automatic NAV SAT message generation by the GNSS. This changes the way getNAVSAT
 // works.
 bool SFE_UBLOX_GNSS::setAutoNAVSATrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
 {
@@ -11953,7 +11953,7 @@ bool SFE_UBLOX_GNSS::setAutoNAVSATcallbackPtr(void (*callbackPointerPtr)(UBX_NAV
   return (true);
 }
 
-// In case no config access to the GNSS is possible and HNR attitude is send cyclically already
+// In case no config access to the GNSS is possible and NAV SAT is send cyclically already
 // set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoNAVSAT(bool enabled, bool implicitUpdate)
 {
@@ -12069,7 +12069,7 @@ bool SFE_UBLOX_GNSS::setAutoRELPOSNED(bool enable, bool implicitUpdate, uint16_t
   return setAutoRELPOSNEDrate(enable ? 1 : 0, implicitUpdate, maxWait);
 }
 
-// Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getRELPOSNED
+// Enable or disable automatic RELPOSNED message generation by the GNSS. This changes the way getRELPOSNED
 // works.
 bool SFE_UBLOX_GNSS::setAutoRELPOSNEDrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
 {
@@ -12150,7 +12150,7 @@ bool SFE_UBLOX_GNSS::setAutoRELPOSNEDcallbackPtr(void (*callbackPointerPtr)(UBX_
   return (true);
 }
 
-// In case no config access to the GNSS is possible and HNR attitude is send cyclically already
+// In case no config access to the GNSS is possible and RELPOSNED is send cyclically already
 // set config to suitable parameters
 bool SFE_UBLOX_GNSS::assumeAutoRELPOSNED(bool enabled, bool implicitUpdate)
 {
