@@ -643,6 +643,7 @@ class SFE_UBLOX_GNSS
 {
 public:
   SFE_UBLOX_GNSS(void);
+  ~SFE_UBLOX_GNSS(void);
 
 // A default of 250ms for maxWait seems fine for I2C but is not enough for SerialUSB.
 // If you know you are only going to be using I2C / Qwiic communication, you can
