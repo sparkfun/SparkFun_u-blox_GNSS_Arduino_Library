@@ -63,12 +63,39 @@ SFE_UBLOX_GNSS::SFE_UBLOX_GNSS(void)
 #endif
 }
 
+SFE_UBLOX_GNSS::~SFE_UBLOX_GNSS(void)
+{
+  // Destructor
+
+  end(); // Delete all allocated memory - excluding payloadCfg, payloadAuto and spiBuffer
+
+  if (payloadCfg != NULL)
+  {
+    delete[] payloadCfg; // Created with new[]
+    payloadCfg = NULL;   // Redundant?
+  }
+
+  if (payloadAuto != NULL)
+  {
+    delete[] payloadAuto; // Created with new[]
+    payloadAuto = NULL;   // Redundant?
+  }
+
+  if (spiBuffer != NULL)
+  {
+    delete[] spiBuffer; // Created with new[]
+    spiBuffer = NULL;   // Redundant?
+  }
+}
+
 // Stop all automatic message processing. Free all used RAM
 void SFE_UBLOX_GNSS::end(void)
 {
   // Note: payloadCfg is not deleted
 
   // Note: payloadAuto is not deleted
+
+  // Note: spiBuffer is not deleted
 
   if (ubxFileBuffer != NULL) // Check if RAM has been allocated for the file buffer
   {
