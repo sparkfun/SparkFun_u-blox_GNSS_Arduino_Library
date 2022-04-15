@@ -7,10 +7,9 @@
   basically do whatever you want with this code.
 
   This example shows how to access the callback data from the main loop.
-  The simple way is to use a global flag: set it in the callback, check it and clear it in the main loop.
+  The simple way to check if new data is available is to use a global flag: set it in the callback, check it and clear it in the main loop.
   Or, you can be more sophisticated and use the callback flags themselves.
-
-  Uncomment the #define useGlobalFlag below to use the simple method.
+  This example shows how to use the sophisticated method.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -23,12 +22,6 @@
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
-
-//#define useGlobalFlag // Uncomment this line to use a global flag to indicate that the callback data is valid
-
-#ifdef useGlobalFlag
-bool newPVTdata = false;
-#endif
 
 #include <Wire.h> //Needed for I2C to GPS
 
@@ -44,13 +37,7 @@ SFE_UBLOX_GNSS myGNSS;
 //        |                 |              |
 void callbackPVT(UBX_NAV_PVT_data_t *ubxDataStruct)
 {
-
-#ifdef useGlobalFlag // If we are using the global flag
-
-  newPVTdata = true;
-  
-#endif
-
+  Serial.println(F("Hey! The NAV PVT callback has been called!"));
 }
 
 void setup()
@@ -79,49 +66,17 @@ void setup()
 
 void loop()
 {
+  
   myGNSS.checkUblox(); // Check for the arrival of new data and process it.
 
-
-#ifndef useGlobalFlag // If we are not using the global flag
-
-  static bool callbackDataValid = false; // Flag to show that fresh callback data is available
-
-  // Is the callback data valid?
-  // If automaticFlags.flags.bits.callbackCopyValid is true, it indicates new PVT data has been received and has been copied
-  // automaticFlags.flags.bits.callbackCopyValid will be cleared when the callback is called
+  // Check if new NAV PVT data has been received:
+  // If myGNSS.packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid is true, it indicates new PVT data has been received and has been copied.
+  // automaticFlags.flags.bits.callbackCopyValid will be cleared automatically when the callback is called.
   
-  if ((callbackDataValid == false) && (myGNSS.packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true))
+  if (myGNSS.packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true)
   {
-    Serial.println(F("NAV PVT callback data is now valid"));
-    callbackDataValid = true; // Set the flag
-  }
-
-#endif
-
-  
-  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-
-  // Check if new PVT data has been received
-
-
-#ifdef useGlobalFlag
-
-  if (newPVTdata)
-  {
-
-
-#else // If we are not using the global flag
-
-
-  // automaticFlags.flags.bits.callbackCopyValid will have been cleared after the callback was called
-  
-  if ((callbackDataValid == true) && (myGNSS.packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == false))
-  {
-    callbackDataValid = false; // Clear the flag
-
-  
-#endif
-
+    // But, we can manually clear the callback flag too. This will prevent the callback from being called!
+    myGNSS.packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Comment this line if you still want the callback to be called
 
     Serial.println();
 
@@ -157,6 +112,8 @@ void loop()
     Serial.print(altitude);
     Serial.println(F(" (mm)"));
   }
+
+  myGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed. There will not be any in this example, unless you commented the line above
 
   Serial.print(".");
   delay(50);
