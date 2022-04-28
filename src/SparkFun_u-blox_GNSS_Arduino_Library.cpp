@@ -3959,8 +3959,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXCFGPRT->dataValid = true;
       }
     }
-    break;
-    if (msg->id == UBX_CFG_RATE && msg->len == UBX_CFG_RATE_LEN)
+    else if (msg->id == UBX_CFG_RATE && msg->len == UBX_CFG_RATE_LEN)
     {
       // Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXCFGRATE != NULL)
@@ -12994,7 +12993,7 @@ bool SFE_UBLOX_GNSS::getPortSettingsInternal(uint8_t portID, uint16_t maxWait)
   if (result == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     retVal = true;
 
-  // Now disable automatic support for CFG-RATE (see above)
+  // Now disable automatic support for CFG-PRT (see above)
   delete packetUBXCFGPRT;
   packetUBXCFGPRT = NULL;
 
