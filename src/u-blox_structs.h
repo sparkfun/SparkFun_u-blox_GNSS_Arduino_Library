@@ -1754,6 +1754,35 @@ typedef struct
   } config2;
 } UBX_CFG_ITFM_data_t;
 
+// UBX-CFG-TMODE3 (0x06 0x71): Time Mode Settings 3
+const uint16_t UBX_CFG_TMODE3_LEN = 40;
+
+typedef struct
+{
+  uint8_t version; // Message version (0x00 for this version)
+  uint8_t reserved1;
+  union
+  {
+    uint16_t all;
+    struct
+    {
+      uint16_t mode : 8; // Receiver Mode: 0 Disabled; 1 Survey In; 2 Fixed Mode (true ARP position information required); 3-255 Reserved
+      uint16_t lla : 1;  // Position is given in LAT/LON/ALT (default is ECEF)
+    } bits;
+  } flags;
+  int32_t ecefXOrLat;  // WGS84 ECEF X coordinate (or latitude) of the ARP position, depending on flags above: cm or deg*1e-7
+  int32_t ecefYOrLon;  // WGS84 ECEF Y coordinate (or latitude) of the ARP position, depending on flags above: cm or deg*1e-7
+  int32_t ecefZOrAlt;  // WGS84 ECEF Z coordinate (or altitude) of the ARP position, depending on flags above: cm
+  int8_t ecefXOrLatHP; // High-precision WGS84 ECEF X coordinate (or latitude) of the ARP position, depending on flags above: 0.1 mm or deg*1e-9
+  int8_t ecefYOrLonHP; // High-precision WGS84 ECEF Y coordinate (or longitude) of the ARP position, depending on flags above: 0.1 mm or deg*1e-9
+  int8_t ecefZOrAltHP; // High-precision WGS84 ECEF Z coordinate (or altitude) of the ARP position, depending on flags above: 0.1 mm
+  uint8_t reserved2;
+  uint32_t fixedPosAcc;  // Fixed position 3D accuracy: 0.1 mm
+  uint32_t svinMinDur;   // Survey-in minimum duration: s
+  uint32_t svinAccLimit; // Survey-in position accuracy limit: 0.1 mm
+  uint8_t reserved3[8];
+} UBX_CFG_TMODE3_data_t;
+
 // MON-specific structs
 
 // UBX-MON-HW (0x0A 0x09): Hardware status
