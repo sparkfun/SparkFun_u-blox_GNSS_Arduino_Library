@@ -861,7 +861,7 @@ public:
 
   // Functions used for RTK and base station setup
   bool getSurveyMode(uint16_t maxWait = defaultMaxWait);                                                                     // Get the current TimeMode3 settings
-  bool getSurveyMode(UBX_CFG_TMODE3_data_t *data = NULL, uint16_t maxWait = defaultMaxWait);                                    // Get the current TimeMode3 settings
+  bool getSurveyMode(UBX_CFG_TMODE3_data_t *data = NULL, uint16_t maxWait = defaultMaxWait);                                 // Get the current TimeMode3 settings
   bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);     // Control survey in mode
   bool setSurveyModeFull(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait); // Control survey in mode
   bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);                // Begin Survey-In for NEO-M8P / ZED-F9x
