@@ -9842,6 +9842,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVDOP()
   }
   packetUBXNAVDOP->automaticFlags.flags.all = 0;
   packetUBXNAVDOP->callbackPointer = NULL;
+  packetUBXNAVDOP->callbackPointerPtr = NULL;
   packetUBXNAVDOP->callbackData = NULL;
   packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0;
   return (true);
