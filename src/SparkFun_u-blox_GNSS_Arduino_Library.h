@@ -1021,6 +1021,16 @@ public:
   void flushDOP();                                                                                                 // Mark all the DOP data as read/stale
   void logNAVDOP(bool enabled = true);                                                                             // Log data to file buffer
 
+  bool getEOE(uint16_t maxWait = defaultMaxWait);                                                                  // Query module for latest dilution of precision values and load global vars:. If autoEOE is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new EOE is available.
+  bool setAutoEOE(bool enabled, uint16_t maxWait = defaultMaxWait);                                                // Enable/disable automatic EOE reports at the navigation frequency
+  bool setAutoEOE(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Enable/disable automatic EOE reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoEOErate(uint8_t rate, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                       // Set the rate for automatic EOE reports
+  bool setAutoEOEcallback(void (*callbackPointer)(UBX_NAV_EOE_data_t), uint16_t maxWait = defaultMaxWait);         // Enable automatic EOE reports at the navigation frequency. Data is accessed from the callback.
+  bool setAutoEOEcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_EOE_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic EOE reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoEOE(bool enabled, bool implicitUpdate = true);                                                    // In case no config access to the GPS is possible and EOE is send cyclically already
+  void flushEOE();                                                                                                 // Mark all the EOE data as read/stale
+  void logNAVEOE(bool enabled = true);                                                                             // Log data to file buffer
+
   bool getVehAtt(uint16_t maxWait = defaultMaxWait);                                                                  // NAV ATT Helper
   bool getNAVATT(uint16_t maxWait = defaultMaxWait);                                                                  // NAV ATT
   bool setAutoNAVATT(bool enabled, uint16_t maxWait = defaultMaxWait);                                                // Enable/disable automatic vehicle attitude reports at the navigation frequency
@@ -1051,6 +1061,16 @@ public:
   bool assumeAutoNAVODO(bool enabled, bool implicitUpdate = true);                                                    // In case no config access to the GPS is possible and ODO is send cyclically already
   void flushNAVODO();                                                                                                 // Mark all the data as read/stale
   void logNAVODO(bool enabled = true);                                                                                // Log data to file buffer
+
+  bool getNAVTIMEUTC(uint16_t maxWait = defaultMaxWait);                                                                      // NAV TIMEUTC
+  bool setAutoNAVTIMEUTC(bool enabled, uint16_t maxWait = defaultMaxWait);                                                    // Enable/disable automatic TIMEUTC reports at the navigation frequency
+  bool setAutoNAVTIMEUTC(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                               // Enable/disable automatic TIMEUTC reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoNAVTIMEUTCrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Set the rate for automatic TIMEUTC reports
+  bool setAutoNAVTIMEUTCcallback(void (*callbackPointer)(UBX_NAV_TIMEUTC_data_t), uint16_t maxWait = defaultMaxWait);         // Enable automatic TIMEUTC reports at the navigation frequency. Data is accessed from the callback.
+  bool setAutoNAVTIMEUTCcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_TIMEUTC_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic TIMEUTC reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoNAVTIMEUTC(bool enabled, bool implicitUpdate = true);                                                        // In case no config access to the GPS is possible and TIMEUTC is send cyclically already
+  void flushNAVTIMEUTC();                                                                                                     // Mark all the data as read/stale
+  void logNAVTIMEUTC(bool enabled = true);                                                                                    // Log data to file buffer
 
   bool getNAVVELECEF(uint16_t maxWait = defaultMaxWait);                                                                      // NAV VELECEF
   bool setAutoNAVVELECEF(bool enabled, uint16_t maxWait = defaultMaxWait);                                                    // Enable/disable automatic VELECEF reports at the navigation frequency
@@ -1501,9 +1521,11 @@ public:
   UBX_NAV_POSECEF_t *packetUBXNAVPOSECEF = NULL;     // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_STATUS_t *packetUBXNAVSTATUS = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_DOP_t *packetUBXNAVDOP = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_NAV_EOE_t *packetUBXNAVEOE = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_ATT_t *packetUBXNAVATT = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_PVT_t *packetUBXNAVPVT = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_ODO_t *packetUBXNAVODO = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_NAV_TIMEUTC_t *packetUBXNAVTIMEUTC = NULL;     // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_VELECEF_t *packetUBXNAVVELECEF = NULL;     // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_VELNED_t *packetUBXNAVVELNED = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1601,9 +1623,11 @@ private:
   bool initPacketUBXNAVPOSECEF();    // Allocate RAM for packetUBXNAVPOSECEF and initialize it
   bool initPacketUBXNAVSTATUS();     // Allocate RAM for packetUBXNAVSTATUS and initialize it
   bool initPacketUBXNAVDOP();        // Allocate RAM for packetUBXNAVDOP and initialize it
+  bool initPacketUBXNAVEOE();        // Allocate RAM for packetUBXNAVEOE and initialize it
   bool initPacketUBXNAVATT();        // Allocate RAM for packetUBXNAVATT and initialize it
   bool initPacketUBXNAVPVT();        // Allocate RAM for packetUBXNAVPVT and initialize it
   bool initPacketUBXNAVODO();        // Allocate RAM for packetUBXNAVODO and initialize it
+  bool initPacketUBXNAVTIMEUTC();    // Allocate RAM for packetUBXNAVTIMEUTC and initialize it
   bool initPacketUBXNAVVELECEF();    // Allocate RAM for packetUBXNAVVELECEF and initialize it
   bool initPacketUBXNAVVELNED();     // Allocate RAM for packetUBXNAVVELNED and initialize it
   bool initPacketUBXNAVHPPOSECEF();  // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
