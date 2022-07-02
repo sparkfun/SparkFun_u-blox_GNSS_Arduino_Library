@@ -298,38 +298,6 @@ typedef struct
   UBX_NAV_DOP_data_t *callbackData;
 } UBX_NAV_DOP_t;
 
-// UBX-NAV-EOE (0x01 0x61): End of Epoch
-const uint16_t UBX_NAV_EOE_LEN = 4;
-
-typedef struct
-{
-  uint32_t iTOW; // GPS time of week of the navigation epoch: ms
-} UBX_NAV_EOE_data_t;
-
-typedef struct
-{
-  union
-  {
-    uint32_t all;
-    struct
-    {
-      uint32_t all : 1;
-
-      uint32_t iTOW : 1;
-    } bits;
-  } moduleQueried;
-} UBX_NAV_EOE_moduleQueried_t;
-
-typedef struct
-{
-  ubxAutomaticFlags automaticFlags;
-  UBX_NAV_EOE_data_t data;
-  UBX_NAV_EOE_moduleQueried_t moduleQueried;
-  void (*callbackPointer)(UBX_NAV_EOE_data_t);
-  void (*callbackPointerPtr)(UBX_NAV_EOE_data_t *);
-  UBX_NAV_EOE_data_t  *callbackData;
-} UBX_NAV_EOE_t;
-
 // UBX-NAV-ATT (0x01 0x05): Attitude solution
 const uint16_t UBX_NAV_ATT_LEN = 32;
 
@@ -1031,7 +999,6 @@ typedef struct
   ubxAutomaticFlags automaticFlags;
   UBX_NAV_TIMEUTC_data_t data;
   UBX_NAV_TIMEUTC_moduleQueried_t moduleQueried;
-  void (*callbackPointer)(UBX_NAV_TIMEUTC_data_t);
   void (*callbackPointerPtr)(UBX_NAV_TIMEUTC_data_t *);
   UBX_NAV_TIMEUTC_data_t *callbackData;
 } UBX_NAV_TIMEUTC_t;
@@ -1414,6 +1381,37 @@ typedef struct
   void (*callbackPointerPtr)(UBX_NAV_AOPSTATUS_data_t *);
   UBX_NAV_AOPSTATUS_data_t *callbackData;
 } UBX_NAV_AOPSTATUS_t;
+
+// UBX-NAV-EOE (0x01 0x61): End of Epoch
+const uint16_t UBX_NAV_EOE_LEN = 4;
+
+typedef struct
+{
+  uint32_t iTOW; // GPS time of week of the navigation epoch: ms
+} UBX_NAV_EOE_data_t;
+
+typedef struct
+{
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t all : 1;
+
+      uint32_t iTOW : 1;
+    } bits;
+  } moduleQueried;
+} UBX_NAV_EOE_moduleQueried_t;
+
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  UBX_NAV_EOE_data_t data;
+  UBX_NAV_EOE_moduleQueried_t moduleQueried;
+  void (*callbackPointerPtr)(UBX_NAV_EOE_data_t *);
+  UBX_NAV_EOE_data_t  *callbackData;
+} UBX_NAV_EOE_t;
 
 // RXM-specific structs
 
