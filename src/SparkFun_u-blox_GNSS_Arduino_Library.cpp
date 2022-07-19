@@ -311,6 +311,26 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXRXMPMP = NULL; // Redundant?
   }
 
+  if (packetUBXRXMPMPmessage != NULL)
+  {
+    if (packetUBXRXMPMPmessage->callbackData != NULL)
+    {
+      delete packetUBXRXMPMPmessage->callbackData;
+    }
+    delete packetUBXRXMPMPmessage;
+    packetUBXRXMPMPmessage = NULL; // Redundant?
+  }
+
+  if (packetUBXRXMQZSSL6 != NULL)
+  {
+    if (packetUBXRXMQZSSL6->callbackData != NULL)
+    {
+      delete packetUBXRXMPMP->callbackData;
+    }
+    delete packetUBXRXMQZSSL6;
+    packetUBXRXMQZSSL6 = NULL; // Redundant?
+  }
+
   if (packetUBXRXMQZSSL6message != NULL)
   {
     if (packetUBXRXMQZSSL6message->callbackData != NULL)
@@ -320,7 +340,7 @@ void SFE_UBLOX_GNSS::end(void)
     delete packetUBXRXMQZSSL6message;
     packetUBXRXMQZSSL6message = NULL; // Redundant?
   }
-
+  
   if (packetUBXRXMCOR != NULL)
   {
     if (packetUBXRXMCOR->callbackData != NULL)
