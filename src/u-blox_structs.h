@@ -1599,6 +1599,54 @@ typedef struct
   UBX_RXM_PMP_message_data_t *callbackData;
 } UBX_RXM_PMP_message_t;
 
+// UBX-RXM-QZSSL6 (0x02 0x73): QZSS L6 raw data (D9C modules)
+const uint16_t UBX_RXM_QZSSL6_MAX_USER_DATA = 250;
+const uint16_t UBX_RXM_QZSSL6_MAX_LEN = UBX_RXM_PMP_MAX_USER_DATA + 14;
+
+typedef struct
+{
+  uint8_t version;        // Message version (0x00 / 0x01)
+  uint8_t svId;           // Satellite identifier
+  uint16_t cno;           // Mean C/N0
+  uint32_t timeTag;       // Time since startup when frame started : ms
+  uint8_t groupDelay;     // L6 group delay w.r.t. L2 on channel
+  uint8_t bitErrCorr;     // Number of bit errors corrected by Reed-Solomon decoder
+  uint16_t chInfo;        // Information about receiver channel associated with a received QZSS L6 message
+  uint8_t reserved0[2];   // Reserved
+  uint8_t msgBytes[UBX_RXM_QZSSL6_MAX_USER_DATA];  // Bytes in a QZSS L6 message
+} UBX_RXM_QZSSL6_data_t;
+
+// The QZSSL6 data can only be accessed via a callback. QZSSL6 cannot be polled.
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  void (*callbackPointerPtr)(UBX_RXM_QZSSL6_data_t *);
+  UBX_RXM_QZSSL6_data_t *callbackData;
+} UBX_RXM_QZSSL6_t;
+
+// Define a struct to hold the entire QZSSL6 message so the whole thing can be pushed to a GNSS.
+// Remember that the length of the payload could be variable (with version 1 messages).
+typedef struct
+{
+  uint8_t sync1; // 0xB5
+  uint8_t sync2; // 0x62
+  uint8_t cls;
+  uint8_t ID;
+  uint8_t lengthLSB;
+  uint8_t lengthMSB;
+  uint8_t payload[UBX_RXM_QZSSL6_MAX_LEN];
+  uint8_t checksumA;
+  uint8_t checksumB;
+} UBX_RXM_QZSSL6_message_data_t;
+
+// The PMP data can only be accessed via a callback. QZSSL6 cannot be polled.
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  void (*callbackPointerPtr)(UBX_RXM_QZSSL6_message_data_t *);
+  UBX_RXM_QZSSL6_message_data_t *callbackData;
+} UBX_RXM_QZSSL6_message_t;
+
 // CFG-specific structs
 
 // UBX-CFG-PRT (0x06 0x00): Port configuration

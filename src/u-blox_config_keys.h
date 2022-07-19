@@ -826,6 +826,14 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_UART1 = 0x20910323; // Output rate o
 const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_UART2 = 0x20910324; // Output rate of the UBX_MON_PMP message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_USB = 0x20910325;   // Output rate of the UBX_MON_PMP message on port USB
 
+// Additional CFG_MSGOUT keys for the NEO-D9S
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C = 0x20910339;   // Output rate of the UBX_RXM_QZSSL6 message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_SPI = 0x2091033a;   // Output rate of the UBX_RXM_QZSSL6 message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART1 = 0x2091033b; // Output rate of the UBX_RXM_QZSSL6 message on port UART1
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART2 = 0x2091033c; // Output rate of the UBX_RXM_QZSSL6 message on port UART2
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_USB = 0x2091033d;   // Output rate of the UBX_RXM_QZSSL6 message on port USB
+
 // CFG-NAV2: Secondary output configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const uint32_t UBLOX_CFG_NAV2_OUT_ENABLED = 0x10170001;        // Enable secondary (NAV2) output
@@ -927,6 +935,14 @@ const uint32_t UBLOX_CFG_PMP_USE_DESCRAMBLER = 0x10b10014;   // Use descrambler.
 const uint32_t UBLOX_CFG_PMP_DESCRAMBLER_INIT = 0x30b10015;  // Descrambler initialization. Set the intialisation value for the descrambler.
 const uint32_t UBLOX_CFG_PMP_USE_PRESCRAMBLING = 0x10b10019; // Use prescrambling. Enables/disables the prescrambling.
 const uint32_t UBLOX_CFG_PMP_UNIQUE_WORD = 0x50b1001a;       // Unique word. Defines value of unique word.
+
+// CFG-QZSS-L6: QZSS system configuration configuration (NEO-D9C)
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t UBLOX_CFG_QZSSL6_SVIDA = 0x20370020;          // QZSS L6 SV Id to be decoded by channel A
+const uint32_t UBLOX_CFG_QZSSL6_SVIDB = 0x20370030;          // QZSS L6 SV Id to be decoded by channel B
+const uint32_t UBLOX_CFG_QZSSL6_MSGA = 0x20370050;           // QZSS L6 messages to be decoded by channel A
+const uint32_t UBLOX_CFG_QZSSL6_MSGB = 0x20370060;           // QZSS L6 messages to be decoded by channel B
+const uint32_t UBLOX_CFG_QZSSL6_RSDECODER = 0x20370080;      // QZSS L6 message Reed-Solomon decoder mode
 
 // CFG-QZSS: QZSS system configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

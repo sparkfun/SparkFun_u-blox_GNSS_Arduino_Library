@@ -311,14 +311,14 @@ void SFE_UBLOX_GNSS::end(void)
     packetUBXRXMPMP = NULL; // Redundant?
   }
 
-  if (packetUBXRXMPMPmessage != NULL)
+  if (packetUBXRXMQZSSL6message != NULL)
   {
-    if (packetUBXRXMPMPmessage->callbackData != NULL)
+    if (packetUBXRXMQZSSL6message->callbackData != NULL)
     {
-      delete packetUBXRXMPMPmessage->callbackData;
+      delete packetUBXRXMQZSSL6message->callbackData;
     }
-    delete packetUBXRXMPMPmessage;
-    packetUBXRXMPMPmessage = NULL; // Redundant?
+    delete packetUBXRXMQZSSL6message;
+    packetUBXRXMQZSSL6message = NULL; // Redundant?
   }
 
   if (packetUBXRXMCOR != NULL)
@@ -1370,6 +1370,10 @@ bool SFE_UBLOX_GNSS::checkAutomatic(uint8_t Class, uint8_t ID)
       if ((packetUBXRXMPMP != NULL) || (packetUBXRXMPMPmessage != NULL))
         result = true;
       break;
+    case UBX_RXM_QZSSL6:
+      if ((packetUBXRXMQZSSL6 != NULL) || (packetUBXRXMQZSSL6message != NULL))
+        result = true;
+      break;
     case UBX_RXM_COR:
       if (packetUBXRXMCOR != NULL)
         result = true;
@@ -1544,6 +1548,9 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
       break;
     case UBX_RXM_PMP:
       maxSize = UBX_RXM_PMP_MAX_LEN;
+      break;
+    case UBX_RXM_QZSSL6:
+      maxSize = UBX_RXM_QZSSL6_MAX_LEN;
       break;
     case UBX_RXM_COR:
       maxSize = UBX_RXM_COR_LEN;
@@ -3830,6 +3837,55 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
       }
     }
+    if (msg->id == UBX_RXM_QZSSL6)
+    // Note: length is variable with version 0x01
+    // Note: the field positions depend on the version
+    {
+      // Parse various byte fields into storage - but only if we have memory allocated for it.
+      // By default, new QZSSL6 data will always overwrite 'old' data (data which is valid but which has not yet been read by the callback).
+      // To prevent this, uncomment the line two lines below
+      if ((packetUBXRXMQZSSL6 != NULL) && (packetUBXRXMQZSSL6->callbackData != NULL)
+          //&& (packetUBXRXMQZSSL6->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
+      )
+      {
+        packetUBXRXMQZSSL6->callbackData->version = extractByte(msg, 0);
+        packetUBXRXMQZSSL6->callbackData->svId = extractByte(msg, 1);
+        packetUBXRXMQZSSL6->callbackData->cno = extractInt(msg, 2);
+        packetUBXRXMQZSSL6->callbackData->timeTag = extractLong(msg, 4);
+        packetUBXRXMQZSSL6->callbackData->groupDelay = extractByte(msg, 8);
+        packetUBXRXMQZSSL6->callbackData->bitErrCorr = extractByte(msg, 9);
+        packetUBXRXMQZSSL6->callbackData->chInfo = extractInt(msg, 10);
+        packetUBXRXMQZSSL6->callbackData->reserved0[0] = extractByte(msg, 12);
+        packetUBXRXMQZSSL6->callbackData->reserved0[0] = extractByte(msg, 13);
+        for (uint16_t i = 0; (i < 250); i++)
+        {
+          packetUBXRXMQZSSL6->callbackData->msgBytes[i] = extractByte(msg, i + 14);
+        }
+        packetUBXRXMQZSSL6->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
+      }
+
+      // Full QZSSL6 message, including Class, ID and checksum
+      // By default, new QZSSL6 data will always overwrite 'old' data (data which is valid but which has not yet been read by the callback).
+      // To prevent this, uncomment the line two lines below
+      if ((packetUBXRXMQZSSL6message != NULL) && (packetUBXRXMQZSSL6message->callbackData != NULL)
+          //&& (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid == false) // <=== Uncomment this line to prevent new data from overwriting 'old'
+      )
+      {
+        packetUBXRXMQZSSL6message->callbackData->sync1 = UBX_SYNCH_1;
+        packetUBXRXMQZSSL6message->callbackData->sync2 = UBX_SYNCH_2;
+        packetUBXRXMQZSSL6message->callbackData->cls = UBX_CLASS_RXM;
+        packetUBXRXMQZSSL6message->callbackData->ID = UBX_RXM_QZSSL6;
+        packetUBXRXMQZSSL6message->callbackData->lengthLSB = msg->len & 0xFF;
+        packetUBXRXMQZSSL6message->callbackData->lengthMSB = msg->len >> 8;
+
+        memcpy(packetUBXRXMQZSSL6message->callbackData->payload, msg->payload, msg->len);
+
+        packetUBXRXMQZSSL6message->callbackData->checksumA = msg->checksumA;
+        packetUBXRXMQZSSL6message->callbackData->checksumB = msg->checksumB;
+
+        packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
+      }
+    }
     else if (msg->id == UBX_RXM_COR)
     {
       // Parse various byte fields into storage - but only if we have memory allocated for it
@@ -5443,6 +5499,28 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM PMP message"));
     packetUBXRXMPMPmessage->callbackPointerPtr(packetUBXRXMPMPmessage->callbackData); // Call the callback
     packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false;      // Mark the data as stale
+  }
+  
+  if ((packetUBXRXMQZSSL6 != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXRXMQZSSL6->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXRXMQZSSL6->callbackPointerPtr != NULL)                           // If the pointer to the callback has been defined
+      && (packetUBXRXMQZSSL6->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM QZSSL6"));
+    packetUBXRXMQZSSL6->callbackPointerPtr(packetUBXRXMQZSSL6->callbackData);   // Call the callback
+    packetUBXRXMQZSSL6->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXRXMQZSSL6message != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXRXMQZSSL6message->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXRXMQZSSL6message->callbackPointerPtr != NULL)                           // If the pointer to the callback has been defined
+      && (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callbackPtr for RXM QZSSL6 message"));
+    packetUBXRXMQZSSL6message->callbackPointerPtr(packetUBXRXMQZSSL6message->callbackData); // Call the callback
+    packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid = false;      // Mark the data as stale
   }
 
   if ((packetUBXRXMCOR != NULL)                                                  // If RAM has been allocated for message storage
@@ -12560,6 +12638,97 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMPMPmessage()
   packetUBXRXMPMPmessage->callbackData = NULL;
   return (true);
 }
+
+// ***** RXM QZSSL6 automatic support
+
+// Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
+bool SFE_UBLOX_GNSS::setRXMQZSSL6callbackPtr(void (*callbackPointer)(UBX_RXM_QZSSL6_data_t *))
+{
+  if (packetUBXRXMQZSSL6 == NULL)
+    initPacketUBXRXMQZSSL6();     // Check that RAM has been allocated for the data
+  if (packetUBXRXMQZSSL6 == NULL) // Only attempt this if RAM allocation was successful
+    return false;
+
+  if (packetUBXRXMQZSSL6->callbackData == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMQZSSL6->callbackData = new UBX_RXM_QZSSL6_data_t; // Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMQZSSL6->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRXMQZSSL6callbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXRXMQZSSL6->callbackPointerPtr = callbackPointer;
+  return (true);
+}
+
+// PRIVATE: Allocate RAM for packetUBXRXMQZSSL6 and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXRXMQZSSL6()
+{
+  packetUBXRXMQZSSL6 = new UBX_RXM_QZSSL6_t; // Allocate RAM for the main struct
+  if (packetUBXRXMQZSSL6 == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXRXMQZSSL6: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+  packetUBXRXMQZSSL6->automaticFlags.flags.all = 0;
+  packetUBXRXMQZSSL6->callbackPointerPtr = NULL;
+  packetUBXRXMQZSSL6->callbackData = NULL;
+  return (true);
+}
+
+// Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
+bool SFE_UBLOX_GNSS::setRXMQZSSL6messageCallbackPtr(void (*callbackPointer)(UBX_RXM_QZSSL6_message_data_t *))
+{
+  if (packetUBXRXMQZSSL6message == NULL)
+    initPacketUBXRXMQZSSL6message();     // Check that RAM has been allocated for the data
+  if (packetUBXRXMQZSSL6message == NULL) // Only attempt this if RAM allocation was successful
+    return false;
+
+  if (packetUBXRXMQZSSL6message->callbackData == NULL) // Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMQZSSL6message->callbackData = new UBX_RXM_QZSSL6_message_data_t; // Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMQZSSL6message->callbackData == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("setAutoRXMQZSSL6messagecallbackPtr: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+
+  packetUBXRXMQZSSL6message->callbackPointerPtr = callbackPointer;
+  return (true);
+}
+
+// PRIVATE: Allocate RAM for packetUBXRXMQZSSL6message and initialize it
+bool SFE_UBLOX_GNSS::initPacketUBXRXMQZSSL6message()
+{
+  packetUBXRXMQZSSL6message = new UBX_RXM_QZSSL6_message_t; // Allocate RAM for the main struct
+  if (packetUBXRXMQZSSL6message == NULL)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("initPacketUBXRXMQZSSL6message: RAM alloc failed!"));
+#endif
+    return (false);
+  }
+  packetUBXRXMQZSSL6message->automaticFlags.flags.all = 0;
+  packetUBXRXMQZSSL6message->callbackPointerPtr = NULL;
+  packetUBXRXMQZSSL6message->callbackData = NULL;
+  return (true);
+}
+
 
 bool SFE_UBLOX_GNSS::setRXMCORcallbackPtr(void (*callbackPointer)(UBX_RXM_COR_data_t *))
 {
