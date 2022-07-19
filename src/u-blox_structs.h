@@ -1601,7 +1601,7 @@ typedef struct
 
 // UBX-RXM-QZSSL6 (0x02 0x73): QZSS L6 raw data (D9C modules)
 const uint16_t UBX_RXM_QZSSL6_MAX_USER_DATA = 250;
-const uint16_t UBX_RXM_QZSSL6_MAX_LEN = UBX_RXM_PMP_MAX_USER_DATA + 14;
+const uint16_t UBX_RXM_QZSSL6_MAX_LEN = UBX_RXM_QZSSL6_MAX_USER_DATA + 14;
 
 typedef struct
 {
@@ -1639,7 +1639,7 @@ typedef struct
   uint8_t checksumB;
 } UBX_RXM_QZSSL6_message_data_t;
 
-// The PMP data can only be accessed via a callback. QZSSL6 cannot be polled.
+// The QZSSL6 data can only be accessed via a callback. QZSSL6 cannot be polled.
 typedef struct
 {
   ubxAutomaticFlags automaticFlags;

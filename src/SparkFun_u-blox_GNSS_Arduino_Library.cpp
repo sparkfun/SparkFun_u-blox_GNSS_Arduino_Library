@@ -325,7 +325,7 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXRXMQZSSL6->callbackData != NULL)
     {
-      delete packetUBXRXMPMP->callbackData;
+      delete packetUBXRXMQZSSL6->callbackData;
     }
     delete packetUBXRXMQZSSL6;
     packetUBXRXMQZSSL6 = NULL; // Redundant?
