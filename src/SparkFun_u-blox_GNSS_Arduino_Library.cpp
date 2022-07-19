@@ -7320,6 +7320,36 @@ bool SFE_UBLOX_GNSS::getSurveyMode(uint16_t maxWait)
   return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are expecting data and an ACK
 }
 
+// Get the current TimeMode3 settings - these contain survey in statuses
+bool SFE_UBLOX_GNSS::getSurveyMode(UBX_CFG_TMODE3_data_t *data, uint16_t maxWait)
+{
+  if (data == NULL) // Check if the user forgot to include the data pointer
+    return (false); // Bail
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_TMODE3;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  // Extract the data
+  data->version = extractByte(&packetCfg, 0);
+  data->flags.all = extractInt(&packetCfg, 2);
+  data->ecefXOrLat = extractSignedLong(&packetCfg, 4);
+  data->ecefYOrLon = extractSignedLong(&packetCfg, 8);
+  data->ecefZOrAlt = extractSignedLong(&packetCfg, 12);
+  data->ecefXOrLatHP = extractSignedChar(&packetCfg, 16);
+  data->ecefYOrLonHP = extractSignedChar(&packetCfg, 17);
+  data->ecefZOrAltHP = extractSignedChar(&packetCfg, 18);
+  data->fixedPosAcc = extractLong(&packetCfg, 20);
+  data->svinMinDur = extractLong(&packetCfg, 24);
+  data->svinAccLimit = extractLong(&packetCfg, 28);
+
+  return (true);
+}
+
 // Control Survey-In for NEO-M8P
 bool SFE_UBLOX_GNSS::setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait)
 {
