@@ -828,8 +828,8 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_MON_PMP_USB = 0x20910325;   // Output rate o
 
 // Additional CFG_MSGOUT keys for the NEO-D9S
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C = 0x2091033F;   // Output rate of the UBX_RXM_QZSSL6 message on port I2C
-const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_SPI = 0x2091033E;   // Output rate of the UBX_RXM_QZSSL6 message on port SPI
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C = 0x2091033f;   // Output rate of the UBX_RXM_QZSSL6 message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_SPI = 0x2091033e;   // Output rate of the UBX_RXM_QZSSL6 message on port SPI
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART1 = 0x2091033b; // Output rate of the UBX_RXM_QZSSL6 message on port UART1
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART2 = 0x2091033c; // Output rate of the UBX_RXM_QZSSL6 message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_USB = 0x2091033d;   // Output rate of the UBX_RXM_QZSSL6 message on port USB
