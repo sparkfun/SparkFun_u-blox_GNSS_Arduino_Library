@@ -1600,8 +1600,8 @@ typedef struct
 } UBX_RXM_PMP_message_t;
 
 // UBX-RXM-QZSSL6 (0x02 0x73): QZSS L6 raw data (D9C modules)
-const uint16_t UBX_RXM_QZSSL6_MAX_USER_DATA = 250;
-const uint16_t UBX_RXM_QZSSL6_MAX_LEN = UBX_RXM_QZSSL6_MAX_USER_DATA + 14;
+#define UBX_RXM_QZSSL6_DATALEN 250
+const uint16_t UBX_RXM_QZSSL6_MAX_LEN = UBX_RXM_QZSSL6_DATALEN + 14;
 
 typedef struct
 {
@@ -1613,7 +1613,7 @@ typedef struct
   uint8_t bitErrCorr;     // Number of bit errors corrected by Reed-Solomon decoder
   uint16_t chInfo;        // Information about receiver channel associated with a received QZSS L6 message
   uint8_t reserved0[2];   // Reserved
-  uint8_t msgBytes[UBX_RXM_QZSSL6_MAX_USER_DATA];  // Bytes in a QZSS L6 message
+  uint8_t msgBytes[UBX_RXM_QZSSL6_DATALEN];  // Bytes in a QZSS L6 message
 } UBX_RXM_QZSSL6_data_t;
 
 // The QZSSL6 data can only be accessed via a callback. QZSSL6 cannot be polled.

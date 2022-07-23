@@ -3877,7 +3877,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMQZSSL6->callbackData->chInfo = extractInt(msg, 10);
         packetUBXRXMQZSSL6->callbackData->reserved0[0] = extractByte(msg, 12);
         packetUBXRXMQZSSL6->callbackData->reserved0[0] = extractByte(msg, 13);
-        for (uint16_t i = 0; (i < 250); i++)
+        for (uint16_t i = 0; (i < UBX_RXM_QZSSL6_DATALEN); i++)
         {
           packetUBXRXMQZSSL6->callbackData->msgBytes[i] = extractByte(msg, i + 14);
         }
