@@ -1168,7 +1168,6 @@ public:
   // Note: on the NEO-D9C, the UBX-RXM-QZSSL6 messages are enabled by default on all ports.
   //       You can disable them by calling (e.g.) setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C, 0)
   //       The NEO-D9C does not support UBX-CFG-MSG
-  bool setRXMQZSSL6callbackPtr(void (*callbackPointerPtr)(UBX_RXM_QZSSL6_data_t *));                // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
   bool setRXMQZSSL6messageCallbackPtr(void (*callbackPointerPtr)(UBX_RXM_QZSSL6_message_data_t *)); // Use this if you want all of the QZSSL6 message (including sync chars, checksum, etc.) to push to a GNSS
   
   bool setRXMCORcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_COR_data_t *)); // RXM COR
@@ -1526,7 +1525,6 @@ public:
 
   UBX_RXM_PMP_t *packetUBXRXMPMP = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_PMP_message_t *packetUBXRXMPMPmessage = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-  UBX_RXM_QZSSL6_t *packetUBXRXMQZSSL6 = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_QZSSL6_message_t *packetUBXRXMQZSSL6message = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_COR_t *packetUBXRXMCOR = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL;            // Pointer to struct. RAM will be allocated for this if/when necessary

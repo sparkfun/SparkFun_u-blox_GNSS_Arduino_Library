@@ -1600,7 +1600,8 @@ typedef struct
 } UBX_RXM_PMP_message_t;
 
 // UBX-RXM-QZSSL6 (0x02 0x73): QZSS L6 raw data (D9C modules)
-#define UBX_RXM_QZSSL6_DATALEN 250
+#define UBX_RXM_QZSSL6_NUM_CHANNELS 2
+const uint16_t UBX_RXM_QZSSL6_DATALEN = 250;
 const uint16_t UBX_RXM_QZSSL6_MAX_LEN = UBX_RXM_QZSSL6_DATALEN + 14;
 
 typedef struct
@@ -1616,13 +1617,20 @@ typedef struct
   uint8_t msgBytes[UBX_RXM_QZSSL6_DATALEN];  // Bytes in a QZSS L6 message
 } UBX_RXM_QZSSL6_data_t;
 
-// The QZSSL6 data can only be accessed via a callback. QZSSL6 cannot be polled.
-typedef struct
+struct ubxQZSSL6AutomaticFlags
 {
-  ubxAutomaticFlags automaticFlags;
-  void (*callbackPointerPtr)(UBX_RXM_QZSSL6_data_t *);
-  UBX_RXM_QZSSL6_data_t *callbackData;
-} UBX_RXM_QZSSL6_t;
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t automatic : 1;         // Will this message be delivered and parsed "automatically" (without polling)
+      uint8_t implicitUpdate : 1;    // Is the update triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+      uint8_t addToFileBuffer : 1;   // Should the raw UBX data be added to the file buffer?
+      uint8_t callbackCopyValid : UBX_RXM_QZSSL6_NUM_CHANNELS; // Is the copies of the data structs used by the callback valid/fresh?
+    } bits;
+  } flags;
+};
 
 // Define a struct to hold the entire QZSSL6 message so the whole thing can be pushed to a GNSS.
 // Remember that the length of the payload could be variable (with version 1 messages).
