@@ -1625,7 +1625,6 @@ private:
   bool initPacketUBXNAVAOPSTATUS();  // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
   bool initPacketUBXRXMPMP();        // Allocate RAM for packetUBXRXMPMP and initialize it
   bool initPacketUBXRXMPMPmessage(); // Allocate RAM for packetUBXRXMPMPRaw and initialize it
-  bool initPacketUBXRXMQZSSL6();        // Allocate RAM for packetUBXRXMQZSSL6and initialize it
   bool initPacketUBXRXMQZSSL6message(); // Allocate RAM for packetUBXRXMQZSSL6raw and initialize it
   bool initPacketUBXRXMCOR();        // Allocate RAM for packetUBXRXMCOR and initialize it
   bool initPacketUBXRXMSFRBX();      // Allocate RAM for packetUBXRXMSFRBX and initialize it
