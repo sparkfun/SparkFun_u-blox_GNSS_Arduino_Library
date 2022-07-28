@@ -1650,7 +1650,7 @@ typedef struct
 // The QZSSL6 data can only be accessed via a callback. QZSSL6 cannot be polled.
 typedef struct
 {
-  ubxAutomaticFlags automaticFlags;
+  ubxQZSSL6AutomaticFlags automaticFlags;
   void (*callbackPointerPtr)(UBX_RXM_QZSSL6_message_data_t *);
   UBX_RXM_QZSSL6_message_data_t *callbackData;
 } UBX_RXM_QZSSL6_message_t;
