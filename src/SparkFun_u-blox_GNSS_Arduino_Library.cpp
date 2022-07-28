@@ -3853,7 +3853,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
     {
       // Full QZSSL6 message, including Class, ID and checksum 
       for (int ch = 0; ch < UBX_RXM_QZSSL6_NUM_CHANNELS; ch ++) {
-        if (0 == (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1<<ch))) {
+        if (0 == (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1 << ch))) {
           
           packetUBXRXMQZSSL6message->callbackData[ch].sync1 = UBX_SYNCH_1;
           packetUBXRXMQZSSL6message->callbackData[ch].sync2 = UBX_SYNCH_2;
@@ -5495,9 +5495,9 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
       if (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1 << ch)) // If the copy of the data is valid
       {
         packetUBXRXMQZSSL6message->callbackPointerPtr( &packetUBXRXMQZSSL6message->callbackData[ch] ); // Call the callback
+        packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid &= ~(1 << ch); // clear it
       }
     }
-    packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid = 0; // Mark the data as stale
   }
 
   if ((packetUBXRXMCOR != NULL)                                                  // If RAM has been allocated for message storage
