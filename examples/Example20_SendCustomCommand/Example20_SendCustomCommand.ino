@@ -167,6 +167,6 @@ void loop()
     
     uint16_t milliseconds = myGNSS.getMillisecond();
     Serial.print(F(" Milliseconds: "));
-    Serial.print(altitude);
+    Serial.print(milliseconds);
     Serial.println();
 }
