@@ -397,6 +397,7 @@ const uint8_t UBX_NAV_AOPSTATUS = 0x60; // AssistNow Autonomous status
 const uint8_t UBX_RXM_COR = 0x34;       // Differential correction input status
 const uint8_t UBX_RXM_MEASX = 0x14;     // Satellite Measurements for RRLP
 const uint8_t UBX_RXM_PMP = 0x72;       // PMP raw data (NEO-D9S) (two different versions) (packet size for version 0x01 is variable)
+const uint8_t UBX_RXM_QZSSL6 = 0x73;    // QZSSL6 data (NEO-D9C)
 const uint8_t UBX_RXM_PMREQ = 0x41;     // Requests a Power Management task (two different packet sizes)
 const uint8_t UBX_RXM_RAWX = 0x15;      // Multi-GNSS Raw Measurement Data
 const uint8_t UBX_RXM_RLM = 0x59;       // Galileo SAR Short-RLM report (two different packet sizes)
@@ -861,7 +862,7 @@ public:
 
   // Functions used for RTK and base station setup
   bool getSurveyMode(uint16_t maxWait = defaultMaxWait);                                                                     // Get the current TimeMode3 settings
-  bool getSurveyMode(UBX_CFG_TMODE3_data_t *data = NULL, uint16_t maxWait = defaultMaxWait);                                    // Get the current TimeMode3 settings
+  bool getSurveyMode(UBX_CFG_TMODE3_data_t *data = NULL, uint16_t maxWait = defaultMaxWait);                                 // Get the current TimeMode3 settings
   bool setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);     // Control survey in mode
   bool setSurveyModeFull(uint8_t mode, uint32_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait); // Control survey in mode
   bool enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = defaultMaxWait);                // Begin Survey-In for NEO-M8P / ZED-F9x
@@ -1102,6 +1103,15 @@ public:
   void flushNAVPVAT();                                                                                                  // Mark all the PVAT data as read/stale
   void logNAVPVAT(bool enabled = true);                                                                                 // Log data to file buffer
 
+  bool getNAVTIMEUTC(uint16_t maxWait = defaultMaxWait);                                                                      // NAV TIMEUTC
+  bool setAutoNAVTIMEUTC(bool enabled, uint16_t maxWait = defaultMaxWait);                                                    // Enable/disable automatic TIMEUTC reports at the navigation frequency
+  bool setAutoNAVTIMEUTC(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                               // Enable/disable automatic TIMEUTC reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoNAVTIMEUTCrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Set the rate for automatic TIMEUTC reports
+  bool setAutoNAVTIMEUTCcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_TIMEUTC_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic TIMEUTC reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoNAVTIMEUTC(bool enabled, bool implicitUpdate = true);                                                        // In case no config access to the GPS is possible and TIMEUTC is send cyclically already
+  void flushNAVTIMEUTC();                                                                                                     // Mark all the data as read/stale
+  void logNAVTIMEUTC(bool enabled = true);                                                                                    // Log data to file buffer
+
   bool getNAVCLOCK(uint16_t maxWait = defaultMaxWait);                                                                    // NAV CLOCK
   bool setAutoNAVCLOCK(bool enabled, uint16_t maxWait = defaultMaxWait);                                                  // Enable/disable automatic clock reports at the navigation frequency
   bool setAutoNAVCLOCK(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                             // Enable/disable automatic clock reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -1120,6 +1130,15 @@ public:
   bool assumeAutoNAVSVIN(bool enabled, bool implicitUpdate = true);                                                     // In case no config access to the GPS is possible and survey in is send cyclically already
   void flushNAVSVIN();                                                                                                  // Mark all the data as read/stale
   void logNAVSVIN(bool enabled = true);                                                                                 // Log data to file buffer
+
+  bool getNAVEOE(uint16_t maxWait = defaultMaxWait);                                                                  // Query module for latest dilution of precision values and load global vars:. If autoEOE is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new EOE is available.
+  bool setAutoNAVEOE(bool enabled, uint16_t maxWait = defaultMaxWait);                                                // Enable/disable automatic EOE reports at the navigation frequency
+  bool setAutoNAVEOE(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Enable/disable automatic EOE reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoNAVEOErate(uint8_t rate, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                       // Set the rate for automatic EOE reports
+  bool setAutoNAVEOEcallbackPtr(void (*callbackPointerPtr)(UBX_NAV_EOE_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic EOE reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoNAVEOE(bool enabled, bool implicitUpdate = true);                                                    // In case no config access to the GPS is possible and EOE is send cyclically already
+  void flushNAVEOE();                                                                                                 // Mark all the EOE data as read/stale
+  void logNAVEOE(bool enabled = true);                                                                                // Log data to file buffer
 
   // Add "auto" support for NAV TIMELS - to avoid needing 'global' storage
   bool getLeapSecondEvent(uint16_t maxWait = defaultMaxWait); // Reads leap second event info
@@ -1163,6 +1182,12 @@ public:
   bool setRXMPMPcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_PMP_data_t *));                // Callback receives a pointer to the data, instead of _all_ the data. Much kinder on the stack!
   bool setRXMPMPmessageCallbackPtr(void (*callbackPointerPtr)(UBX_RXM_PMP_message_data_t *)); // Use this if you want all of the PMP message (including sync chars, checksum, etc.) to push to a GNSS
 
+  // Configure a callback for the UBX-RXM-QZSSL6 messages produced by the NEO-D9C
+  // Note: on the NEO-D9C, the UBX-RXM-QZSSL6 messages are enabled by default on all ports.
+  //       You can disable them by calling (e.g.) setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C, 0)
+  //       The NEO-D9C does not support UBX-CFG-MSG
+  bool setRXMQZSSL6messageCallbackPtr(void (*callbackPointerPtr)(UBX_RXM_QZSSL6_message_data_t *)); // Use this if you want all of the QZSSL6 message (including sync chars, checksum, etc.) to push to a GNSS
+  
   bool setRXMCORcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_COR_data_t *)); // RXM COR
 
   bool getRXMSFRBX(uint16_t maxWait = defaultMaxWait);                                                                    // RXM SFRBX
@@ -1501,9 +1526,11 @@ public:
   UBX_NAV_POSECEF_t *packetUBXNAVPOSECEF = NULL;     // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_STATUS_t *packetUBXNAVSTATUS = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_DOP_t *packetUBXNAVDOP = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_NAV_EOE_t *packetUBXNAVEOE = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_ATT_t *packetUBXNAVATT = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_PVT_t *packetUBXNAVPVT = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_ODO_t *packetUBXNAVODO = NULL;             // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_NAV_TIMEUTC_t *packetUBXNAVTIMEUTC = NULL;     // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_VELECEF_t *packetUBXNAVVELECEF = NULL;     // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_VELNED_t *packetUBXNAVVELNED = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1518,6 +1545,7 @@ public:
 
   UBX_RXM_PMP_t *packetUBXRXMPMP = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_PMP_message_t *packetUBXRXMPMPmessage = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_QZSSL6_message_t *packetUBXRXMQZSSL6message = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_COR_t *packetUBXRXMCOR = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL;            // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL;              // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1609,14 +1637,17 @@ private:
   bool initPacketUBXNAVHPPOSECEF();  // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
   bool initPacketUBXNAVHPPOSLLH();   // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
   bool initPacketUBXNAVPVAT();       // Allocate RAM for packetUBXNAVPVAT and initialize it
+  bool initPacketUBXNAVTIMEUTC();    // Allocate RAM for packetUBXNAVTIMEUTC and initialize it
   bool initPacketUBXNAVCLOCK();      // Allocate RAM for packetUBXNAVCLOCK and initialize it
   bool initPacketUBXNAVTIMELS();     // Allocate RAM for packetUBXNAVTIMELS and initialize it
   bool initPacketUBXNAVSVIN();       // Allocate RAM for packetUBXNAVSVIN and initialize it
   bool initPacketUBXNAVSAT();        // Allocate RAM for packetUBXNAVSAT and initialize it
   bool initPacketUBXNAVRELPOSNED();  // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
   bool initPacketUBXNAVAOPSTATUS();  // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
+  bool initPacketUBXNAVEOE();        // Allocate RAM for packetUBXNAVEOE and initialize it
   bool initPacketUBXRXMPMP();        // Allocate RAM for packetUBXRXMPMP and initialize it
   bool initPacketUBXRXMPMPmessage(); // Allocate RAM for packetUBXRXMPMPRaw and initialize it
+  bool initPacketUBXRXMQZSSL6message(); // Allocate RAM for packetUBXRXMQZSSL6raw and initialize it
   bool initPacketUBXRXMCOR();        // Allocate RAM for packetUBXRXMCOR and initialize it
   bool initPacketUBXRXMSFRBX();      // Allocate RAM for packetUBXRXMSFRBX and initialize it
   bool initPacketUBXRXMRAWX();       // Allocate RAM for packetUBXRXMRAWX and initialize it

@@ -48,7 +48,7 @@ v2.1 of the library adds support for u-blox AssistNow<sup>TM</sup> Assisted GNSS
 This library is the new and improved version of the very popular SparkFun u-blox GNSS Arduino Library. v2.0 contains some big changes and improvements:
 
 * Seamless support for "automatic" message delivery:
-  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**27 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity, attitude and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
+  * In v1.8, you could ask for the NAV PVT (Navigation Position Velocity Time) message to be delivered _automatically_, without polling. v2.0 adds automatic support for [**29 messages**](./Theory.md#auto-messages), covering the full range of: standard and High Precision position, velocity, attitude and time information; relative positioning; event capture with nanosecond time resolution; raw GNSS signal data including carrier phase; Sensor Fusion; and High Navigation Rate data.
   * Don't see the message you really need? [Adding_New_Messages](./Adding_New_Messages.md) provides details on how to add "auto" support for your favourite message.
 * Dynamic memory allocation with clearly-defined data storage structs for each message:
   * There are no static 'global' variables to eat up your RAM. v2.0 automatically allocates memory for the automatic messages when they are enabled. You may find your total RAM use is lower with v2.0 than with v1.8.

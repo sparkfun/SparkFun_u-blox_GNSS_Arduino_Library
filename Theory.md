@@ -55,11 +55,13 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-HPPOSECEF (0x01 0x13): High precision position solution in ECEF
 - UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
 - UBX-NAV-PVAT (0x01 0x17): Navigation position velocity attitude time solution (**only with ADR or UDR products**)
+- UBX-NAV-TIMEUTC (0x01 0x21): UTC time solution
 - UBX-NAV-CLOCK (0x01 0x22): Clock solution
 - UBX-NAV-SAT (0x01 0x35): Satellite information
 - UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
 - UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
 - UBX-NAV-AOPSTATUS (0x01 0x60): AssistNow Autonomous status
+- UBX-NAV-EOE (0x01 0x61): End of epoch
 - UBX-RXM-SFRBX (0x02 0x13): Broadcast navigation data subframe
 - UBX-RXM-RAWX (0x02 0x15): Multi-GNSS raw measurement data (**only with ADR or High Precision GNSS or Time Sync products**)
 - UBX-TIM-TM2 (0x0D 0x03): Time mark data
@@ -76,7 +78,6 @@ Please see [Adding_New_Messages](./Adding_New_Messages.md) for details on how to
 
 Notes:
 - UBX-NAV-POSLLH is not supported as UBX-NAV-PVT contains the same information
-- UBX-NAV-TIMEUTC is not supported as UBX-NAV-PVT contains the same information
 
 ## Migrating your code to v2.0
 
