@@ -3940,7 +3940,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = true; // Mark the data as valid
       }
     }
-    if (msg->id == UBX_RXM_QZSSL6)
+    else if (msg->id == UBX_RXM_QZSSL6)
     // Note: length is variable with version 0x01
     // Note: the field positions depend on the version
     {
