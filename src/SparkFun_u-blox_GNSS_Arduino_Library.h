@@ -646,6 +646,15 @@ public:
   SFE_UBLOX_GNSS(void);
   ~SFE_UBLOX_GNSS(void);
 
+  // Depending on the sentence type the processor will load characters into different arrays
+  enum SentenceTypes
+  {
+    NONE = 0,
+    NMEA,
+    UBX,
+    RTCM
+  } currentSentence = NONE;
+
 // A default of 250ms for maxWait seems fine for I2C but is not enough for SerialUSB.
 // If you know you are only going to be using I2C / Qwiic communication, you can
 // safely reduce defaultMaxWait to 250.
@@ -738,7 +747,7 @@ public:
 
   void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);    // Processes NMEA and UBX binary sentences one byte at a time
   void processNMEA(char incoming) __attribute__((weak));                                                  // Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
-  void processRTCMframe(uint8_t incoming);                                                                // Monitor the incoming bytes for start and length bytes
+  SentenceTypes processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter) __attribute__((weak));    // Monitor the incoming bytes for start and length bytes
   void processRTCM(uint8_t incoming) __attribute__((weak));                                               // Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
   void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); // Given a character, file it away into the uxb packet structure
   void processUBXpacket(ubxPacket *msg);                                                                  // Once a packet has been received and validated, identify this packet's class/id and update internal flags
@@ -1187,7 +1196,7 @@ public:
   //       You can disable them by calling (e.g.) setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C, 0)
   //       The NEO-D9C does not support UBX-CFG-MSG
   bool setRXMQZSSL6messageCallbackPtr(void (*callbackPointerPtr)(UBX_RXM_QZSSL6_message_data_t *)); // Use this if you want all of the QZSSL6 message (including sync chars, checksum, etc.) to push to a GNSS
-  
+
   bool setRXMCORcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_COR_data_t *)); // RXM COR
 
   bool getRXMSFRBX(uint16_t maxWait = defaultMaxWait);                                                                    // RXM SFRBX
@@ -1582,15 +1591,6 @@ public:
   uint16_t rtcmFrameCounter = 0; // Tracks the type of incoming byte inside RTCM frame
 
 private:
-  // Depending on the sentence type the processor will load characters into different arrays
-  enum SentenceTypes
-  {
-    NONE = 0,
-    NMEA,
-    UBX,
-    RTCM
-  } currentSentence = NONE;
-
   // Depending on the ubx binary response class, store binary responses into different places
   enum classTypes
   {
@@ -1760,8 +1760,6 @@ private:
   uint8_t *getNMEACallbackNMEAPtr();     // Get a pointer to the callback copy NMEA data
   uint8_t getNMEAMaxLength();            // Get the maximum length of this NMEA message
   nmeaAutomaticFlags *getNMEAFlagsPtr(); // Get a pointer to the flags
-
-  uint16_t rtcmLen = 0;
 
   // Flag to prevent reentry into checkCallbacks
   // Prevent badness if the user accidentally calls checkCallbacks from inside a callback
