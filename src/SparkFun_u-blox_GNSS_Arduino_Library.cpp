@@ -350,7 +350,7 @@ void SFE_UBLOX_GNSS::end(void)
     delete packetUBXRXMQZSSL6message;
     packetUBXRXMQZSSL6message = NULL; // Redundant?
   }
-  
+
   if (packetUBXRXMCOR != NULL)
   {
     if (packetUBXRXMCOR->callbackData != NULL)
@@ -2114,7 +2114,7 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
   }
   else if (currentSentence == RTCM)
   {
-    processRTCMframe(incoming); // Deal with RTCM bytes
+    currentSentence = processRTCMframe(incoming, &rtcmFrameCounter); // Deal with RTCM bytes
   }
 }
 
@@ -2876,13 +2876,15 @@ nmeaAutomaticFlags *SFE_UBLOX_GNSS::getNMEAFlagsPtr()
 // Byte 2: 10-bits of length of this packet including the first two-ish header bytes, + 6.
 // byte 3 + 4 bits: Msg type 12 bits
 // Example: D3 00 7C 43 F0 ... / 0x7C = 124+6 = 130 bytes in this packet, 0x43F = Msg type 1087
-void SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming)
+SFE_UBLOX_GNSS::SentenceTypes SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter)
 {
-  if (rtcmFrameCounter == 1)
+  static uint16_t rtcmLen = 0;
+
+  if (*rtcmFrameCounter == 1)
   {
     rtcmLen = (incoming & 0x03) << 8; // Get the last two bits of this byte. Bits 8&9 of 10-bit length
   }
-  else if (rtcmFrameCounter == 2)
+  else if (*rtcmFrameCounter == 2)
   {
     rtcmLen |= incoming; // Bits 0-7 of packet length
     rtcmLen += 6;        // There are 6 additional bytes of what we presume is header, msgType, CRC, and stuff
@@ -2896,15 +2898,12 @@ void SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming)
     rtcmMsgType |= (incoming >> 4); //Message Type, bits 0-7
   }*/
 
-  rtcmFrameCounter++;
+  *rtcmFrameCounter++;
 
   processRTCM(incoming); // Here is where we expose this byte to the user
 
-  if (rtcmFrameCounter == rtcmLen)
-  {
-    // We're done!
-    currentSentence = NONE; // Reset and start looking for next sentence type
-  }
+  // Reset and start looking for next sentence type when done
+  return (*rtcmFrameCounter == rtcmLen) ? NONE : RTCM;
 }
 
 // This function is called for each byte of an RTCM frame
@@ -3944,10 +3943,10 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
     // Note: length is variable with version 0x01
     // Note: the field positions depend on the version
     {
-      // Full QZSSL6 message, including Class, ID and checksum 
+      // Full QZSSL6 message, including Class, ID and checksum
       for (int ch = 0; ch < UBX_RXM_QZSSL6_NUM_CHANNELS; ch ++) {
         if (0 == (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1 << ch))) {
-          
+
           packetUBXRXMQZSSL6message->callbackData[ch].sync1 = UBX_SYNCH_1;
           packetUBXRXMQZSSL6message->callbackData[ch].sync2 = UBX_SYNCH_2;
           packetUBXRXMQZSSL6message->callbackData[ch].cls = UBX_CLASS_RXM;
@@ -3958,12 +3957,12 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
           memcpy(packetUBXRXMQZSSL6message->callbackData[ch].payload, msg->payload, msg->len);
 
           packetUBXRXMQZSSL6message->callbackData[ch].checksumA = msg->checksumA;
-          packetUBXRXMQZSSL6message->callbackData[ch].checksumB = msg->checksumB;   
+          packetUBXRXMQZSSL6message->callbackData[ch].checksumB = msg->checksumB;
 
           packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid |= (1 << ch);
           break; // abort when added
         }
-      } 
+      }
     }
     else if (msg->id == UBX_RXM_COR)
     {
@@ -5605,7 +5604,7 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXRXMPMPmessage->callbackPointerPtr(packetUBXRXMPMPmessage->callbackData); // Call the callback
     packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false;      // Mark the data as stale
   }
-  
+
   if ((packetUBXRXMQZSSL6message != NULL) &&                    // If RAM has been allocated for message storage
       (packetUBXRXMQZSSL6message->callbackData != NULL) &&      // If RAM has been allocated for the copy of the data
       (packetUBXRXMQZSSL6message->callbackPointerPtr != NULL))  // If the pointer to the callback has been defined
