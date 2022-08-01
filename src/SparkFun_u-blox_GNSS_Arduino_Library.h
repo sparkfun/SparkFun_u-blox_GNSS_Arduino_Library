@@ -745,12 +745,12 @@ public:
 
   // Process the incoming data
 
-  void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);    // Processes NMEA and UBX binary sentences one byte at a time
-  void processNMEA(char incoming) __attribute__((weak));                                                  // Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
-  sfe_ublox_sentence_types_e processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter) __attribute__((weak));    // Monitor the incoming bytes for start and length bytes
-  void processRTCM(uint8_t incoming) __attribute__((weak));                                               // Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
-  void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); // Given a character, file it away into the uxb packet structure
-  void processUBXpacket(ubxPacket *msg);                                                                  // Once a packet has been received and validated, identify this packet's class/id and update internal flags
+  void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);             // Processes NMEA and UBX binary sentences one byte at a time
+  void processNMEA(char incoming) __attribute__((weak));                                                           // Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
+  sfe_ublox_sentence_types_e processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter) __attribute__((weak)); // Monitor the incoming bytes for start and length bytes
+  void processRTCM(uint8_t incoming) __attribute__((weak));                                                        // Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
+  void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);          // Given a character, file it away into the uxb packet structure
+  void processUBXpacket(ubxPacket *msg);                                                                           // Once a packet has been received and validated, identify this packet's class/id and update internal flags
 
   // Send I2C/Serial/SPI commands to the module
 
@@ -1552,12 +1552,12 @@ public:
   UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_NAV_AOPSTATUS_t *packetUBXNAVAOPSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
-  UBX_RXM_PMP_t *packetUBXRXMPMP = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
-  UBX_RXM_PMP_message_t *packetUBXRXMPMPmessage = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_PMP_t *packetUBXRXMPMP = NULL;                      // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_PMP_message_t *packetUBXRXMPMPmessage = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_QZSSL6_message_t *packetUBXRXMQZSSL6message = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-  UBX_RXM_COR_t *packetUBXRXMCOR = NULL;                // Pointer to struct. RAM will be allocated for this if/when necessary
-  UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL;            // Pointer to struct. RAM will be allocated for this if/when necessary
-  UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL;              // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_COR_t *packetUBXRXMCOR = NULL;                      // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL;                  // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL;                    // Pointer to struct. RAM will be allocated for this if/when necessary
 
   UBX_CFG_PRT_t *packetUBXCFGPRT = NULL;   // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_CFG_RATE_t *packetUBXCFGRATE = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1626,44 +1626,44 @@ private:
 
   // The initPacket functions need to be private as they don't check if memory has already been allocated.
   // Functions like setAutoNAVPOSECEF will check that memory has not been allocated before calling initPacket.
-  bool initPacketUBXNAVPOSECEF();    // Allocate RAM for packetUBXNAVPOSECEF and initialize it
-  bool initPacketUBXNAVSTATUS();     // Allocate RAM for packetUBXNAVSTATUS and initialize it
-  bool initPacketUBXNAVDOP();        // Allocate RAM for packetUBXNAVDOP and initialize it
-  bool initPacketUBXNAVATT();        // Allocate RAM for packetUBXNAVATT and initialize it
-  bool initPacketUBXNAVPVT();        // Allocate RAM for packetUBXNAVPVT and initialize it
-  bool initPacketUBXNAVODO();        // Allocate RAM for packetUBXNAVODO and initialize it
-  bool initPacketUBXNAVVELECEF();    // Allocate RAM for packetUBXNAVVELECEF and initialize it
-  bool initPacketUBXNAVVELNED();     // Allocate RAM for packetUBXNAVVELNED and initialize it
-  bool initPacketUBXNAVHPPOSECEF();  // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
-  bool initPacketUBXNAVHPPOSLLH();   // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
-  bool initPacketUBXNAVPVAT();       // Allocate RAM for packetUBXNAVPVAT and initialize it
-  bool initPacketUBXNAVTIMEUTC();    // Allocate RAM for packetUBXNAVTIMEUTC and initialize it
-  bool initPacketUBXNAVCLOCK();      // Allocate RAM for packetUBXNAVCLOCK and initialize it
-  bool initPacketUBXNAVTIMELS();     // Allocate RAM for packetUBXNAVTIMELS and initialize it
-  bool initPacketUBXNAVSVIN();       // Allocate RAM for packetUBXNAVSVIN and initialize it
-  bool initPacketUBXNAVSAT();        // Allocate RAM for packetUBXNAVSAT and initialize it
-  bool initPacketUBXNAVRELPOSNED();  // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
-  bool initPacketUBXNAVAOPSTATUS();  // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
-  bool initPacketUBXNAVEOE();        // Allocate RAM for packetUBXNAVEOE and initialize it
-  bool initPacketUBXRXMPMP();        // Allocate RAM for packetUBXRXMPMP and initialize it
-  bool initPacketUBXRXMPMPmessage(); // Allocate RAM for packetUBXRXMPMPRaw and initialize it
+  bool initPacketUBXNAVPOSECEF();       // Allocate RAM for packetUBXNAVPOSECEF and initialize it
+  bool initPacketUBXNAVSTATUS();        // Allocate RAM for packetUBXNAVSTATUS and initialize it
+  bool initPacketUBXNAVDOP();           // Allocate RAM for packetUBXNAVDOP and initialize it
+  bool initPacketUBXNAVATT();           // Allocate RAM for packetUBXNAVATT and initialize it
+  bool initPacketUBXNAVPVT();           // Allocate RAM for packetUBXNAVPVT and initialize it
+  bool initPacketUBXNAVODO();           // Allocate RAM for packetUBXNAVODO and initialize it
+  bool initPacketUBXNAVVELECEF();       // Allocate RAM for packetUBXNAVVELECEF and initialize it
+  bool initPacketUBXNAVVELNED();        // Allocate RAM for packetUBXNAVVELNED and initialize it
+  bool initPacketUBXNAVHPPOSECEF();     // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
+  bool initPacketUBXNAVHPPOSLLH();      // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
+  bool initPacketUBXNAVPVAT();          // Allocate RAM for packetUBXNAVPVAT and initialize it
+  bool initPacketUBXNAVTIMEUTC();       // Allocate RAM for packetUBXNAVTIMEUTC and initialize it
+  bool initPacketUBXNAVCLOCK();         // Allocate RAM for packetUBXNAVCLOCK and initialize it
+  bool initPacketUBXNAVTIMELS();        // Allocate RAM for packetUBXNAVTIMELS and initialize it
+  bool initPacketUBXNAVSVIN();          // Allocate RAM for packetUBXNAVSVIN and initialize it
+  bool initPacketUBXNAVSAT();           // Allocate RAM for packetUBXNAVSAT and initialize it
+  bool initPacketUBXNAVRELPOSNED();     // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
+  bool initPacketUBXNAVAOPSTATUS();     // Allocate RAM for packetUBXNAVAOPSTATUS and initialize it
+  bool initPacketUBXNAVEOE();           // Allocate RAM for packetUBXNAVEOE and initialize it
+  bool initPacketUBXRXMPMP();           // Allocate RAM for packetUBXRXMPMP and initialize it
+  bool initPacketUBXRXMPMPmessage();    // Allocate RAM for packetUBXRXMPMPRaw and initialize it
   bool initPacketUBXRXMQZSSL6message(); // Allocate RAM for packetUBXRXMQZSSL6raw and initialize it
-  bool initPacketUBXRXMCOR();        // Allocate RAM for packetUBXRXMCOR and initialize it
-  bool initPacketUBXRXMSFRBX();      // Allocate RAM for packetUBXRXMSFRBX and initialize it
-  bool initPacketUBXRXMRAWX();       // Allocate RAM for packetUBXRXMRAWX and initialize it
-  bool initPacketUBXCFGPRT();        // Allocate RAM for packetUBXCFGPRT and initialize it
-  bool initPacketUBXCFGRATE();       // Allocate RAM for packetUBXCFGRATE and initialize it
-  bool initPacketUBXTIMTM2();        // Allocate RAM for packetUBXTIMTM2 and initialize it
-  bool initPacketUBXESFALG();        // Allocate RAM for packetUBXESFALG and initialize it
-  bool initPacketUBXESFSTATUS();     // Allocate RAM for packetUBXESFSTATUS and initialize it
-  bool initPacketUBXESFINS();        // Allocate RAM for packetUBXESFINS and initialize it
-  bool initPacketUBXESFMEAS();       // Allocate RAM for packetUBXESFMEAS and initialize it
-  bool initPacketUBXESFRAW();        // Allocate RAM for packetUBXESFRAW and initialize it
-  bool initPacketUBXHNRATT();        // Allocate RAM for packetUBXHNRATT and initialize it
-  bool initPacketUBXHNRINS();        // Allocate RAM for packetUBXHNRINS and initialize it
-  bool initPacketUBXHNRPVT();        // Allocate RAM for packetUBXHNRPVT and initialize it
-  bool initPacketUBXMGAACK();        // Allocate RAM for packetUBXMGAACK and initialize it
-  bool initPacketUBXMGADBD();        // Allocate RAM for packetUBXMGADBD and initialize it
+  bool initPacketUBXRXMCOR();           // Allocate RAM for packetUBXRXMCOR and initialize it
+  bool initPacketUBXRXMSFRBX();         // Allocate RAM for packetUBXRXMSFRBX and initialize it
+  bool initPacketUBXRXMRAWX();          // Allocate RAM for packetUBXRXMRAWX and initialize it
+  bool initPacketUBXCFGPRT();           // Allocate RAM for packetUBXCFGPRT and initialize it
+  bool initPacketUBXCFGRATE();          // Allocate RAM for packetUBXCFGRATE and initialize it
+  bool initPacketUBXTIMTM2();           // Allocate RAM for packetUBXTIMTM2 and initialize it
+  bool initPacketUBXESFALG();           // Allocate RAM for packetUBXESFALG and initialize it
+  bool initPacketUBXESFSTATUS();        // Allocate RAM for packetUBXESFSTATUS and initialize it
+  bool initPacketUBXESFINS();           // Allocate RAM for packetUBXESFINS and initialize it
+  bool initPacketUBXESFMEAS();          // Allocate RAM for packetUBXESFMEAS and initialize it
+  bool initPacketUBXESFRAW();           // Allocate RAM for packetUBXESFRAW and initialize it
+  bool initPacketUBXHNRATT();           // Allocate RAM for packetUBXHNRATT and initialize it
+  bool initPacketUBXHNRINS();           // Allocate RAM for packetUBXHNRINS and initialize it
+  bool initPacketUBXHNRPVT();           // Allocate RAM for packetUBXHNRPVT and initialize it
+  bool initPacketUBXMGAACK();           // Allocate RAM for packetUBXMGAACK and initialize it
+  bool initPacketUBXMGADBD();           // Allocate RAM for packetUBXMGADBD and initialize it
 
 #ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
   bool initStorageNMEAGPGGA(); // Allocate RAM for incoming NMEA GPGGA messages and initialize it

@@ -345,7 +345,7 @@ void SFE_UBLOX_GNSS::end(void)
   {
     if (packetUBXRXMQZSSL6message->callbackData != NULL)
     {
-      delete [] packetUBXRXMQZSSL6message->callbackData;
+      delete[] packetUBXRXMQZSSL6message->callbackData;
     }
     delete packetUBXRXMQZSSL6message;
     packetUBXRXMQZSSL6message = NULL; // Redundant?
@@ -1721,9 +1721,9 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
   {
     // Decide what type of response this is
     if ((ubxFrameCounter == 0) && (incoming != UBX_SYNCH_1))      // ISO 'μ'
-      currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE;                                     // Something went wrong. Reset.
+      currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE;             // Something went wrong. Reset.
     else if ((ubxFrameCounter == 1) && (incoming != UBX_SYNCH_2)) // ASCII 'b'
-      currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE;                                     // Something went wrong. Reset.
+      currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE;             // Something went wrong. Reset.
     // Note to future self:
     // There may be some duplication / redundancy in the next few lines as processUBX will also
     // load information into packetBuf, but we'll do it here too for clarity
@@ -2028,8 +2028,8 @@ void SFE_UBLOX_GNSS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t r
 
     nmeaByteCounter++; // Increment the byte counter
 
-    if (nmeaByteCounter == maxNMEAByteCount) // Check if we have processed too many bytes
-      currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE;                // Something went wrong. Reset.
+    if (nmeaByteCounter == maxNMEAByteCount)          // Check if we have processed too many bytes
+      currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE; // Something went wrong. Reset.
 
     if (nmeaByteCounter == 0) // Check if we are done
     {
@@ -2876,7 +2876,7 @@ nmeaAutomaticFlags *SFE_UBLOX_GNSS::getNMEAFlagsPtr()
 // Byte 2: 10-bits of length of this packet including the first two-ish header bytes, + 6.
 // byte 3 + 4 bits: Msg type 12 bits
 // Example: D3 00 7C 43 F0 ... / 0x7C = 124+6 = 130 bytes in this packet, 0x43F = Msg type 1087
-SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter)
+SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter)
 {
   static uint16_t rtcmLen = 0;
 
@@ -3614,8 +3614,8 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVTIMEUTC->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         // Check if we need to copy the data for the callback
-        if ((packetUBXNAVTIMEUTC->callbackData != NULL)                                   // If RAM has been allocated for the copy of the data
-          && (packetUBXNAVTIMEUTC->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        if ((packetUBXNAVTIMEUTC->callbackData != NULL)                                     // If RAM has been allocated for the copy of the data
+            && (packetUBXNAVTIMEUTC->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
           memcpy(&packetUBXNAVTIMEUTC->callbackData->iTOW, &packetUBXNAVTIMEUTC->data.iTOW, sizeof(UBX_NAV_TIMEUTC_data_t));
           packetUBXNAVTIMEUTC->automaticFlags.flags.bits.callbackCopyValid = true;
@@ -3943,8 +3943,10 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
     // Note: the field positions depend on the version
     {
       // Full QZSSL6 message, including Class, ID and checksum
-      for (int ch = 0; ch < UBX_RXM_QZSSL6_NUM_CHANNELS; ch ++) {
-        if (0 == (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1 << ch))) {
+      for (int ch = 0; ch < UBX_RXM_QZSSL6_NUM_CHANNELS; ch++)
+      {
+        if (0 == (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1 << ch)))
+        {
 
           packetUBXRXMQZSSL6message->callbackData[ch].sync1 = UBX_SYNCH_1;
           packetUBXRXMQZSSL6message->callbackData[ch].sync2 = UBX_SYNCH_2;
@@ -5466,9 +5468,9 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXNAVPVAT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVTIMEUTC != NULL)                                                // If RAM has been allocated for message storage
-    && (packetUBXNAVTIMEUTC->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVTIMEUTC->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  if ((packetUBXNAVTIMEUTC != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXNAVTIMEUTC->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXNAVTIMEUTC->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     if (packetUBXNAVTIMEUTC->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
@@ -5568,9 +5570,9 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXNAVAOPSTATUS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVEOE != NULL)                                                // If RAM has been allocated for message storage
-    && (packetUBXNAVEOE->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVEOE->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  if ((packetUBXNAVEOE != NULL)                                                  // If RAM has been allocated for message storage
+      && (packetUBXNAVEOE->callbackData != NULL)                                 // If RAM has been allocated for the copy of the data
+      && (packetUBXNAVEOE->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     if (packetUBXNAVEOE->callbackPointerPtr != NULL) // If the pointer to the callback has been defined
     {
@@ -5603,15 +5605,16 @@ void SFE_UBLOX_GNSS::checkCallbacks(void)
     packetUBXRXMPMPmessage->automaticFlags.flags.bits.callbackCopyValid = false;      // Mark the data as stale
   }
 
-  if ((packetUBXRXMQZSSL6message != NULL) &&                    // If RAM has been allocated for message storage
-      (packetUBXRXMQZSSL6message->callbackData != NULL) &&      // If RAM has been allocated for the copy of the data
-      (packetUBXRXMQZSSL6message->callbackPointerPtr != NULL))  // If the pointer to the callback has been defined
+  if ((packetUBXRXMQZSSL6message != NULL) &&                   // If RAM has been allocated for message storage
+      (packetUBXRXMQZSSL6message->callbackData != NULL) &&     // If RAM has been allocated for the copy of the data
+      (packetUBXRXMQZSSL6message->callbackPointerPtr != NULL)) // If the pointer to the callback has been defined
   {
-    for (int ch = 0; ch < UBX_RXM_QZSSL6_NUM_CHANNELS; ch ++) {
+    for (int ch = 0; ch < UBX_RXM_QZSSL6_NUM_CHANNELS; ch++)
+    {
       if (packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid & (1 << ch)) // If the copy of the data is valid
       {
-        packetUBXRXMQZSSL6message->callbackPointerPtr( &packetUBXRXMQZSSL6message->callbackData[ch] ); // Call the callback
-        packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid &= ~(1 << ch); // clear it
+        packetUBXRXMQZSSL6message->callbackPointerPtr(&packetUBXRXMQZSSL6message->callbackData[ch]); // Call the callback
+        packetUBXRXMQZSSL6message->automaticFlags.flags.bits.callbackCopyValid &= ~(1 << ch);        // clear it
       }
     }
   }
@@ -13126,7 +13129,6 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMQZSSL6message()
   packetUBXRXMQZSSL6message->callbackData = NULL;
   return (true);
 }
-
 
 bool SFE_UBLOX_GNSS::setRXMCORcallbackPtr(void (*callbackPointer)(UBX_RXM_COR_data_t *))
 {
