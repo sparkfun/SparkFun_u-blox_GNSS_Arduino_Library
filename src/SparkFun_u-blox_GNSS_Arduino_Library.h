@@ -647,13 +647,13 @@ public:
   ~SFE_UBLOX_GNSS(void);
 
   // Depending on the sentence type the processor will load characters into different arrays
-  enum SentenceTypes
+  enum sfe_ublox_sentence_types_e
   {
-    NONE = 0,
-    NMEA,
-    UBX,
-    RTCM
-  } currentSentence = NONE;
+    SFE_UBLOX_SENTENCE_TYPE_NONE = 0,
+    SFE_UBLOX_SENTENCE_TYPE_NMEA,
+    SFE_UBLOX_SENTENCE_TYPE_UBX,
+    SFE_UBLOX_SENTENCE_TYPE_RTCM
+  } currentSentence = SFE_UBLOX_SENTENCE_TYPE_NONE;
 
 // A default of 250ms for maxWait seems fine for I2C but is not enough for SerialUSB.
 // If you know you are only going to be using I2C / Qwiic communication, you can
@@ -747,7 +747,7 @@ public:
 
   void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);    // Processes NMEA and UBX binary sentences one byte at a time
   void processNMEA(char incoming) __attribute__((weak));                                                  // Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
-  SentenceTypes processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter) __attribute__((weak));    // Monitor the incoming bytes for start and length bytes
+  sfe_ublox_sentence_types_e processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter) __attribute__((weak));    // Monitor the incoming bytes for start and length bytes
   void processRTCM(uint8_t incoming) __attribute__((weak));                                               // Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
   void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); // Given a character, file it away into the uxb packet structure
   void processUBXpacket(ubxPacket *msg);                                                                  // Once a packet has been received and validated, identify this packet's class/id and update internal flags
