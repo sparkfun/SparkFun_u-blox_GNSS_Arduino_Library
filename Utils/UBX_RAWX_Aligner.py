@@ -1,4 +1,4 @@
-# Aligns RAWX messages in u-blox UBX binary files to the nearest decimalPlaces seconds
+# Aligns the rcvTow in RAWX messages in u-blox UBX binary files to the nearest decimalPlaces seconds
 
 # Written by: Paul Clark
 # Last update: August 17th 2022
