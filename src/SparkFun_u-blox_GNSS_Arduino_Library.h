@@ -1408,6 +1408,12 @@ public:
   // Helper functions for HPPOSECEF
 
   uint32_t getPositionAccuracy(uint16_t maxWait = defaultMaxWait); // Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
+  int32_t getHighResECEFX(uint16_t maxWait = defaultMaxWait); // Returns the ECEF X coordinate (cm)
+  int32_t getHighResECEFY(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Y coordinate (cm)
+  int32_t getHighResECEFZ(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Z coordinate (cm)
+  int8_t getHighResECEFXHp(uint16_t maxWait = defaultMaxWait); // Returns the ECEF X coordinate High Precision Component (0.1 mm)
+  int8_t getHighResECEFYHp(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Y coordinate High Precision Component (0.1 mm)
+  int8_t getHighResECEFZHp(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Z coordinate High Precision Component (0.1 mm)
 
   // Helper functions for HPPOSLLH
 

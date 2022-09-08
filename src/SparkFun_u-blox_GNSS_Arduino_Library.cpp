@@ -17527,6 +17527,108 @@ uint32_t SFE_UBLOX_GNSS::getPositionAccuracy(uint16_t maxWait)
   return (tempAccuracy);
 }
 
+// Get the current 3D high precision X coordinate
+// Returns a long representing the coordinate in cm
+int32_t SFE_UBLOX_GNSS::getHighResECEFX(uint16_t maxWait)
+{
+  if (packetUBXNAVHPPOSECEF == NULL)
+    initPacketUBXNAVHPPOSECEF();     // Check that RAM has been allocated for the HPPOSECEF data
+  if (packetUBXNAVHPPOSECEF == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefX == false)
+    getNAVHPPOSECEF(maxWait);
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefX = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXNAVHPPOSECEF->data.ecefX);
+}
+
+// Get the current 3D high precision Y coordinate
+// Returns a long representing the coordinate in cm
+int32_t SFE_UBLOX_GNSS::getHighResECEFY(uint16_t maxWait)
+{
+  if (packetUBXNAVHPPOSECEF == NULL)
+    initPacketUBXNAVHPPOSECEF();     // Check that RAM has been allocated for the HPPOSECEF data
+  if (packetUBXNAVHPPOSECEF == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefY == false)
+    getNAVHPPOSECEF(maxWait);
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefY = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXNAVHPPOSECEF->data.ecefY);
+}
+
+// Get the current 3D high precision Z coordinate
+// Returns a long representing the coordinate in cm
+int32_t SFE_UBLOX_GNSS::getHighResECEFZ(uint16_t maxWait)
+{
+  if (packetUBXNAVHPPOSECEF == NULL)
+    initPacketUBXNAVHPPOSECEF();     // Check that RAM has been allocated for the HPPOSECEF data
+  if (packetUBXNAVHPPOSECEF == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefZ == false)
+    getNAVHPPOSECEF(maxWait);
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefZ = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXNAVHPPOSECEF->data.ecefZ);
+}
+
+// Get the high precision component of the ECEF X coordinate
+// Returns a signed byte representing the component as 0.1*mm
+int8_t SFE_UBLOX_GNSS::getHighResECEFXHp(uint16_t maxWait)
+{
+  if (packetUBXNAVHPPOSECEF == NULL)
+    initPacketUBXNAVHPPOSECEF();     // Check that RAM has been allocated for the HPPOSECEF data
+  if (packetUBXNAVHPPOSECEF == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefXHp == false)
+    getNAVHPPOSECEF(maxWait);
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefXHp = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXNAVHPPOSECEF->data.ecefXHp);
+}
+
+// Get the high precision component of the ECEF Y coordinate
+// Returns a signed byte representing the component as 0.1*mm
+int8_t SFE_UBLOX_GNSS::getHighResECEFYHp(uint16_t maxWait)
+{
+  if (packetUBXNAVHPPOSECEF == NULL)
+    initPacketUBXNAVHPPOSECEF();     // Check that RAM has been allocated for the HPPOSECEF data
+  if (packetUBXNAVHPPOSECEF == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefYHp == false)
+    getNAVHPPOSECEF(maxWait);
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefYHp = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXNAVHPPOSECEF->data.ecefYHp);
+}
+
+// Get the high precision component of the ECEF Z coordinate
+// Returns a signed byte representing the component as 0.1*mm
+int8_t SFE_UBLOX_GNSS::getHighResECEFZHp(uint16_t maxWait)
+{
+  if (packetUBXNAVHPPOSECEF == NULL)
+    initPacketUBXNAVHPPOSECEF();     // Check that RAM has been allocated for the HPPOSECEF data
+  if (packetUBXNAVHPPOSECEF == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefZHp == false)
+    getNAVHPPOSECEF(maxWait);
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.ecefZHp = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
+
+  return (packetUBXNAVHPPOSECEF->data.ecefZHp);
+}
+
 // ***** HPPOSLLH Helper Functions
 
 uint32_t SFE_UBLOX_GNSS::getTimeOfWeekFromHPPOSLLH(uint16_t maxWait)

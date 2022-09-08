@@ -585,6 +585,12 @@ getMagAcc	KEYWORD2
 getHeadVehValid	KEYWORD2
 
 getPositionAccuracy	KEYWORD2
+getHighResECEFX	KEYWORD2
+getHighResECEFY	KEYWORD2
+getHighResECEFZ	KEYWORD2
+getHighResECEFXHp	KEYWORD2
+getHighResECEFYHp	KEYWORD2
+getHighResECEFZHp	KEYWORD2
 
 getTimeOfWeekFromHPPOSLLH	KEYWORD2
 getHighResLongitude	KEYWORD2
