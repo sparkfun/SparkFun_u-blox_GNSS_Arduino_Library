@@ -4216,15 +4216,12 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         packetUBXESFMEAS->data.timeTag = extractLong(msg, 0);
         packetUBXESFMEAS->data.flags.all = extractInt(msg, 4);
         packetUBXESFMEAS->data.id = extractInt(msg, 6);
-        for (uint16_t i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas) && ((i * 4) < (msg->len - 8)); i++)
+        for (uint16_t i = 0; (i < DEF_MAX_NUM_ESF_MEAS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas) && ((i * 4) < (msg->len - 8)); i++)
         {
           packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
         }
         if ((uint16_t)msg->len > (uint16_t)(8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4)))
           packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
-
-        // Mark all datums as fresh (not read before)
-        packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         // Check if we need to copy the data for the callback
         if ((packetUBXESFMEAS->callbackData != NULL)                                     // If RAM has been allocated for the copy of the data
@@ -14515,92 +14512,19 @@ void SFE_UBLOX_GNSS::logESFINS(bool enabled)
 
 // ***** ESF MEAS automatic support
 
-bool SFE_UBLOX_GNSS::getEsfDataInfo(uint16_t maxWait)
-{
-  return (getESFMEAS(maxWait));
-}
-
-bool SFE_UBLOX_GNSS::getESFMEAS(uint16_t maxWait)
-{
-  if (packetUBXESFMEAS == NULL)
-    initPacketUBXESFMEAS();     // Check that RAM has been allocated for the ESF MEAS data
-  if (packetUBXESFMEAS == NULL) // Only attempt this if RAM allocation was successful
-    return false;
-
-  if (packetUBXESFMEAS->automaticFlags.flags.bits.automatic && packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate)
-  {
-    // The GPS is automatically reporting, we just check whether we got unread data
-    //  if (_printDebug == true)
-    //  {
-    //    _debugSerial->println(F("getEsfDataInfo: Autoreporting"));
-    //  }
-    checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_MEAS);
-    return packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all;
-  }
-  else if (packetUBXESFMEAS->automaticFlags.flags.bits.automatic && !packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate)
-  {
-    // Someone else has to call checkUblox for us...
-    //  if (_printDebug == true)
-    //  {
-    //    _debugSerial->println(F("getEsfDataInfo: Exit immediately"));
-    //  }
-    return (false);
-  }
-  else
-  {
-    // if (_printDebug == true)
-    // {
-    //   _debugSerial->println(F("getEsfDataInfo: Polling"));
-    // }
-
-    // The GPS is not automatically reporting HNR PVT so we have to poll explicitly
-    packetCfg.cls = UBX_CLASS_ESF;
-    packetCfg.id = UBX_ESF_MEAS;
-    packetCfg.len = 0;
-    packetCfg.startingSpot = 0;
-
-    // The data is parsed as part of processing the response
-    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
-      return (true);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
-    {
-      // if (_printDebug == true)
-      // {
-      //   _debugSerial->println(F("getEsfDataInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      // }
-      return (true);
-    }
-
-    // if (_printDebug == true)
-    // {
-    //   _debugSerial->print(F("getEsfDataInfo retVal: "));
-    //   _debugSerial->println(statusString(retVal));
-    // }
-    return (false);
-  }
-
-  return (false); // Trap. We should never get here...
-}
-
-// Enable or disable automatic ESF MEAS message generation by the GNSS. This changes the way getESFDataInfo
-// works.
+// Enable or disable automatic ESF MEAS message generation by the GNSS
 bool SFE_UBLOX_GNSS::setAutoESFMEAS(bool enable, uint16_t maxWait)
 {
   return setAutoESFMEASrate(enable ? 1 : 0, true, maxWait);
 }
 
-// Enable or disable automatic ESF MEAS message generation by the GNSS. This changes the way getESFDataInfo
-// works.
+// Enable or disable automatic ESF MEAS message generation by the GNSS
 bool SFE_UBLOX_GNSS::setAutoESFMEAS(bool enable, bool implicitUpdate, uint16_t maxWait)
 {
   return setAutoESFMEASrate(enable ? 1 : 0, implicitUpdate, maxWait);
 }
 
-// Enable or disable automatic ESF MEAS message generation by the GNSS. This changes the way getESFDataInfo
-// works.
+// Enable or disable automatic ESF MEAS message generation by the GNSS
 bool SFE_UBLOX_GNSS::setAutoESFMEASrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
 {
   if (packetUBXESFMEAS == NULL)
@@ -14625,7 +14549,6 @@ bool SFE_UBLOX_GNSS::setAutoESFMEASrate(uint8_t rate, bool implicitUpdate, uint1
     packetUBXESFMEAS->automaticFlags.flags.bits.automatic = (rate > 0);
     packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
-  packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
 }
 
@@ -14714,16 +14637,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFMEAS()
   packetUBXESFMEAS->callbackPointer = NULL;
   packetUBXESFMEAS->callbackPointerPtr = NULL;
   packetUBXESFMEAS->callbackData = NULL;
-  packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0;
   return (true);
-}
-
-// Mark all the data as read/stale
-void SFE_UBLOX_GNSS::flushESFMEAS()
-{
-  if (packetUBXESFMEAS == NULL)
-    return;                                              // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
-  packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0; // Mark all datums as stale (read before)
 }
 
 // Log this data in file buffer
@@ -14866,13 +14780,6 @@ bool SFE_UBLOX_GNSS::initPacketUBXESFRAW()
   packetUBXESFRAW->callbackPointerPtr = NULL;
   packetUBXESFRAW->callbackData = NULL;
   return (true);
-}
-
-// Mark all the data as read/stale
-void SFE_UBLOX_GNSS::flushESFRAW()
-{
-  if (packetUBXESFRAW == NULL)
-    return;                                             // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
 }
 
 // Log this data in file buffer
@@ -18044,21 +17951,6 @@ float SFE_UBLOX_GNSS::getESFyaw(uint16_t maxWait) // Returned as degrees
   packetUBXESFALG->moduleQueried.moduleQueried.bits.yaw = false; // Since we are about to give this to user, mark this data as stale
   packetUBXESFALG->moduleQueried.moduleQueried.bits.all = false;
   return (((float)packetUBXESFALG->data.yaw) / 100.0); // Convert to degrees
-}
-
-bool SFE_UBLOX_GNSS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait)
-{
-  if (packetUBXESFMEAS == NULL)
-    initPacketUBXESFMEAS();     // Check that RAM has been allocated for the ESF MEAS data
-  if (packetUBXESFMEAS == NULL) // Bail if the RAM allocation failed
-    return (false);
-
-  if ((packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data & (1 << sensor)) == 0)
-    getESFMEAS(maxWait);
-  packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data &= ~(1 << sensor); // Since we are about to give this to user, mark this data as stale
-  packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all = false;
-  sensorData->data.all = packetUBXESFMEAS->data.data[sensor].data.all;
-  return (true);
 }
 
 bool SFE_UBLOX_GNSS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, UBX_ESF_MEAS_data_t ubxDataStruct, uint8_t sensor)
