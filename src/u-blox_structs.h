@@ -49,6 +49,10 @@
 #define DEF_NUM_SENS 7 // The maximum number of ESF sensors
 #endif
 
+#ifndef DEF_MAX_NUM_ESF_RAW_REPEATS
+#define DEF_MAX_NUM_ESF_RAW_REPEATS 10 // The NEO-M8U sends ESF RAW data in blocks / sets of ten readings. (The ZED-F9R sends them one at a time.)
+#endif
+
 // Additional flags and pointers that need to be stored with each message type
 struct ubxAutomaticFlags
 {
@@ -2257,7 +2261,10 @@ typedef struct
 
 // UBX-ESF-RAW (0x10 0x03): Raw sensor measurements
 // Note: length is variable
-const uint16_t UBX_ESF_RAW_MAX_LEN = 4 + (8 * DEF_NUM_SENS);
+// Note: The ZED-F9R sends sets of seven sensor readings one at a time
+//       But the NEO-M8U sends them in sets of ten (i.e. seventy readings per message)
+// Note: ESF RAW data cannot be polled. It is "Output" only
+const uint16_t UBX_ESF_RAW_MAX_LEN = 4 + (8 * DEF_NUM_SENS * DEF_MAX_NUM_ESF_RAW_REPEATS);
 
 typedef struct
 {
@@ -2276,28 +2283,14 @@ typedef struct
 typedef struct
 {
   uint8_t reserved1[4];
-  UBX_ESF_RAW_sensorData_t data[DEF_NUM_SENS];
+  UBX_ESF_RAW_sensorData_t data[DEF_NUM_SENS * DEF_MAX_NUM_ESF_RAW_REPEATS];
+  uint8_t numEsfRawBlocks; // Note: this is not contained in the ESF RAW message. It is calculated from the message length.
 } UBX_ESF_RAW_data_t;
-
-typedef struct
-{
-  union
-  {
-    uint32_t all;
-    struct
-    {
-      uint32_t all : 1;
-
-      uint32_t data : DEF_NUM_SENS;
-    } bits;
-  } moduleQueried;
-} UBX_ESF_RAW_moduleQueried_t;
 
 typedef struct
 {
   ubxAutomaticFlags automaticFlags;
   UBX_ESF_RAW_data_t data;
-  UBX_ESF_RAW_moduleQueried_t moduleQueried;
   void (*callbackPointer)(UBX_ESF_RAW_data_t);
   void (*callbackPointerPtr)(UBX_ESF_RAW_data_t *);
   UBX_ESF_RAW_data_t *callbackData;

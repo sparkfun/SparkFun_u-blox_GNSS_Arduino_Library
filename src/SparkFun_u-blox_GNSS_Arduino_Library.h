@@ -1283,8 +1283,6 @@ public:
   void flushESFMEAS();                                                                                                  // Mark all the data as read/stale
   void logESFMEAS(bool enabled = true);                                                                                 // Log data to file buffer
 
-  bool getEsfRawDataInfo(uint16_t maxWait = defaultMaxWait);                                                          // ESF RAW Helper
-  bool getESFRAW(uint16_t maxWait = defaultMaxWait);                                                                  // ESF RAW
   bool setAutoESFRAW(bool enabled, uint16_t maxWait = defaultMaxWait);                                                // Enable/disable automatic ESF RAW reports
   bool setAutoESFRAW(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Enable/disable automatic ESF RAW reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
   bool setAutoESFRAWrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait);                // Set the rate for automatic RAW reports
@@ -1470,7 +1468,6 @@ public:
   float getESFyaw(uint16_t maxWait = defaultMaxWait);   // Returned as degrees
   bool getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
   bool getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, UBX_ESF_MEAS_data_t ubxDataStruct, uint8_t sensor);
-  bool getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
   bool getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorData, UBX_ESF_RAW_data_t ubxDataStruct, uint8_t sensor);
   bool getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sensorStatus, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
   bool getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sensorStatus, UBX_ESF_STATUS_data_t ubxDataStruct, uint8_t sensor);
