@@ -250,7 +250,7 @@ void setup()
 
   if (ok) ok = myGNSS.setNavigationFrequency(1); //Set output in Hz.
   
-  if (ok) ok = myGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_UART1, 1); // Enable UBX-RXM-COR messages on UART2
+  if (ok) ok = myGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_UART1, 1); // Enable UBX-RXM-COR messages on UART1
   
   //if (ok) ok = myGNSS.saveConfiguration(VAL_CFG_SUBSEC_IOPORT | VAL_CFG_SUBSEC_MSGCONF); //Optional: Save the ioPort and message settings to NVM
   
