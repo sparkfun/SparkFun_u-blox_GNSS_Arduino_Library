@@ -9,10 +9,18 @@
   It also enables UBX-RXM-QZSSL6 message output on both UART1 and UART2 at 38400 baud
   so you can feed the corrections directly to (e.g.) a ZED-F9P.
 
-  It is not clear if the NEO-D9C's default I2C address is 0x43 or 0x42. It may depend
-  on what firmware version is installed. If the NEO-D9C is not detected at 0x43, please
-  try 0x42. (Please note: the ZED-F9P's default address is also 0x42)
+  We believe the NEO-D9C's I2C address should be 0x43 (like the NEO-D9S). But, reported by users in Japan,
+  the initial NEO-D9C's use address 0x42 - which is the same as the ZED-F9P.
 
+  If you have one of the initial NEO-D9C's, the address 0x42 should work for you.
+  If you have a newer or upgraded NEO-D9C, then you may need to change to 0x43. See line 100.
+
+  Also, again reported by users in Japan, the initial NEO-D9C's do not support UBX-CFG-PRT.
+  The library uses UBX-CFG-PRT inside .begin (.isConnected) to check if the module is connected.
+  This then fails with the initial NEO-D9C's.
+  The work-around is to set the .begin assumeSuccess parameter to true.
+  With newer NEO-D9C's this work-around may not be necessary. Again see line 100.
+  
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/16481
@@ -88,7 +96,10 @@ void setup()
 
   //myQZSS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
-  while (myQZSS.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9C using Wire port. If 0x43 does not work, try 0x42
+  // For the initial NEO-D9C's: connect using address 0x42; set the assumeSuccess parameter to true
+  while (myQZSS.begin(Wire, 0x42, 1100, true) == false)
+  // For newer NEO-D9C's: use address 0x43; leave assumeSuccess set to false (default)
+  //while (myQZSS.begin(Wire, 0x43) == false)
   {
     Serial.println(F("u-blox NEO-D9C not detected at selected I2C address. Please check wiring and I2C address."));
     delay(2000);
@@ -96,13 +107,21 @@ void setup()
   Serial.println(F("u-blox NEO-D9C connected"));
 
   uint8_t ok = myQZSS.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C,   1);     // Output QZSS-L6 message on the I2C port 
+
+  Serial.print(F("QZSS-L6: I2C configuration "));
+  Serial.println(OK(ok));
+
   if (ok) ok = myQZSS.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART1, 1);     // Output QZSS-L6 message on UART1
   if (ok) ok = myQZSS.setVal32(UBLOX_CFG_UART1_BAUDRATE,            38400); // Match UART1 baudrate with ZED
+
+  Serial.print(F("QZSS-L6: UART1 configuration "));
+  Serial.println(OK(ok));
+
   if (ok) ok = myQZSS.setVal(UBLOX_CFG_UART2OUTPROT_UBX,            1);     // Enable UBX output on UART2
   if (ok) ok = myQZSS.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART2, 1);     // Output QZSS-L6 message on UART2
   if (ok) ok = myQZSS.setVal32(UBLOX_CFG_UART2_BAUDRATE,            38400); // Match UART2 baudrate with ZED
 
-  Serial.print(F("QZSS-L6: configuration "));
+  Serial.print(F("QZSS-L6: UART2 configuration "));
   Serial.println(OK(ok));
 
   myQZSS.setRXMQZSSL6messageCallbackPtr(&printRXMQZSSL6); // Call printRXMQZSSL6 when new QZSS-L6 data arrives
