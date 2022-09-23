@@ -33,7 +33,7 @@ SFE_UBLOX_GNSS myQZSS; // NEO-D9C
 
 // Callback: printRXMQZSSL6 will be called when new QZSS-L6 data arrives
 // See u-blox_structs.h for the full definition of UBX_RXM_QZSSL6_message_data_t
-//         _____  You can use any name you like for the callback. Use the same name when you call setRXMPMPcallbackPtr
+//         _____  You can use any name you like for the callback. Use the same name when you call setRXMQZSSL6messageCallbackPtr
 //        /                  _____  This _must_ be UBX_RXM_QZSSL6_message_data_t
 //        |                 /                        _____ You can use any name you like for the struct
 //        |                 |                       /
