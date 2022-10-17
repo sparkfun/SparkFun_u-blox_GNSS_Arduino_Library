@@ -67,6 +67,9 @@ void setup()
   lcd.setCursor(0, 1);
   lcd.print("GNSS Detected");
 
+  myGNSS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); // Ensure RTCM3 is enabled
+  myGNSS.saveConfiguration(); //Save the current settings to flash and BBR
+
   //Check if Survey is in Progress before initiating one
   // From v2.0, the data from getSurveyStatus (UBX-NAV-SVIN) is returned in UBX_NAV_SVIN_t packetUBXNAVSVIN
   // Please see u-blox_structs.h for the full definition of UBX_NAV_SVIN_t

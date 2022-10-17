@@ -69,8 +69,7 @@ void setup()
   lcd.setCursor(0, 1);
   lcd.print("GNSS Detected");
 
-  //myGNSS.setI2COutput(COM_TYPE_RTCM3); //Set the I2C port to output RTCM3 sentences (turn off NMEA noise)
-  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX sentences (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); // Ensure RTCM3 is enabled
   myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
 
   bool response = true;
