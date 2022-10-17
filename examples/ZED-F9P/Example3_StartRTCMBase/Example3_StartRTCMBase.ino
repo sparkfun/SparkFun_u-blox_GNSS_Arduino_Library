@@ -54,7 +54,7 @@ void setup()
   // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
   //myGNSS.factoryDefault(); delay(5000);
 
-  myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGNSS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); // Ensure RTCM3 is enabled
   myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
 
   while (Serial.available()) Serial.read(); //Clear any latent chars in serial buffer
