@@ -88,10 +88,7 @@ void newRAWX(UBX_RXM_RAWX_data_t *ubxDataStruct)
 
 void setup()
 {
-  delay(1000);
-  
   Serial.begin(115200);
-  Serial.println(F("SparkFun OpenLog ESP32 GNSS Logging : SPI and SDIO"));
 
   pinMode(STAT_LED, OUTPUT); // Flash the STAT LED each time we write to the SD card
   digitalWrite(STAT_LED, LOW);
@@ -103,15 +100,20 @@ void setup()
   pinMode(MAG_CS, OUTPUT);
   digitalWrite(MAG_CS, HIGH);
 
+  spiPort.begin();
+
+  // Do a fake transaction to initialize the SPI pins
+  spiPort.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+  spiPort.endTransaction();
+
   pinMode(EN_3V3_SW, OUTPUT); // Enable power for the microSD card and GNSS
   digitalWrite(EN_3V3_SW, HIGH);
   
-  delay(1000); // Allow time for the SD card to start up
-
-  spiPort.begin();
+  delay(3000); // Allow time for the GNSS and SD card to start up and for Tera Term to reconnect
+  Serial.println(F("SparkFun OpenLog ESP32 GNSS Logging : SPI and SDIO"));
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // Initialize the GNSS. Wait for a 3D fix. Get the date and time for the log file
+  // Initialize the GNSS
 
   Serial.println(F("Initializing the GNSS..."));
 
@@ -127,12 +129,15 @@ void setup()
     begun = myGNSS.begin(spiPort, GNSS_CS, 4000000);
     if (!begun)
     {
-      Serial.println(F("u-blox GNSS not detected on SPI bus. Please check wiring."));
+      Serial.println(F("u-blox GNSS not detected on SPI bus."));
       delay(1000);
     }
   }
   while (!begun);
   
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // Wait for a 3D fix. Get the date and time for the log file
+
   //myGNSS.factoryDefault(); delay(5000); // Uncomment this line to reset the module back to its factory defaults
 
   myGNSS.setSPIOutput(COM_TYPE_UBX | COM_TYPE_NMEA); //Set the SPI port to output both UBX and NMEA messages
