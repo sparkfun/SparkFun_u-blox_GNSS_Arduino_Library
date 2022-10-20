@@ -49,8 +49,10 @@ File myFile;
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
 
-#define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
-#define fileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
+#define sdWriteSize 2048     // Write data to the SD card in blocks of n*512 bytes
+#define fileBufferSize 65530 // Allocate just under 64KBytes of RAM for UBX message storage
+#define navRate 20           // Set the Nav Rate (Frequency) to 20Hz
+//#define ubxOnly            // Uncomment this line to log UBX (RAWX and SFRBX) only
 uint8_t *myBuffer; // Use myBuffer to hold the data while we write it to SD card
 
 unsigned long lastPrint; // Record when the last Serial print took place
@@ -104,6 +106,7 @@ void setup()
 
   // Do a fake transaction to initialize the SPI pins
   spiPort.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+  spiPort.transfer(0);
   spiPort.endTransaction();
 
   pinMode(EN_3V3_SW, OUTPUT); // Enable power for the microSD card and GNSS
@@ -140,7 +143,11 @@ void setup()
 
   //myGNSS.factoryDefault(); delay(5000); // Uncomment this line to reset the module back to its factory defaults
 
+#ifdef ubxOnly
+  myGNSS.setSPIOutput(COM_TYPE_UBX); //Set the SPI port to output only UBX
+#else
   myGNSS.setSPIOutput(COM_TYPE_UBX | COM_TYPE_NMEA); //Set the SPI port to output both UBX and NMEA messages
+#endif
 
   //myGNSS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Optional: save (only) the communications port settings to flash and BBR
 
@@ -218,8 +225,6 @@ void setup()
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   // Enable RAWX and SFRBX
 
-  myGNSS.setNavigationFrequency(4); // Set navigation rate to 4Hz
-
   myGNSS.setAutoRXMSFRBXcallbackPtr(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
 
   myGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
@@ -228,13 +233,18 @@ void setup()
 
   myGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
 
-  myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_SPI, 1); // Ensure the GxGGA (Global positioning system fix data) message is enabled. Send every measurement.
-  myGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_SPI, 1); // Ensure the GxGSA (GNSS DOP and Active satellites) message is enabled. Send every measurement.
-  myGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_SPI, 1); // Ensure the GxGSV (GNSS satellites in view) message is enabled. Send every measurement.
-
-  myGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_ALL); // Enable logging of all enabled NMEA messages
-
   myBuffer = new uint8_t[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card  
+
+#ifndef ubxOnly
+  myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_SPI, navRate); // Ensure the GxGGA (Global positioning system fix data) message is enabled. Send every second.
+  myGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_SPI, navRate); // Ensure the GxGSA (GNSS DOP and Active satellites) message is enabled. Send every second.
+  myGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_SPI, navRate); // Ensure the GxGSV (GNSS satellites in view) message is enabled. Send every second.
+  myGNSS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_SPI, navRate); // Ensure the GxGST (Position error statistics) message is enabled. Send every second.
+  myGNSS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_SPI, navRate); // Ensure the GxRMC (Recommended minimum: position, velocity and time) message is enabled. Send every second.
+  myGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_GGA | SFE_UBLOX_FILTER_NMEA_GSA | SFE_UBLOX_FILTER_NMEA_GSV | SFE_UBLOX_FILTER_NMEA_GST | SFE_UBLOX_FILTER_NMEA_RMC); // Log only these NMEA messages
+#endif
+
+  myGNSS.setNavigationFrequency(navRate); // Set navigation rate
 
   Serial.println(F("Press any key to stop logging."));
 
@@ -269,20 +279,21 @@ void loop()
 
   if (millis() > (lastPrint + 1000)) // Print the message count once per second
   {
-    Serial.print(F("Number of message groups received: SFRBX: ")); // Print how many message groups have been received (see note above)
+    uint16_t maxBufferBytes = myGNSS.getMaxFileBufferAvail(); // Get how full the file buffer has been (not how full it is now)
+    float bufferHigh = 100.0 * (float)maxBufferBytes / (float)fileBufferSize;
+
+    Serial.print(F("Message groups received: SFRBX: ")); // Print how many message groups have been received (see note above)
     Serial.print(numSFRBX);
     Serial.print(F(" RAWX: "));
-    Serial.println(numRAWX);
-
-    uint16_t maxBufferBytes = myGNSS.getMaxFileBufferAvail(); // Get how full the file buffer has been (not how full it is now)
-
-    //Serial.print(F("The maximum number of bytes which the file buffer has contained is: ")); // It is a fun thing to watch how full the buffer gets
-    //Serial.println(maxBufferBytes);
-
-    if (maxBufferBytes > ((fileBufferSize / 5) * 4)) // Warn the user if fileBufferSize was more than 80% full
-    {
-      Serial.println(F("Warning: the file buffer has been over 80% full. Some data may have been lost."));
-    }
+    Serial.print(numRAWX);
+    Serial.print(F("  \tBuffer high tide: "));
+    Serial.print(bufferHigh, 1); // It is a fun thing to watch how full the buffer gets
+    if (bufferHigh > 90.)
+      Serial.println(F("%!!"));
+    else if (bufferHigh > 80.)
+      Serial.println(F("%!"));
+    else
+      Serial.println(F("%"));
 
     lastPrint = millis(); // Update lastPrint
   }
@@ -318,6 +329,8 @@ void loop()
 
     myGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_SPI);
     myGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_SPI);
+
+    myGNSS.setSPIOutput(COM_TYPE_UBX | COM_TYPE_NMEA); // Re-enable NMEA
 
     Serial.println(F("Logging stopped. Freezing..."));
     while(1); // Do nothing more
