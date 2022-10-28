@@ -627,6 +627,12 @@ bool SFE_UBLOX_GNSS::setPacketCfgPayloadSize(size_t payloadSize)
   return (success);
 }
 
+// Return the number of free bytes remaining in packetCfgPayload
+size_t SFE_UBLOX_GNSS::getPacketCfgSpaceRemaining()
+{
+  return (packetCfgPayloadSize - packetCfg.len);
+}
+
 // Initialize the I2C port
 bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress, uint16_t maxWait, bool assumeSuccess)
 {
@@ -9178,6 +9184,8 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset64(uint32_t key, uint64_t value, uint8_t lay
   packetCfg.len = 4 + 4 + 8; // 4 byte header, 4 byte key ID, 8 bytes of value
   packetCfg.startingSpot = 0;
 
+  _numCfgKeyIDs = 1;
+
   // Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
@@ -9215,6 +9223,8 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset32(uint32_t key, uint32_t value, uint8_t lay
   packetCfg.len = 4 + 4 + 4; // 4 byte header, 4 byte key ID, 4 bytes of value
   packetCfg.startingSpot = 0;
 
+  _numCfgKeyIDs = 1;
+
   // Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
@@ -9248,6 +9258,8 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset16(uint32_t key, uint16_t value, uint8_t lay
   packetCfg.len = 4 + 4 + 2; // 4 byte header, 4 byte key ID, 2 bytes of value
   packetCfg.startingSpot = 0;
 
+  _numCfgKeyIDs = 1;
+
   // Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
@@ -9279,7 +9291,9 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer
   packetCfg.len = 4 + 4 + 1; // 4 byte header, 4 byte key ID, 1 byte value
   packetCfg.startingSpot = 0;
 
-  // Clear all of packet payload
+  _numCfgKeyIDs = 1;
+
+// Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     // Message Version - set to 0
@@ -9298,10 +9312,49 @@ uint8_t SFE_UBLOX_GNSS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer
   return (true);
 }
 
+// Start defining a new (empty) UBX-CFG-VALSET ubxPacket
+// Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GNSS::newCfgValset(uint8_t layer)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_VALSET;
+  packetCfg.len = 4; // 4 byte header
+  packetCfg.startingSpot = 0;
+
+  _numCfgKeyIDs = 0;
+
+  // Clear all of packet payload
+  memset(payloadCfg, 0, packetCfgPayloadSize);
+
+  payloadCfg[0] = 0;     // Message Version - set to 0
+  payloadCfg[1] = layer; // By default we ask for the BBR layer
+
+  // All done
+  return (true);
+}
+
 // Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
 // This function takes a full 32-bit key and 64-bit value
 uint8_t SFE_UBLOX_GNSS::addCfgValset64(uint32_t key, uint64_t value)
 {
+  if (packetCfg.len >= (packetCfgPayloadSize - 12))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset64: packetCfgPayloadSize reached!"));
+#endif
+    return false;
+  }
+
+  if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset64: key limit reached!"));
+#endif
+    return false;
+  }
+
   // Load key into outgoing payload
   payloadCfg[packetCfg.len + 0] = key >> 8 * 0; // Key LSB
   payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
@@ -9321,6 +9374,8 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset64(uint32_t key, uint64_t value)
   // Update packet length: 4 byte key ID, 8 bytes of value
   packetCfg.len = packetCfg.len + 4 + 8;
 
+  _numCfgKeyIDs++;
+
   // All done
   return (true);
 }
@@ -9329,6 +9384,24 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset64(uint32_t key, uint64_t value)
 // This function takes a full 32-bit key and 32-bit value
 uint8_t SFE_UBLOX_GNSS::addCfgValset32(uint32_t key, uint32_t value)
 {
+  if (packetCfg.len >= (packetCfgPayloadSize - 8))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset32: packetCfgPayloadSize reached!"));
+#endif
+    return false;
+  }
+
+  if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset32: key limit reached!"));
+#endif
+    return false;
+  }
+
   // Load key into outgoing payload
   payloadCfg[packetCfg.len + 0] = key >> 8 * 0; // Key LSB
   payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
@@ -9344,6 +9417,8 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset32(uint32_t key, uint32_t value)
   // Update packet length: 4 byte key ID, 4 bytes of value
   packetCfg.len = packetCfg.len + 4 + 4;
 
+  _numCfgKeyIDs++;
+
   // All done
   return (true);
 }
@@ -9352,6 +9427,24 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset32(uint32_t key, uint32_t value)
 // This function takes a full 32-bit key and 16-bit value
 uint8_t SFE_UBLOX_GNSS::addCfgValset16(uint32_t key, uint16_t value)
 {
+  if (packetCfg.len >= (packetCfgPayloadSize - 6))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset16: packetCfgPayloadSize reached!"));
+#endif
+    return false;
+  }
+
+  if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset16: key limit reached!"));
+#endif
+    return false;
+  }
+
   // Load key into outgoing payload
   payloadCfg[packetCfg.len + 0] = key >> 8 * 0; // Key LSB
   payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
@@ -9365,6 +9458,8 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset16(uint32_t key, uint16_t value)
   // Update packet length: 4 byte key ID, 2 bytes of value
   packetCfg.len = packetCfg.len + 4 + 2;
 
+  _numCfgKeyIDs++;
+
   // All done
   return (true);
 }
@@ -9373,6 +9468,24 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset16(uint32_t key, uint16_t value)
 // This function takes a full 32-bit key and 8-bit value
 uint8_t SFE_UBLOX_GNSS::addCfgValset8(uint32_t key, uint8_t value)
 {
+  if (packetCfg.len >= (packetCfgPayloadSize - 5))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset8: packetCfgPayloadSize reached!"));
+#endif
+    return false;
+  }
+
+  if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("addCfgValset8: key limit reached!"));
+#endif
+    return false;
+  }
+
   // Load key into outgoing payload
   payloadCfg[packetCfg.len + 0] = key >> 8 * 0; // Key LSB
   payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
@@ -9385,6 +9498,8 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset8(uint32_t key, uint8_t value)
   // Update packet length: 4 byte key ID, 1 byte value
   packetCfg.len = packetCfg.len + 4 + 1;
 
+  _numCfgKeyIDs++;
+
   // All done
   return (true);
 }
@@ -9393,8 +9508,25 @@ uint8_t SFE_UBLOX_GNSS::addCfgValset8(uint32_t key, uint8_t value)
 // This function takes a full 32-bit key and 64-bit value
 uint8_t SFE_UBLOX_GNSS::sendCfgValset64(uint32_t key, uint64_t value, uint16_t maxWait)
 {
-  // Load keyID and value into outgoing payload
-  addCfgValset64(key, value);
+  if (packetCfg.len >= (packetCfgPayloadSize - 12))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset64: packetCfgPayloadSize reached!"));
+#endif
+  }
+  else if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset64: key limit reached!"));
+#endif
+  }
+  else
+    // Load keyID and value into outgoing payload
+    addCfgValset64(key, value);
+
+  _numCfgKeyIDs = 0;
 
   // Send VALSET command with this key and value
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
@@ -9404,8 +9536,25 @@ uint8_t SFE_UBLOX_GNSS::sendCfgValset64(uint32_t key, uint64_t value, uint16_t m
 // This function takes a full 32-bit key and 32-bit value
 uint8_t SFE_UBLOX_GNSS::sendCfgValset32(uint32_t key, uint32_t value, uint16_t maxWait)
 {
-  // Load keyID and value into outgoing payload
-  addCfgValset32(key, value);
+  if (packetCfg.len >= (packetCfgPayloadSize - 8))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset32: packetCfgPayloadSize reached!"));
+#endif
+  }
+  else if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset32: key limit reached!"));
+#endif
+  }
+  else
+    // Load keyID and value into outgoing payload
+    addCfgValset32(key, value);
+
+  _numCfgKeyIDs = 0;
 
   // Send VALSET command with this key and value
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
@@ -9415,8 +9564,25 @@ uint8_t SFE_UBLOX_GNSS::sendCfgValset32(uint32_t key, uint32_t value, uint16_t m
 // This function takes a full 32-bit key and 16-bit value
 uint8_t SFE_UBLOX_GNSS::sendCfgValset16(uint32_t key, uint16_t value, uint16_t maxWait)
 {
-  // Load keyID and value into outgoing payload
-  addCfgValset16(key, value);
+  if (packetCfg.len >= (packetCfgPayloadSize - 6))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset16: packetCfgPayloadSize reached!"));
+#endif
+  }
+  else if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset16: key limit reached!"));
+#endif
+  }
+  else
+    // Load keyID and value into outgoing payload
+    addCfgValset16(key, value);
+
+  _numCfgKeyIDs = 0;
 
   // Send VALSET command with this key and value
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
@@ -9426,11 +9592,49 @@ uint8_t SFE_UBLOX_GNSS::sendCfgValset16(uint32_t key, uint16_t value, uint16_t m
 // This function takes a full 32-bit key and 8-bit value
 uint8_t SFE_UBLOX_GNSS::sendCfgValset8(uint32_t key, uint8_t value, uint16_t maxWait)
 {
-  // Load keyID and value into outgoing payload
-  addCfgValset8(key, value);
+  if (packetCfg.len >= (packetCfgPayloadSize - 5))
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset8: packetCfgPayloadSize reached!"));
+#endif
+  }
+  else if (_numCfgKeyIDs == CFG_VALSET_MAX_KEYS)
+  {
+#ifndef SFE_UBLOX_REDUCED_PROG_MEM
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+      _debugSerial->println(F("sendCfgValset8: key limit reached!"));
+#endif
+  }
+  else
+    // Load keyID and value into outgoing payload
+    addCfgValset8(key, value);
+
+  _numCfgKeyIDs = 0;
 
   // Send VALSET command with this key and value
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+// Send the UBX-CFG-VALSET ubxPacket
+uint8_t SFE_UBLOX_GNSS::sendCfgValset(uint16_t maxWait)
+{
+  _numCfgKeyIDs = 0;
+
+  // Send VALSET command with this key and value
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+// Return the number of keys in the CfgValset
+uint8_t SFE_UBLOX_GNSS::getCfgValsetLen()
+{
+  return _numCfgKeyIDs;
+}
+
+// Return the number of free bytes remaining in packetCfgPayload
+size_t SFE_UBLOX_GNSS::getCfgValsetSpaceRemaining()
+{
+  return getPacketCfgSpaceRemaining();
 }
 
 //=-=-=-=-=-=-=-= "Automatic" Messages =-=-=-=-=-=-=-==-=-=-=-=-=-=-=

@@ -664,6 +664,7 @@ public:
 
   // New in v2.0: allow the payload size for packetCfg to be changed
   bool setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
+  size_t getPacketCfgSpaceRemaining();              // Returns the number of free bytes remaining in packetCfgPayload
 
   // Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
   // Begin will then return true if "signs of life" have been seen: reception of _any_ valid UBX packet or _any_ valid NMEA header.
@@ -979,6 +980,7 @@ public:
   uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);             // Sets the 16-bit value at a given group/id/size location
   uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);             // Sets the 32-bit value at a given group/id/size location
   uint8_t setVal64(uint32_t keyID, uint64_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = defaultMaxWait);             // Sets the 64-bit value at a given group/id/size location
+  uint8_t newCfgValset(uint8_t layer = VAL_LAYER_ALL);                                                                            // Create a new, empty UBX-CFG-VALSET. Add entries with addCfgValset8/16/32/64
   uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL);                                            // Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
   uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL);                                          // Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
   uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL);                                          // Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
@@ -991,6 +993,9 @@ public:
   uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = defaultMaxWait);                                     // Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
   uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = defaultMaxWait);                                     // Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
   uint8_t sendCfgValset64(uint32_t keyID, uint64_t value, uint16_t maxWait = defaultMaxWait);                                     // Add the final KeyID and 64-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+  uint8_t sendCfgValset(uint16_t maxWait = defaultMaxWait);                                                                       // Send the CfgValset (UBX-CFG-VALSET) construct
+  uint8_t getCfgValsetLen();                                                                                                      // Returns the length of the current CfgValset construct as number-of-keyIDs
+  size_t getCfgValsetSpaceRemaining();                                                                                            // Returns the number of free bytes remaining in packetCfg
 
   // get and set functions for all of the "automatic" message processing
 
@@ -1402,12 +1407,12 @@ public:
   // Helper functions for HPPOSECEF
 
   uint32_t getPositionAccuracy(uint16_t maxWait = defaultMaxWait); // Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
-  int32_t getHighResECEFX(uint16_t maxWait = defaultMaxWait); // Returns the ECEF X coordinate (cm)
-  int32_t getHighResECEFY(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Y coordinate (cm)
-  int32_t getHighResECEFZ(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Z coordinate (cm)
-  int8_t getHighResECEFXHp(uint16_t maxWait = defaultMaxWait); // Returns the ECEF X coordinate High Precision Component (0.1 mm)
-  int8_t getHighResECEFYHp(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Y coordinate High Precision Component (0.1 mm)
-  int8_t getHighResECEFZHp(uint16_t maxWait = defaultMaxWait); // Returns the ECEF Z coordinate High Precision Component (0.1 mm)
+  int32_t getHighResECEFX(uint16_t maxWait = defaultMaxWait);      // Returns the ECEF X coordinate (cm)
+  int32_t getHighResECEFY(uint16_t maxWait = defaultMaxWait);      // Returns the ECEF Y coordinate (cm)
+  int32_t getHighResECEFZ(uint16_t maxWait = defaultMaxWait);      // Returns the ECEF Z coordinate (cm)
+  int8_t getHighResECEFXHp(uint16_t maxWait = defaultMaxWait);     // Returns the ECEF X coordinate High Precision Component (0.1 mm)
+  int8_t getHighResECEFYHp(uint16_t maxWait = defaultMaxWait);     // Returns the ECEF Y coordinate High Precision Component (0.1 mm)
+  int8_t getHighResECEFZHp(uint16_t maxWait = defaultMaxWait);     // Returns the ECEF Z coordinate High Precision Component (0.1 mm)
 
   // Helper functions for HPPOSLLH
 
@@ -1788,6 +1793,9 @@ private:
   // .begin will return true if the assumeSuccess parameter is true and if _signsOfLife is true
   // _signsOfLife is set to true when: a valid UBX message is seen; a valig NMEA header is seen.
   bool _signsOfLife;
+
+  // Keep track of how many keys have been added to CfgValset
+  uint8_t _numCfgKeyIDs = 0;
 };
 
 #endif

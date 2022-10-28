@@ -43,6 +43,10 @@
 #ifndef __u_blox_config_keys_h__
 #define __u_blox_config_keys_h__
 
+// Define the maximum length of a multi-CfgValset construct
+// "This message is limited to containing a maximum of 64 key-value pairs"
+const uint8_t CFG_VALSET_MAX_KEYS = 64;
+
 // The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
 const uint8_t VAL_SIZE_1 = 0x01;  // One bit
 const uint8_t VAL_SIZE_8 = 0x02;  // One byte
