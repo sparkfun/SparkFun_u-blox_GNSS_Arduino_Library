@@ -66,6 +66,13 @@ void setup()
   //but with multiple messages all in one go using newCfgValset, addCfgValset and sendCfgValset.
   //Original: myGNSS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
 
+  //If we will be sending a large number of key IDs and values, packetCfg could fill up before the CFG_VALSET is sent...
+  //There are three possible solutions:
+  //  Increase the space available by calling myGNSS.setPacketCfgPayloadSize
+  //  Monitor how much space is remaining by calling myGNSS.getCfgValsetSpaceRemaining. Call myGNSS.sendCfgValset(); before packetCfg becomes full.
+  //  Call myGNSS.autoSendCfgValsetAtSpaceRemaining(16); . This will cause the existing CFG_VALSET to be send automatically and a new one created when packetCfg has less than 16 bytes remaining.
+  myGNSS.autoSendCfgValsetAtSpaceRemaining(16); // Trigger an auto-send when packetCfg has less than 16 bytes are remaining
+
   //Begin with newCfgValset
   setValueSuccess &= myGNSS.newCfgValset(); // Defaults to configuring the setting in Flash, RAM and BBR
   //setValueSuccess &= myGNSS.newCfgValset(VAL_LAYER_RAM); //Set this and the following settings in RAM only instead of Flash/RAM/BBR

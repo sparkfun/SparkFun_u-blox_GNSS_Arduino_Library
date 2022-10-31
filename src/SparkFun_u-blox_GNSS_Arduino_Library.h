@@ -996,6 +996,7 @@ public:
   uint8_t sendCfgValset(uint16_t maxWait = defaultMaxWait);                                                                       // Send the CfgValset (UBX-CFG-VALSET) construct
   uint8_t getCfgValsetLen();                                                                                                      // Returns the length of the current CfgValset construct as number-of-keyIDs
   size_t getCfgValsetSpaceRemaining();                                                                                            // Returns the number of free bytes remaining in packetCfg
+  void autoSendCfgValsetAtSpaceRemaining(size_t spaceRemaining) { _autoSendAtSpaceRemaining = spaceRemaining; }                   // Cause CFG_VALSET packets to be sent automatically when packetCfg has less than this many bytes available
 
   // get and set functions for all of the "automatic" message processing
 
@@ -1796,6 +1797,9 @@ private:
 
   // Keep track of how many keys have been added to CfgValset
   uint8_t _numCfgKeyIDs = 0;
+
+  // Send the current CFG_VALSET message when packetCfg has less than this many bytes available
+  size_t _autoSendAtSpaceRemaining = 0;
 };
 
 #endif
