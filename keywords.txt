@@ -249,6 +249,7 @@ sendCfgValset64	KEYWORD2
 sendCfgValset	KEYWORD2
 getCfgValsetLen	KEYWORD2
 getCfgValsetSpaceRemaining	KEYWORD2
+autoSendCfgValsetAtSpaceRemaining	KEYWORD2
 
 getNAVPOSECEF	KEYWORD2
 setAutoNAVPOSECEF	KEYWORD2
