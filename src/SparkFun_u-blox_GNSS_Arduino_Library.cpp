@@ -13494,7 +13494,7 @@ bool SFE_UBLOX_GNSS::getRXMSFRBX(uint16_t maxWait)
   if (packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic && packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate)
   {
     // The GPS is automatically reporting, we just check whether we got unread data
-    checkUbloxInternal(&packetCfg, UBX_CLASS_TIM, UBX_TIM_TM2);
+    checkUbloxInternal(&packetCfg, UBX_CLASS_RXM, UBX_RXM_SFRBX);
     return packetUBXRXMSFRBX->moduleQueried;
   }
   else if (packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic && !packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate)
@@ -13686,7 +13686,7 @@ bool SFE_UBLOX_GNSS::getRXMRAWX(uint16_t maxWait)
   if (packetUBXRXMRAWX->automaticFlags.flags.bits.automatic && packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate)
   {
     // The GPS is automatically reporting, we just check whether we got unread data
-    checkUbloxInternal(&packetCfg, UBX_CLASS_TIM, UBX_TIM_TM2);
+    checkUbloxInternal(&packetCfg, UBX_CLASS_RXM, UBX_RXM_RAWX);
     return packetUBXRXMRAWX->moduleQueried;
   }
   else if (packetUBXRXMRAWX->automaticFlags.flags.bits.automatic && !packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate)
