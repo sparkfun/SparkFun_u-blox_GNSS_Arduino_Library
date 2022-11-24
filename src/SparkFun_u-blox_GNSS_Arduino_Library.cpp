@@ -10377,10 +10377,7 @@ bool SFE_UBLOX_GNSS::getNAVEOE(uint16_t maxWait)
   }
   else
   {
-    // if (_printDebug == true)
-    // {
-    //   _debugSerial->println(F("getEOE: Polling"));
-    // }
+    // Note to self: NAV-EOE is "Periodic" (only). Not sure if it can be polled?
 
     // The GPS is not automatically reporting navigation position so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
@@ -10396,18 +10393,9 @@ bool SFE_UBLOX_GNSS::getNAVEOE(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      // if (_printDebug == true)
-      // {
-      //   _debugSerial->println(F("getEOE: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      // }
       return (true);
     }
 
-    // if (_printDebug == true)
-    // {
-    //   _debugSerial->print(F("getEOE retVal: "));
-    //   _debugSerial->println(statusString(retVal));
-    // }
     return (false);
   }
 }
@@ -13504,23 +13492,9 @@ bool SFE_UBLOX_GNSS::getRXMSFRBX(uint16_t maxWait)
   }
   else
   {
-    // The GPS is not automatically reporting navigation position so we have to poll explicitly
-    packetCfg.cls = UBX_CLASS_RXM;
-    packetCfg.id = UBX_RXM_SFRBX;
-    packetCfg.len = 0;
-    packetCfg.startingSpot = 0;
-
-    // The data is parsed as part of processing the response
-    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
-      return (true);
-
-    if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
-    {
-      return (true);
-    }
-
+    // SFRBX is output-only. It cannot be polled...
+    // Strictly, getRXMSFRBX should be deprecated. But, to keep the library backward compatible, return(false) here.
+    // See issue #167 for details
     return (false);
   }
 }
