@@ -13475,7 +13475,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXRXMCOR()
 bool SFE_UBLOX_GNSS::getRXMSFRBX(uint16_t maxWait)
 {
   if (packetUBXRXMSFRBX == NULL)
-    initPacketUBXRXMSFRBX();     // Check that RAM has been allocated for the TM2 data
+    initPacketUBXRXMSFRBX();     // Check that RAM has been allocated for the SFRBX data
   if (packetUBXRXMSFRBX == NULL) // Bail if the RAM allocation failed
     return (false);
 
