@@ -1521,6 +1521,65 @@ typedef struct
   UBX_RXM_RAWX_data_t *callbackData;
 } UBX_RXM_RAWX_t;
 
+// UBX-RXM-MEASX (0x02 0x14): Receiver Manager Messages: i.e. Satellite Status, RTC Status.
+const uint8_t UBX_RXM_MEASX_MAX_BLOCKS = 92;
+const uint16_t UBX_RXM_MEASX_MAX_LEN = 44 + (24 * UBX_RXM_MEASX_MAX_BLOCKS);
+
+typedef struct {
+  uint8_t version; // Message version (0x01 for this version)
+  uint8_t reserved1[3];
+  uint32_t gpsTOW;
+  uint32_t gloTOW;
+  uint32_t bdsTOW;
+  uint8_t reserved2[4];
+  uint32_t qzssTOW;
+  uint16_t gpsTOWacc;
+  uint16_t gloTOWacc;
+  uint16_t bdsTOWacc;
+  uint8_t reserved3[2];
+  uint16_t qzssTOWacc;
+  uint8_t numSV;
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t towSet : 2;    // TOW set (0 = no, 1 or 2 = yes)
+    } bits;
+  } flags;
+  uint8_t reserved4[8];
+} UBX_RXM_MEASX_header_t;
+
+typedef struct {
+  uint8_t gnssId;
+  uint8_t svId;
+  uint8_t cNo;
+  uint8_t mpathIndic;
+  int32_t dopplerMS;
+  int32_t dopplerHz;
+  uint16_t wholeChips;
+  uint16_t fracChips;
+  uint32_t codePhase;
+  uint8_t intCodePhase;
+  uint8_t pseuRangeRMSErr;
+  uint8_t reserved5[2];
+} UBX_RXM_MEASX_block_t;
+
+typedef struct {
+  UBX_RXM_MEASX_header_t header;
+  UBX_RXM_MEASX_block_t blocks[UBX_RXM_MEASX_MAX_BLOCKS];
+} UBX_RXM_MEASX_data_t;
+
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  UBX_RXM_MEASX_data_t data;
+  bool moduleQueried;
+  void (*callbackPointer)(UBX_RXM_MEASX_data_t);
+  void (*callbackPointerPtr)(UBX_RXM_MEASX_data_t *);
+  UBX_RXM_MEASX_data_t *callbackData;
+} UBX_RXM_MEASX_t;
+
 // UBX-RXM-COR (0x02 0x34): Differential correction input status
 const uint16_t UBX_RXM_COR_LEN = 12;
 

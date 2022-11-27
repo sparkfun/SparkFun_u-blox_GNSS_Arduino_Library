@@ -1225,6 +1225,16 @@ public:
   void flushRXMRAWX();                                                                                                  // Mark all the data as read/stale
   void logRXMRAWX(bool enabled = true);                                                                                 // Log data to file buffer
 
+  bool getRXMMEASX(uint16_t maxWait = defaultMaxWait);                                                                    // RXM RAWX
+  bool setAutoRXMMEASX(bool enabled, uint16_t maxWait = defaultMaxWait);                                                  // Enable/disable automatic RXM RAWX reports at the navigation frequency
+  bool setAutoRXMMEASX(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                             // Enable/disable automatic RXM RAWX reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoRXMMEASXrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait);                  // Set the rate for automatic RAWX reports
+  bool setAutoRXMMEASXcallback(void (*callbackPointer)(UBX_RXM_MEASX_data_t), uint16_t maxWait = defaultMaxWait);         // Enable automatic RAWX reports at the navigation frequency. Data is accessed from the callback.
+  bool setAutoRXMMEASXcallbackPtr(void (*callbackPointerPtr)(UBX_RXM_MEASX_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic RAWX reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoRXMMEASX(bool enabled, bool implicitUpdate = true);                                                      // In case no config access to the GPS is possible and RXM RAWX is send cyclically already
+  void flushRXMMEASX();                                                                                                   // Mark all the data as read/stale
+  void logRXMMEASX(bool enabled = true);                                                                                  // Log data to file buffer
+
   // Configuration (CFG)
 
   // Add "auto" support for CFG PRT - because we use it for isConnected (to stop it being mugged by other messages)
@@ -1562,6 +1572,7 @@ public:
   UBX_RXM_COR_t *packetUBXRXMCOR = NULL;                      // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL;                  // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL;                    // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_RXM_MEASX_t *packetUBXRXMMEASX = NULL;                  // Pointer to struct. RAM will be allocated for this if/when necessary
 
   UBX_CFG_PRT_t *packetUBXCFGPRT = NULL;   // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_CFG_RATE_t *packetUBXCFGRATE = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1655,6 +1666,7 @@ private:
   bool initPacketUBXRXMCOR();           // Allocate RAM for packetUBXRXMCOR and initialize it
   bool initPacketUBXRXMSFRBX();         // Allocate RAM for packetUBXRXMSFRBX and initialize it
   bool initPacketUBXRXMRAWX();          // Allocate RAM for packetUBXRXMRAWX and initialize it
+  bool initPacketUBXRXMMEASX();         // Allocate RAM for packetUBXRXMMEASX and initialize it
   bool initPacketUBXCFGPRT();           // Allocate RAM for packetUBXCFGPRT and initialize it
   bool initPacketUBXCFGRATE();          // Allocate RAM for packetUBXCFGRATE and initialize it
   bool initPacketUBXTIMTM2();           // Allocate RAM for packetUBXTIMTM2 and initialize it
