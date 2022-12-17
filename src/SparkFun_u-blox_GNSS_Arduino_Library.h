@@ -854,6 +854,7 @@ public:
   void factoryReset();                                    // Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
   void hardReset();                                       // Perform a reset leading to a cold start (zero info start-up)
   void softwareResetGNSSOnly();                           // Controlled Software Reset (GNSS only) only restarts the GNSS tasks, without reinitializing the full system or reloading any stored configuration.
+  void softwareEnableGNSS(bool enable);                           // Controlled Software Start / Stop (GNSS only) 
   bool factoryDefault(uint16_t maxWait = defaultMaxWait); // Reset module to factory defaults
 
   // Save configuration to BBR / Flash
