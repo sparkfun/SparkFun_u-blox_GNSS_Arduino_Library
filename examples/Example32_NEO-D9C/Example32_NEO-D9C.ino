@@ -106,19 +106,19 @@ void setup()
   }
   Serial.println(F("u-blox NEO-D9C connected"));
 
-  uint8_t ok = myQZSS.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C,   1);     // Output QZSS-L6 message on the I2C port 
+  uint8_t ok = myQZSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_I2C,   1);    // Output QZSS-L6 message on the I2C port 
 
   Serial.print(F("QZSS-L6: I2C configuration "));
   Serial.println(OK(ok));
 
-  if (ok) ok = myQZSS.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART1, 1);     // Output QZSS-L6 message on UART1
+  if (ok) ok = myQZSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART1, 1);    // Output QZSS-L6 message on UART1
   if (ok) ok = myQZSS.setVal32(UBLOX_CFG_UART1_BAUDRATE,            38400); // Match UART1 baudrate with ZED
 
   Serial.print(F("QZSS-L6: UART1 configuration "));
   Serial.println(OK(ok));
 
-  if (ok) ok = myQZSS.setVal(UBLOX_CFG_UART2OUTPROT_UBX,            1);     // Enable UBX output on UART2
-  if (ok) ok = myQZSS.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART2, 1);     // Output QZSS-L6 message on UART2
+  if (ok) ok = myQZSS.setVal8(UBLOX_CFG_UART2OUTPROT_UBX,            1);    // Enable UBX output on UART2
+  if (ok) ok = myQZSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_QZSSL6_UART2, 1);    // Output QZSS-L6 message on UART2
   if (ok) ok = myQZSS.setVal32(UBLOX_CFG_UART2_BAUDRATE,            38400); // Match UART2 baudrate with ZED
 
   Serial.print(F("QZSS-L6: UART2 configuration "));
