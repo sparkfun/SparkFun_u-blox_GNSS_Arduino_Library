@@ -1,14 +1,57 @@
 #include "SparkFun_u-blox_GNSS_Arduino_Library.h"
+#include <Arduino.h>
+
+namespace emulation
+{
 
 #define CAT_FIELDS(MSB, LSB) ((MSB << 8) + LSB)
 
-static bool read_buffer_ok(int fd, uint8_t* buf, size_t size, int tries=3)
+template <size_t CAP>
+struct Buffer
+{
+  enum Mode
+  {
+    LINEAR,
+    RING,
+  };
+
+  Buffer(Mode mode=LINEAR)
+  {
+    m_mode = mode;
+  }
+
+  void push_back(uint8_t b)
+  {
+    if (m_mode == LINEAR && m_size < CAP - 1)
+    {
+      m_buffer[m_left_ptr++] = b;
+      m_size++;
+    }
+    else if (m_mode == RING)
+    {
+      
+    }
+  }
+
+  size_t size() const { return m_size; }
+
+  uint8_t& operator[](unsigned i) { return m_buffer[i]; }
+
+  uint8_t* data() { return m_buffer; }
+
+  Mode m_mode;
+  uint8_t m_buffer[CAP];
+  size_t m_left_ptr = 0, m_right_ptr = 0;
+  size_t m_size = 0;
+};
+
+static bool read_buffer_ok(Stream& stream, uint8_t* buf, size_t size, int tries=3)
 {
 	auto bytes_remaining = size;
 
 	for (tries = 3; bytes_remaining > 0 && tries--;)
 	{
-		auto read_res = read(fd, buf + size - bytes_remaining, bytes_remaining);
+		auto read_res = stream.readBytes(buf + size - bytes_remaining, bytes_remaining);
 		if (read_res > 0)
 		{
 			bytes_remaining -= read_res;
@@ -22,6 +65,8 @@ static bool read_buffer_ok(int fd, uint8_t* buf, size_t size, int tries=3)
 
 	return tries >= 0;
 }
+
+
 
 struct UbloxPacket
 {
@@ -43,7 +88,7 @@ struct UbloxPacket
 	} __attribute__((packed));
 
 	Header header;
-	std::vector<uint8_t> payload;
+	Buffer<256> payload;
 	Footer footer;
 
 	void compute_checksums(uint8_t& checksumA, uint8_t& checksumB) const
@@ -57,13 +102,13 @@ struct UbloxPacket
 		checksumA += header.id;
 		checksumB += checksumA;
 
-		checksumA += (playload.size() & 0xFF);
+		checksumA += (payload.size() & 0xFF);
 		checksumB += checksumA;
 
-		checksumA += (len >> 8);
+		checksumA += (payload.size() >> 8);
 		checksumB += checksumA;
 
-		for (uint16_t i = 0; i < playload.size(); i++)
+		for (uint16_t i = 0; i < payload.size(); i++)
 		{
 			checksumA += payload[i];
 			checksumB += checksumA;
@@ -83,14 +128,14 @@ struct UbloxPacket
 		return CAT_FIELDS(header.cls, header.id);
 	}
 
-	static UbloxPacket read_from_fd(int fd)
+	static UbloxPacket read_from_stream(Stream& stream)
 	{
 		UbloxPacket packet;
 		// read(fd, &packet.header, sizeof(packet.header));
-		assert(read_buffer_ok(fd, &packet.header, sizeof(packet.header)));
-		packet.payload.reserve(packet.header.len);
-		assert(read_buffer_ok(fd, packet.payload.data(), packet.header.len));
-		assert(!read_buffer_ok(fd, &packet.footer, sizeof(footer)));
+		read_buffer_ok(stream, (uint8_t*)&packet.header, sizeof(packet.header));
+		// packet.payload.reserve(packet.header.len);
+		read_buffer_ok(stream, packet.payload.data(), packet.header.len);
+		read_buffer_ok(stream, (uint8_t*)&packet.footer, sizeof(footer));
 
 		return packet;
 	}
@@ -99,13 +144,13 @@ struct UbloxPacket
 
 struct ZED_FP9
 {
-	void service(int fd)
+	void service(Stream& stream)
 	{
-		process_packet(UbloxPacket::read_from_fd(fd));
+		process_packet(stream, UbloxPacket::read_from_stream(stream));
 	}
 
 private:
-	void process_packet(int fd, UbloxHeader& packet)
+	void process_packet(Stream& stream, const UbloxPacket& packet)
 	{
 		switch(packet.key())
 		{
@@ -116,5 +161,7 @@ private:
 		}
 	}
 
-	std::queue<UbloxPacket> m_packet_queue;
+	//std::queue<UbloxPacket> m_packet_queue;
 };
+
+} // namespace emulation
