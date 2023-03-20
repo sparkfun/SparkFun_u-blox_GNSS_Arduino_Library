@@ -8207,6 +8207,70 @@ bool SFE_UBLOX_GNSS::resetOdometer(uint16_t maxWait)
   return (sendCommand(&packetCfg, maxWait, true) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+// Enable / disable the odometer
+bool SFE_UBLOX_GNSS::enableOdometer(bool enable, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_ODO;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  // Ask module for the current odometer configuration. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  if (enable)
+    payloadCfg[4] = payloadCfg[4] | UBX_CFG_ODO_USE_ODO;
+  else
+    payloadCfg[4] = payloadCfg[4] & ~UBX_CFG_ODO_USE_ODO;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+  
+// Read the odometer configuration
+bool SFE_UBLOX_GNSS::getOdometerConfig(uint8_t *flags, uint8_t *odoCfg, uint8_t *cogMaxSpeed, uint8_t *cogMaxPosAcc, uint8_t *velLpGain, uint8_t *cogLpGain, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_ODO;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  // Ask module for the current odometer configuration. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  *flags = payloadCfg[4];
+  *odoCfg = payloadCfg[5];
+  *cogMaxSpeed = payloadCfg[12];
+  *cogMaxPosAcc = payloadCfg[13];
+  *velLpGain = payloadCfg[16];
+  *cogLpGain = payloadCfg[17];
+
+  return true;
+}
+
+// Configure the odometer
+bool SFE_UBLOX_GNSS::setOdometerConfig(uint8_t flags, uint8_t odoCfg, uint8_t cogMaxSpeed, uint8_t cogMaxPosAcc, uint8_t velLpGain, uint8_t cogLpGain, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_ODO;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  // Ask module for the current odometer configuration. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  payloadCfg[4] = flags;
+  payloadCfg[5] = odoCfg;
+  payloadCfg[12] = cogMaxSpeed;
+  payloadCfg[13] = cogMaxPosAcc;
+  payloadCfg[16] = velLpGain;
+  payloadCfg[17] = cogLpGain;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 // Enable/Disable individual GNSS systems using UBX-CFG-GNSS
 bool SFE_UBLOX_GNSS::enableGNSS(bool enable, sfe_ublox_gnss_ids_e id, uint16_t maxWait)
 {
