@@ -17466,6 +17466,8 @@ int32_t SFE_UBLOX_GNSS::getAltitude(uint16_t maxWait)
 // Get the current altitude in mm according to mean sea level
 // Ellipsoid model: https://www.esri.com/news/arcuser/0703/geoid1of3.html
 // Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
+// Also see: https://portal.u-blox.com/s/question/0D52p00008HKDSkCAP/what-geoid-model-is-used-and-where-is-this-calculated
+// and: https://cddis.nasa.gov/926/egm96/egm96.html on 10x10 degree grid
 int32_t SFE_UBLOX_GNSS::getAltitudeMSL(uint16_t maxWait)
 {
   if (packetUBXNAVPVT == NULL)
