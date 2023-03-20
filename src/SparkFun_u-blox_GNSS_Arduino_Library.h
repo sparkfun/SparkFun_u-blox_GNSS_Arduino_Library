@@ -465,6 +465,22 @@ const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
 const uint8_t COM_TYPE_SPARTN = (1 << 6);
 
+// Odometer configuration - flags
+const uint8_t UBX_CFG_ODO_USE_ODO = (1 << 0);
+const uint8_t UBX_CFG_ODO_USE_COG = (1 << 1);
+const uint8_t UBX_CFG_ODO_OUT_LP_VEL = (1 << 2);
+const uint8_t UBX_CFG_ODO_OUT_LP_COG = (1 << 3);
+
+// Odometer configuration - odoCfg
+enum odoCfg_e
+{
+  UBX_CFG_ODO_RUN = 0,
+  UBX_CFG_ODO_CYCLE,
+  UBX_CFG_ODO_SWIM,
+  UBX_CFG_ODO_CAR,
+  UBX_CFG_ODO_CUSTOM,
+};
+
 // Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
 const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001;   // ioPort - communications port settings (causes IO system reset!)
 const uint32_t VAL_CFG_SUBSEC_MSGCONF = 0x00000002;  // msgConf - message configuration
@@ -909,8 +925,11 @@ public:
   bool setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = defaultMaxWait);
   uint8_t getDynamicModel(uint16_t maxWait = defaultMaxWait); // Get the dynamic model - returns 255 if the sendCommand fails
 
-  // Reset the odometer
+  // Reset / enable / configure the odometer
   bool resetOdometer(uint16_t maxWait = defaultMaxWait); // Reset the odometer
+  bool enableOdometer(bool enable = true, uint16_t maxWait = defaultMaxWait); // Enable / disable the odometer
+  bool getOdometerConfig(uint8_t *flags, uint8_t *odoCfg, uint8_t *cogMaxSpeed, uint8_t *cogMaxPosAcc, uint8_t *velLpGain, uint8_t *cogLpGain, uint16_t maxWait = defaultMaxWait); // Read the odometer configuration
+  bool setOdometerConfig(uint8_t flags, uint8_t odoCfg, uint8_t cogMaxSpeed, uint8_t cogMaxPosAcc, uint8_t velLpGain, uint8_t cogLpGain, uint16_t maxWait = defaultMaxWait); // Configure the odometer
 
   // Enable/Disable individual GNSS systems using UBX-CFG-GNSS
   // Note: you must leave at least one major GNSS enabled! If in doubt, enable GPS before disabling the others
