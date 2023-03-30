@@ -148,7 +148,7 @@ void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 void printRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 {
   Serial.print(F("UBX-RXM-COR:  ebno: "));
-  Serial.print(ubxDataStruct->ebno);
+  Serial.print((double)ubxDataStruct->ebno / 8, 3); //Convert to dB
 
   Serial.print(F("  protocol: "));
   if (ubxDataStruct->statusInfo.bits.protocol == 1)
