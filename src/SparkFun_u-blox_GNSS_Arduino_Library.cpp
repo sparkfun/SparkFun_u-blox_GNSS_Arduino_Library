@@ -8293,6 +8293,7 @@ bool SFE_UBLOX_GNSS::enableGNSS(bool enable, sfe_ublox_gnss_ids_e id, uint16_t m
         payloadCfg[(block * 8) + 4 + 4] |= 0x01; // Set the enable bit in flags (Little Endian)
       else
         payloadCfg[(block * 8) + 4 + 4] &= 0xFE; // Clear the enable bit in flags (Little Endian)
+      break;
     }
   }
 
@@ -8310,8 +8311,6 @@ bool SFE_UBLOX_GNSS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);
 
-  bool retVal = false;
-
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
 
   for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
@@ -8320,11 +8319,11 @@ bool SFE_UBLOX_GNSS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
     {
       // We have a match so check the enable bit in flags
       if ((payloadCfg[(block * 8) + 4 + 4] & 0x01) > 0) // Check the enable bit in flags (Little Endian)
-        retVal = true;
+        return true;
     }
   }
 
-  return (retVal);
+  return false;
 }
 
 // Reset ESF automatic IMU-mount alignment
