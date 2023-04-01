@@ -581,6 +581,25 @@ enum sfe_ublox_dgnss_mode_e
   SFE_UBLOX_DGNSS_MODE_FIXED      // Ambiguities are fixed whenever possible
 };
 
+// Values for UBX-CFG-PMS
+enum sfe_ublox_pms_mode_e
+{
+  SFE_UBLOX_PMS_MODE_FULLPOWER = 0,
+  SFE_UBLOX_PMS_MODE_BALANCED,
+  SFE_UBLOX_PMS_MODE_INTERVAL,
+  SFE_UBLOX_PMS_MODE_AGGRESSIVE_1HZ,
+  SFE_UBLOX_PMS_MODE_AGGRESSIVE_2HZ,
+  SFE_UBLOX_PMS_MODE_AGGRESSIVE_4HZ,
+  SFE_UBLOX_PMS_MODE_INVALID = 0xff
+};
+
+//Values for UBX-CFG-RXM
+enum sfe_ublox_rxm_mode_e
+{
+  SFE_UBLOX_CFG_RXM_CONTINUOUS = 0,
+  SFE_UBLOX_CFG_RXM_POWERSAVE = 1
+};
+
 //-=-=-=-=-
 
 #ifndef MAX_PAYLOAD_SIZE
@@ -1396,6 +1415,7 @@ public:
   uint8_t getFixType(uint16_t maxWait = defaultMaxWait); // Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 
   bool getGnssFixOk(uint16_t maxWait = defaultMaxWait); // Get whether we have a valid fix (i.e within DOP & accuracy masks)
+  bool getNAVPVTPSMMode(uint16_t maxWait = defaultMaxWait); // Not fully documented power save mode value
   bool getDiffSoln(uint16_t maxWait = defaultMaxWait);  // Get whether differential corrections were applied
   bool getHeadVehValid(uint16_t maxWait = defaultMaxWait);
   uint8_t getCarrierSolutionType(uint16_t maxWait = defaultMaxWait); // Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
@@ -1541,6 +1561,10 @@ public:
   bool setNMEAGNZDAcallback(void (*callbackPointer)(NMEA_ZDA_data_t));         // Enable a callback on the arrival of a GNZDA message
   bool setNMEAGNZDAcallbackPtr(void (*callbackPointerPtr)(NMEA_ZDA_data_t *)); // Enable a callback on the arrival of a GNZDA message
 #endif
+
+  // Power Mode Setup. Values period and onTime are only valid if mode is SFE_UBLOX_PMS_MODE_INTERVAL
+  boolean setPMS(sfe_ublox_pms_mode_e mode, uint16_t period=0, uint16_t onTime=0, uint16_t maxWait = defaultMaxWait);
+  boolean setRXM(sfe_ublox_rxm_mode_e mode, uint16_t maxWait = defaultMaxWait);
 
   // Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
   // From v2.0: These are public. The user can call these to extract data from custom packets

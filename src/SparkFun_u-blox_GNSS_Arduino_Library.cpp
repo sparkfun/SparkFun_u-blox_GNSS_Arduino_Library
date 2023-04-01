@@ -17369,6 +17369,21 @@ bool SFE_UBLOX_GNSS::getDiffSoln(uint16_t maxWait)
   return (packetUBXNAVPVT->data.flags.bits.diffSoln);
 }
 
+// Get power save mode from NAV-PVT
+bool SFE_UBLOX_GNSS::getNAVPVTPSMMode(uint16_t maxWait)
+{
+  if (packetUBXNAVPVT == NULL)
+    initPacketUBXNAVPVT();     // Check that RAM has been allocated for the PVT data
+  if (packetUBXNAVPVT == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.psmState== false)
+    getPVT(maxWait);
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.psmState= false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVT->data.flags.bits.psmState);
+}
+
 // Get whether head vehicle valid or not
 bool SFE_UBLOX_GNSS::getHeadVehValid(uint16_t maxWait)
 {
@@ -18522,4 +18537,49 @@ int8_t SFE_UBLOX_GNSS::extractSignedChar(ubxPacket *msg, uint16_t spotToStart)
 
   stSignedByte.unsignedByte = extractByte(msg, spotToStart);
   return (stSignedByte.signedByte);
+}
+
+boolean SFE_UBLOX_GNSS::setPMS(sfe_ublox_pms_mode_e mode, uint16_t period, uint16_t onTime, uint16_t maxWait)
+{
+  // INVALID only valid in response
+  if (mode == SFE_UBLOX_PMS_MODE_INVALID)
+    return false;
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PMS;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  packetCfg.payload[0] = 0x0; //message version
+  packetCfg.payload[1] = mode;
+  // only valid if mode==SFE_UBLOX_PMS_MODE_INTERVAL
+  if (mode == SFE_UBLOX_PMS_MODE_INTERVAL)
+  {
+    packetCfg.payload[2] = period >> 8;
+    packetCfg.payload[3] = period & 0xff;
+    packetCfg.payload[4] = onTime >> 8;
+    packetCfg.payload[5] = onTime & 0xff;
+  }
+  else
+  {
+    packetCfg.payload[2] = 0;
+    packetCfg.payload[3] = 0;
+    packetCfg.payload[4] = 0;
+    packetCfg.payload[5] = 0;
+  }
+  packetCfg.payload[6] = 0x0; //reserved
+  packetCfg.payload[7] = 0x0; //reserved
+  return sendCommand(&packetCfg, maxWait);
+}
+
+boolean SFE_UBLOX_GNSS::setRXM(sfe_ublox_rxm_mode_e mode, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  packetCfg.payload[0] = 0x0; //reserved
+  packetCfg.payload[1] = mode; //low power mode
+
+  return sendCommand(&packetCfg, maxWait);
 }
