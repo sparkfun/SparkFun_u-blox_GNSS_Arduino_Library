@@ -16,11 +16,9 @@
 	SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 
-	After calibrating the module and securing it to your vehicle such that it's
-  stable within 2 degrees, and the board is oriented correctly with regards to
-  the vehicle's frame, you can now read the vehicle's "attitude". The attitude
-  includes the vehicle's heading, pitch, and roll. You can also check the
-  accuracy of those readings. 
+  getEsfAlignment (UBX-ESF-ALG) reports the status and alignment angles of the IMU within the vehicle.
+  These define the rotation of the IMU frame within the vehicle (installation frame) - not the heading
+  of the vehicle itself. The vehicle attitude solution is reported separately by getNAVATT (UBX-NAV-ATT).
 
 */
 
@@ -45,6 +43,8 @@ void setup()
 
   myGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
+  myGNSS.setESFAutoAlignment(true); //Enable Automatic IMU-mount Alignment
+
   if (myGNSS.getEsfInfo()){
 
     Serial.print(F("Fusion Mode: "));  
@@ -63,20 +63,32 @@ void setup()
 void loop()
 {
   // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
-	if (myGNSS.getEsfAlignment()) // Poll new ESF ALG data
+  if (myGNSS.getEsfAlignment()) // Poll new ESF ALG data
   {
-  	Serial.print(F("Status: ")); 
-  	Serial.print(myGNSS.packetUBXESFALG->data.flags.bits.status);
+    Serial.print(F("IMU-Mount Alignment: On/Off: ")); 
+    Serial.print(myGNSS.packetUBXESFALG->data.flags.bits.autoMntAlgOn);
+    Serial.print(F(" Status: ")); 
+    Serial.print(myGNSS.packetUBXESFALG->data.flags.bits.status);
     Serial.print(F(" Roll: ")); 
     Serial.print(myGNSS.getESFroll(), 2); // Use the helper function to get the roll in degrees
-  	Serial.print(F(" Pitch: ")); 
-  	Serial.print(myGNSS.getESFpitch(), 2); // Use the helper function to get the pitch in degrees
-  	Serial.print(F(" Heading: ")); 
-  	Serial.print(myGNSS.getESFyaw(), 2); // Use the helper function to get the yaw in degrees
-  	Serial.print(F(" Errors: ")); 
-  	Serial.print(myGNSS.packetUBXESFALG->data.error.bits.tiltAlgError);
-  	Serial.print(myGNSS.packetUBXESFALG->data.error.bits.yawAlgError);
-  	Serial.println(myGNSS.packetUBXESFALG->data.error.bits.angleError);
+    Serial.print(F(" Pitch: ")); 
+    Serial.print(myGNSS.getESFpitch(), 2); // Use the helper function to get the pitch in degrees
+    Serial.print(F(" Yaw: ")); 
+    Serial.print(myGNSS.getESFyaw(), 2); // Use the helper function to get the yaw in degrees
+    Serial.print(F(" Errors: ")); 
+    Serial.print(myGNSS.packetUBXESFALG->data.error.bits.tiltAlgError);
+    Serial.print(myGNSS.packetUBXESFALG->data.error.bits.yawAlgError);
+    Serial.println(myGNSS.packetUBXESFALG->data.error.bits.angleError);
+  }
+
+  if (myGNSS.getNAVATT()) // Poll new NAV ATT data
+  {
+    Serial.print(F("Vehicle Attitude: Roll: ")); 
+    Serial.print(myGNSS.getATTroll(), 2); // Use the helper function to get the roll in degrees
+    Serial.print(F(" Pitch: ")); 
+    Serial.print(myGNSS.getATTpitch(), 2); // Use the helper function to get the pitch in degrees
+    Serial.print(F(" Heading: ")); 
+    Serial.println(myGNSS.getATTheading(), 2); // Use the helper function to get the heading in degrees    
   }
 
   delay(250);
