@@ -45,8 +45,8 @@ void printRXMPMP(UBX_RXM_PMP_data_t *pmpData)
   Serial.print(F("numBytesUserData :   "));
   Serial.println(pmpData->numBytesUserData);
   
-  Serial.print(F("serviceIdentifier:   "));
-  Serial.println(pmpData->serviceIdentifier);
+  Serial.print(F("serviceIdentifier:   0x"));
+  Serial.println(pmpData->serviceIdentifier, HEX);
   
   Serial.print(F("uniqueWordBitErrors: "));
   Serial.println(pmpData->uniqueWordBitErrors);
@@ -54,8 +54,8 @@ void printRXMPMP(UBX_RXM_PMP_data_t *pmpData)
   Serial.print(F("fecBits:             "));
   Serial.println(pmpData->fecBits);
   
-  Serial.print(F("ebno:                "));
-  Serial.println(pmpData->ebno);
+  Serial.print(F("ebno (dB):           "));
+  Serial.println((double)pmpData->ebno / 8, 3); //Convert ebno to dB
 
   Serial.println();
 }
