@@ -2,8 +2,8 @@ name: Compile Sketch
 
 on:
   # - push
-  - pull_request
-
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   compile-sketch:
@@ -100,6 +100,7 @@ jobs:
             - source-path: ./
           sketch-paths: |
             - examples/Example20_SendCustomCommand
+            - examples/NEO-M8P-2/Example2_StartRTCMBase_virtual/Example2_StartRTCMBase_virtual
           enable-warnings-report: true
           enable-deltas-report: true
           # verbose: true
