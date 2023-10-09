@@ -107,8 +107,11 @@ checkUbloxSPI	KEYWORD2
 
 process	KEYWORD2
 processNMEA	KEYWORD2
+processNMEA_v	KEYWORD2
 processRTCMframe	KEYWORD2
+processRTCMframe_v	KEYWORD2
 processRTCM	KEYWORD2
+processRTCM_v	KEYWORD2
 processUBX	KEYWORD2
 processUBXpacket	KEYWORD2
 
