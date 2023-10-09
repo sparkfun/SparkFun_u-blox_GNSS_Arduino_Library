@@ -7978,28 +7978,7 @@ bool SFE_UBLOX_GNSS::powerSaveMode(bool power_save, uint16_t maxWait)
   }
 
   // Now let's change the power setting using UBX-CFG-RXM
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_RXM;
-  packetCfg.len = 0;
-  packetCfg.startingSpot = 0;
-
-  // Ask module for the current power management settings. Loads into payloadCfg.
-  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-    return (false);
-
-  if (power_save)
-  {
-    payloadCfg[1] = 1; // Power Save Mode
-  }
-  else
-  {
-    payloadCfg[1] = 0; // Continuous Mode
-  }
-
-  packetCfg.len = 2;
-  packetCfg.startingSpot = 0;
-
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return setupPowerMode(power_save ? SFE_UBLOX_CFG_RXM_POWERSAVE : SFE_UBLOX_CFG_RXM_CONTINUOUS, maxWait);
 }
 
 // Get Power Save Mode
@@ -8163,6 +8142,51 @@ bool SFE_UBLOX_GNSS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeu
     sendCommand(&packetCfg, maxWait);
     return false; // can't tell if command not acknowledged if maxWait = 0
   }
+}
+
+bool SFE_UBLOX_GNSS::setPowerManagement(sfe_ublox_pms_mode_e mode, uint16_t period, uint16_t onTime, uint16_t maxWait)
+{
+  // INVALID only valid in response
+  if (mode == SFE_UBLOX_PMS_MODE_INVALID)
+    return false;
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PMS;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  packetCfg.payload[0] = 0x0; //message version
+  packetCfg.payload[1] = mode;
+  // only valid if mode==SFE_UBLOX_PMS_MODE_INTERVAL
+  if (mode == SFE_UBLOX_PMS_MODE_INTERVAL)
+  {
+    packetCfg.payload[2] = period >> 8;
+    packetCfg.payload[3] = period & 0xff;
+    packetCfg.payload[4] = onTime >> 8;
+    packetCfg.payload[5] = onTime & 0xff;
+  }
+  else
+  {
+    packetCfg.payload[2] = 0;
+    packetCfg.payload[3] = 0;
+    packetCfg.payload[4] = 0;
+    packetCfg.payload[5] = 0;
+  }
+  packetCfg.payload[6] = 0x0; //reserved
+  packetCfg.payload[7] = 0x0; //reserved
+  return sendCommand(&packetCfg, maxWait);
+}
+
+bool SFE_UBLOX_GNSS::setupPowerMode(sfe_ublox_rxm_mode_e mode, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  packetCfg.payload[0] = 0x0; //reserved
+  packetCfg.payload[1] = mode; //low power mode
+
+  return sendCommand(&packetCfg, maxWait);
 }
 
 // Dynamic Platform Model
@@ -18551,49 +18575,4 @@ int8_t SFE_UBLOX_GNSS::extractSignedChar(ubxPacket *msg, uint16_t spotToStart)
 
   stSignedByte.unsignedByte = extractByte(msg, spotToStart);
   return (stSignedByte.signedByte);
-}
-
-boolean SFE_UBLOX_GNSS::setPMS(sfe_ublox_pms_mode_e mode, uint16_t period, uint16_t onTime, uint16_t maxWait)
-{
-  // INVALID only valid in response
-  if (mode == SFE_UBLOX_PMS_MODE_INVALID)
-    return false;
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_PMS;
-  packetCfg.len = 8;
-  packetCfg.startingSpot = 0;
-
-  packetCfg.payload[0] = 0x0; //message version
-  packetCfg.payload[1] = mode;
-  // only valid if mode==SFE_UBLOX_PMS_MODE_INTERVAL
-  if (mode == SFE_UBLOX_PMS_MODE_INTERVAL)
-  {
-    packetCfg.payload[2] = period >> 8;
-    packetCfg.payload[3] = period & 0xff;
-    packetCfg.payload[4] = onTime >> 8;
-    packetCfg.payload[5] = onTime & 0xff;
-  }
-  else
-  {
-    packetCfg.payload[2] = 0;
-    packetCfg.payload[3] = 0;
-    packetCfg.payload[4] = 0;
-    packetCfg.payload[5] = 0;
-  }
-  packetCfg.payload[6] = 0x0; //reserved
-  packetCfg.payload[7] = 0x0; //reserved
-  return sendCommand(&packetCfg, maxWait);
-}
-
-boolean SFE_UBLOX_GNSS::setRXM(sfe_ublox_rxm_mode_e mode, uint16_t maxWait)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_RXM;
-  packetCfg.len = 2;
-  packetCfg.startingSpot = 0;
-
-  packetCfg.payload[0] = 0x0; //reserved
-  packetCfg.payload[1] = mode; //low power mode
-
-  return sendCommand(&packetCfg, maxWait);
 }

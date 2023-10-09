@@ -681,8 +681,8 @@ getLatestNMEAGNZDA	KEYWORD2
 setNMEAGNZDAcallback	KEYWORD2
 setNMEAGNZDAcallbackPtr	KEYWORD2
 
-setPMS	KEYWORD2
-setRXM	KEYWORD2
+setupPowerMode	KEYWORD2
+setPowerManagement	KEYWORD2
 
 extractLong	KEYWORD2
 extractSignedLong	KEYWORD2
