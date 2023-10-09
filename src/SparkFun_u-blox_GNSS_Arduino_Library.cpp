@@ -2288,11 +2288,16 @@ bool SFE_UBLOX_GNSS::processThisNMEA()
 // This is the default or generic NMEA processor. We're only going to pipe the data to serial port so we can see it.
 // User could overwrite this function to pipe characters to nmea.process(c) of tinyGPS or MicroNMEA
 // Or user could pipe each character to a buffer, radio, etc.
-void SFE_UBLOX_GNSS::processNMEA(char incoming)
+void SFE_UBLOX_GNSS::processNMEA_v(char incoming)
 {
   // If user has assigned an output port then pipe the characters there
   if (_nmeaOutputPort != NULL)
     _nmeaOutputPort->write(incoming); // Echo this byte to the serial port
+}
+
+void SFE_UBLOX_GNSS::processNMEA(char incoming)
+{
+  processNMEA_v(incoming);
 }
 
 #ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
@@ -2882,7 +2887,7 @@ nmeaAutomaticFlags *SFE_UBLOX_GNSS::getNMEAFlagsPtr()
 // Byte 2: 10-bits of length of this packet including the first two-ish header bytes, + 6.
 // byte 3 + 4 bits: Msg type 12 bits
 // Example: D3 00 7C 43 F0 ... / 0x7C = 124+6 = 130 bytes in this packet, 0x43F = Msg type 1087
-SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter)
+SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe_v(uint8_t incoming, uint16_t *rtcmFrameCounter)
 {
   static uint16_t rtcmLen = 0;
 
@@ -2912,10 +2917,15 @@ SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint
   return (*rtcmFrameCounter == rtcmLen) ? SFE_UBLOX_SENTENCE_TYPE_NONE : SFE_UBLOX_SENTENCE_TYPE_RTCM;
 }
 
+SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter)
+{
+  return processRTCMframe_v(incoming, rtcmFrameCounter);
+}
+
 // This function is called for each byte of an RTCM frame
 // Ths user can overwrite this function and process the RTCM frame as they please
 // Bytes can be piped to Serial or other interface. The consumer could be a radio or the internet (Ntrip broadcaster)
-void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
+void SFE_UBLOX_GNSS::processRTCM_v(uint8_t incoming)
 {
   // Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
@@ -2928,6 +2938,11 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   //   if(rtcmFrameCounter % 16 == 0) _debugSerial->println();
 
   (void)incoming; // Do something with incoming just to get rid of the pesky compiler warning!
+}
+
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
+{
+  processRTCM_v(incoming);
 }
 
 // Given a character, file it away into the uxb packet structure
