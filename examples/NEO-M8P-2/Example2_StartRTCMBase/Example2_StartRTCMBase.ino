@@ -29,7 +29,30 @@
 #include <Wire.h> //Needed for I2C to GNSS
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GNSS myGNSS;
+
+class MY_SFE_UBLOX_GNSS : public SFE_UBLOX_GNSS {
+
+  friend SFE_UBLOX_GNSS;
+
+public:
+  MY_SFE_UBLOX_GNSS()
+  {
+    setUserContext(this);
+  }
+
+protected:
+  void myProcessRTCM(uint8_t incoming)
+  {
+    //Let's just pretty-print the HEX values for now
+    if (rtcmFrameCounter % 16 == 0) Serial.println();
+    Serial.print(F(" "));
+    if (incoming < 0x10) Serial.print(F("0"));
+    Serial.print(incoming, HEX);
+  }
+
+};
+
+MY_SFE_UBLOX_GNSS myGNSS;
 
 void setup()
 {
@@ -156,9 +179,11 @@ void loop()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  //Let's just pretty-print the HEX values for now
-  if (myGNSS.rtcmFrameCounter % 16 == 0) Serial.println();
-  Serial.print(F(" "));
-  if (incoming < 0x10) Serial.print(F("0"));
-  Serial.print(incoming, HEX);
+  MY_SFE_UBLOX_GNSS *me;
+
+  // jump into our instance
+  if ((me = static_cast<MY_SFE_UBLOX_GNSS *>(this)) != NULL)
+  {
+    me->myProcessRTCM(incoming);
+  }
 }

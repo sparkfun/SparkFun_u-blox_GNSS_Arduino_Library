@@ -682,6 +682,10 @@ public:
   bool setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
   size_t getPacketCfgSpaceRemaining();              // Returns the number of free bytes remaining in packetCfgPayload
 
+  // User context
+  void setUserContext(void *userContext);          // Sets user context
+  void *getUserContext(void);                      // Retrive user context
+
   // Begin communication with the GNSS. Advanced users can assume success if required. Useful if the port is already outputting messages at high navigation rate.
   // Begin will then return true if "signs of life" have been seen: reception of _any_ valid UBX packet or _any_ valid NMEA header.
   // By default use the default I2C address, and use Wire port
@@ -1708,6 +1712,7 @@ private:
   SPIClass *_spiPort; // The instance of SPIClass
   uint8_t _csPin;     // The chip select pin
   uint32_t _spiSpeed; // The speed to use for SPI (Hz)
+  void *_userContext; // Custom user context as callback context
 
   uint8_t _gpsI2Caddress = 0x42; // Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
   // This can be changed using the ublox configuration software

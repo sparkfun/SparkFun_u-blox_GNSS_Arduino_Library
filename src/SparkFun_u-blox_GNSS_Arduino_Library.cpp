@@ -633,6 +633,18 @@ size_t SFE_UBLOX_GNSS::getPacketCfgSpaceRemaining()
   return (packetCfgPayloadSize - packetCfg.len);
 }
 
+// Sets user context
+void SFE_UBLOX_GNSS::setUserContext(void *userContext)
+{
+  _userContext = userContext;
+}
+
+// Retrive user context
+void *SFE_UBLOX_GNSS::getUserContext(void)
+{
+  return _userContext;
+}
+
 // Initialize the I2C port
 bool SFE_UBLOX_GNSS::begin(TwoWire &wirePort, uint8_t deviceAddress, uint16_t maxWait, bool assumeSuccess)
 {
