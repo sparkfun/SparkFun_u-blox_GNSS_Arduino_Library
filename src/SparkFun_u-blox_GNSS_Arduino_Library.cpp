@@ -2288,11 +2288,16 @@ bool SFE_UBLOX_GNSS::processThisNMEA()
 // This is the default or generic NMEA processor. We're only going to pipe the data to serial port so we can see it.
 // User could overwrite this function to pipe characters to nmea.process(c) of tinyGPS or MicroNMEA
 // Or user could pipe each character to a buffer, radio, etc.
-void SFE_UBLOX_GNSS::processNMEA(char incoming)
+void SFE_UBLOX_GNSS::processNMEA_v(char incoming)
 {
   // If user has assigned an output port then pipe the characters there
   if (_nmeaOutputPort != NULL)
     _nmeaOutputPort->write(incoming); // Echo this byte to the serial port
+}
+
+void SFE_UBLOX_GNSS::processNMEA(char incoming)
+{
+  processNMEA_v(incoming);
 }
 
 #ifndef SFE_UBLOX_DISABLE_AUTO_NMEA
@@ -2882,7 +2887,7 @@ nmeaAutomaticFlags *SFE_UBLOX_GNSS::getNMEAFlagsPtr()
 // Byte 2: 10-bits of length of this packet including the first two-ish header bytes, + 6.
 // byte 3 + 4 bits: Msg type 12 bits
 // Example: D3 00 7C 43 F0 ... / 0x7C = 124+6 = 130 bytes in this packet, 0x43F = Msg type 1087
-SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter)
+SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe_v(uint8_t incoming, uint16_t *rtcmFrameCounter)
 {
   static uint16_t rtcmLen = 0;
 
@@ -2912,10 +2917,15 @@ SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint
   return (*rtcmFrameCounter == rtcmLen) ? SFE_UBLOX_SENTENCE_TYPE_NONE : SFE_UBLOX_SENTENCE_TYPE_RTCM;
 }
 
+SFE_UBLOX_GNSS::sfe_ublox_sentence_types_e SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter)
+{
+  return processRTCMframe_v(incoming, rtcmFrameCounter);
+}
+
 // This function is called for each byte of an RTCM frame
 // Ths user can overwrite this function and process the RTCM frame as they please
 // Bytes can be piped to Serial or other interface. The consumer could be a radio or the internet (Ntrip broadcaster)
-void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
+void SFE_UBLOX_GNSS::processRTCM_v(uint8_t incoming)
 {
   // Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
@@ -2928,6 +2938,11 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   //   if(rtcmFrameCounter % 16 == 0) _debugSerial->println();
 
   (void)incoming; // Do something with incoming just to get rid of the pesky compiler warning!
+}
+
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
+{
+  processRTCM_v(incoming);
 }
 
 // Given a character, file it away into the uxb packet structure
@@ -7963,28 +7978,7 @@ bool SFE_UBLOX_GNSS::powerSaveMode(bool power_save, uint16_t maxWait)
   }
 
   // Now let's change the power setting using UBX-CFG-RXM
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_RXM;
-  packetCfg.len = 0;
-  packetCfg.startingSpot = 0;
-
-  // Ask module for the current power management settings. Loads into payloadCfg.
-  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-    return (false);
-
-  if (power_save)
-  {
-    payloadCfg[1] = 1; // Power Save Mode
-  }
-  else
-  {
-    payloadCfg[1] = 0; // Continuous Mode
-  }
-
-  packetCfg.len = 2;
-  packetCfg.startingSpot = 0;
-
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return setupPowerMode(power_save ? SFE_UBLOX_CFG_RXM_POWERSAVE : SFE_UBLOX_CFG_RXM_CONTINUOUS, maxWait);
 }
 
 // Get Power Save Mode
@@ -8150,6 +8144,51 @@ bool SFE_UBLOX_GNSS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeu
   }
 }
 
+bool SFE_UBLOX_GNSS::setPowerManagement(sfe_ublox_pms_mode_e mode, uint16_t period, uint16_t onTime, uint16_t maxWait)
+{
+  // INVALID only valid in response
+  if (mode == SFE_UBLOX_PMS_MODE_INVALID)
+    return false;
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PMS;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  packetCfg.payload[0] = 0x0; //message version
+  packetCfg.payload[1] = mode;
+  // only valid if mode==SFE_UBLOX_PMS_MODE_INTERVAL
+  if (mode == SFE_UBLOX_PMS_MODE_INTERVAL)
+  {
+    packetCfg.payload[2] = period >> 8;
+    packetCfg.payload[3] = period & 0xff;
+    packetCfg.payload[4] = onTime >> 8;
+    packetCfg.payload[5] = onTime & 0xff;
+  }
+  else
+  {
+    packetCfg.payload[2] = 0;
+    packetCfg.payload[3] = 0;
+    packetCfg.payload[4] = 0;
+    packetCfg.payload[5] = 0;
+  }
+  packetCfg.payload[6] = 0x0; //reserved
+  packetCfg.payload[7] = 0x0; //reserved
+  return sendCommand(&packetCfg, maxWait);
+}
+
+bool SFE_UBLOX_GNSS::setupPowerMode(sfe_ublox_rxm_mode_e mode, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  packetCfg.payload[0] = 0x0; //reserved
+  packetCfg.payload[1] = mode; //low power mode
+
+  return sendCommand(&packetCfg, maxWait);
+}
+
 // Dynamic Platform Model
 
 // Change the dynamic platform model using UBX-CFG-NAV5
@@ -8293,6 +8332,7 @@ bool SFE_UBLOX_GNSS::enableGNSS(bool enable, sfe_ublox_gnss_ids_e id, uint16_t m
         payloadCfg[(block * 8) + 4 + 4] |= 0x01; // Set the enable bit in flags (Little Endian)
       else
         payloadCfg[(block * 8) + 4 + 4] &= 0xFE; // Clear the enable bit in flags (Little Endian)
+      break;
     }
   }
 
@@ -8310,8 +8350,6 @@ bool SFE_UBLOX_GNSS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);
 
-  bool retVal = false;
-
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
 
   for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
@@ -8320,11 +8358,11 @@ bool SFE_UBLOX_GNSS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
     {
       // We have a match so check the enable bit in flags
       if ((payloadCfg[(block * 8) + 4 + 4] & 0x01) > 0) // Check the enable bit in flags (Little Endian)
-        retVal = true;
+        return true;
     }
   }
 
-  return (retVal);
+  return false;
 }
 
 // Reset ESF automatic IMU-mount alignment
@@ -17367,6 +17405,21 @@ bool SFE_UBLOX_GNSS::getDiffSoln(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.diffSoln = false; // Since we are about to give this to user, mark this data as stale
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   return (packetUBXNAVPVT->data.flags.bits.diffSoln);
+}
+
+// Get power save mode from NAV-PVT
+bool SFE_UBLOX_GNSS::getNAVPVTPSMMode(uint16_t maxWait)
+{
+  if (packetUBXNAVPVT == NULL)
+    initPacketUBXNAVPVT();     // Check that RAM has been allocated for the PVT data
+  if (packetUBXNAVPVT == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.psmState== false)
+    getPVT(maxWait);
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.psmState= false; // Since we are about to give this to user, mark this data as stale
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  return (packetUBXNAVPVT->data.flags.bits.psmState);
 }
 
 // Get whether head vehicle valid or not

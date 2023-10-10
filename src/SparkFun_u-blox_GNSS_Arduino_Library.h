@@ -581,6 +581,25 @@ enum sfe_ublox_dgnss_mode_e
   SFE_UBLOX_DGNSS_MODE_FIXED      // Ambiguities are fixed whenever possible
 };
 
+// Values for UBX-CFG-PMS
+enum sfe_ublox_pms_mode_e
+{
+  SFE_UBLOX_PMS_MODE_FULLPOWER = 0,
+  SFE_UBLOX_PMS_MODE_BALANCED,
+  SFE_UBLOX_PMS_MODE_INTERVAL,
+  SFE_UBLOX_PMS_MODE_AGGRESSIVE_1HZ,
+  SFE_UBLOX_PMS_MODE_AGGRESSIVE_2HZ,
+  SFE_UBLOX_PMS_MODE_AGGRESSIVE_4HZ,
+  SFE_UBLOX_PMS_MODE_INVALID = 0xff
+};
+
+//Values for UBX-CFG-RXM
+enum sfe_ublox_rxm_mode_e
+{
+  SFE_UBLOX_CFG_RXM_CONTINUOUS = 0,
+  SFE_UBLOX_CFG_RXM_POWERSAVE = 1
+};
+
 //-=-=-=-=-
 
 #ifndef MAX_PAYLOAD_SIZE
@@ -660,7 +679,7 @@ class SFE_UBLOX_GNSS
 {
 public:
   SFE_UBLOX_GNSS(void);
-  ~SFE_UBLOX_GNSS(void);
+  virtual ~SFE_UBLOX_GNSS(void);
 
   // Depending on the sentence type the processor will load characters into different arrays
   enum sfe_ublox_sentence_types_e
@@ -764,8 +783,11 @@ public:
 
   void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);             // Processes NMEA and UBX binary sentences one byte at a time
   void processNMEA(char incoming) __attribute__((weak));                                                           // Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
+  virtual void processNMEA_v(char incoming);                                                                       // Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
   sfe_ublox_sentence_types_e processRTCMframe(uint8_t incoming, uint16_t *rtcmFrameCounter) __attribute__((weak)); // Monitor the incoming bytes for start and length bytes
+  virtual sfe_ublox_sentence_types_e processRTCMframe_v(uint8_t incoming, uint16_t *rtcmFrameCounter);             // Monitor the incoming bytes for start and length bytes
   void processRTCM(uint8_t incoming) __attribute__((weak));                                                        // Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
+  virtual void processRTCM_v(uint8_t incoming);                                                                    // Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
   void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);          // Given a character, file it away into the uxb packet structure
   void processUBXpacket(ubxPacket *msg);                                                                           // Once a packet has been received and validated, identify this packet's class/id and update internal flags
 
@@ -920,6 +942,9 @@ public:
   uint8_t getPowerSaveMode(uint16_t maxWait = defaultMaxWait); // Returns 255 if the sendCommand fails
   bool powerOff(uint32_t durationInMs, uint16_t maxWait = defaultMaxWait);
   bool powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources = VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0, bool forceWhileUsb = true, uint16_t maxWait = defaultMaxWait);
+  // Power Mode Setup. Values period and onTime are only valid if mode is SFE_UBLOX_PMS_MODE_INTERVAL
+  bool setPowerManagement(sfe_ublox_pms_mode_e mode, uint16_t period=0, uint16_t onTime=0, uint16_t maxWait = defaultMaxWait);
+  bool setupPowerMode(sfe_ublox_rxm_mode_e mode, uint16_t maxWait = defaultMaxWait);
 
   // Change the dynamic platform model using UBX-CFG-NAV5
   bool setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = defaultMaxWait);
@@ -1396,6 +1421,7 @@ public:
   uint8_t getFixType(uint16_t maxWait = defaultMaxWait); // Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 
   bool getGnssFixOk(uint16_t maxWait = defaultMaxWait); // Get whether we have a valid fix (i.e within DOP & accuracy masks)
+  bool getNAVPVTPSMMode(uint16_t maxWait = defaultMaxWait); // Not fully documented power save mode value
   bool getDiffSoln(uint16_t maxWait = defaultMaxWait);  // Get whether differential corrections were applied
   bool getHeadVehValid(uint16_t maxWait = defaultMaxWait);
   uint8_t getCarrierSolutionType(uint16_t maxWait = defaultMaxWait); // Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
