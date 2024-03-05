@@ -1877,6 +1877,51 @@ typedef struct
   uint8_t reserved3[8];
 } UBX_CFG_TMODE3_data_t;
 
+
+// UBX-CFG-SMGR (0x06 0x62): Synchronization manager configuration
+const uint16_t UBX_CFG_SMGR_LEN = 20;
+
+typedef struct
+{
+  uint8_t version;                       /* Message version (0x00 for this version) */
+  uint8_t minGNSSFix;                    /* Minimum number of GNSS fixes before we commit to use it as a source */
+  uint16_t maxFreqChangeRate;            /* Maximum frequency change rate during disciplining. Must not exceed 30ppb/s*/
+  uint16_t maxPhaseCorrRate;             /* Maximum phase correction rate in coherent time pulse mode. */
+  uint16_t reserved1;                    /* Reserved. Do not use */
+  uint16_t freqTolerance;                /* Freq limit of possible deviation from nominal */
+  uint16_t timeTolerance;                /* Time pulse limit of possible deviation from nominal */
+  union {
+    uint16_t messageCfgX;
+    struct {
+      uint8_t measInternal       : 1;    /* 1 = report the estimated offset of the internal oscillator based on the oscillator model */
+      uint8_t measGNSS           : 1;    /* 1 = report the internal oscillator's offset relative to GNSS */
+      uint8_t measEXTINT0        : 1;    /* 1 = report the internal oscillator's offset relative to the source on EXTINT0 */
+      uint8_t measEXTINT1        : 1;    /* 1 = report the internal oscillator's offset relative to the source on EXTINT1 */
+    } messageCfg;
+  };
+  uint16_t maxSlewRate;
+  union {
+    uint32_t flagsX;
+    struct {
+      uint8_t disableInternal    : 1;    /* 1 = disable disciplining of the internal oscillator */
+      uint8_t disableExternal    : 1;    /* 1 = disable disciplining of the external oscillator */
+      uint8_t preferenceMode     : 1;    /* Reference selection preference: 0 - best frequency accuracy; 1 - best phase accuracy */
+      uint8_t enableGNSS         : 1;    /* 1 = enable use of GNSS as synchronization source */
+      uint8_t enableEXTINT0      : 1;    /* 1 = enable use of EXTINT0 as synchronization source */
+      uint8_t enableEXTINT1      : 1;    /* 1 = enable use of EXTINT1 as synchronization source */
+      uint8_t enableHostMeasInt  : 1;    /* 1 = enable use of host measurements on the internal oscillator as synchronization source */
+      uint8_t enableHostMeasExt  : 1;    /* 1 = enable use of host measurements on the external oscillator as synchronization source */
+      uint8_t reserved           : 2;    /* Reserved. Do not use */
+      uint8_t useAnyFix          : 1;    /* 0 - use over-determined navigation solutions only; 1 - use any fix */
+      uint8_t disableMaxSlewRate : 1;    /* 1 - don't use the value in the field maxSlewRate */
+      uint8_t issueFreqWarn      : 1;    /* 1 - issue a warning (via UBX-TIM-TOS flag) when frequency uncertainty exceeds freqTolerance */
+      uint8_t issueTimeWarn      : 1;    /* 1 = issue a warning (via UBX-TIM-TOS flag) when time uncertainty exceeds timeTolerance */
+      uint8_t TPCoherent         : 2;    /* Control time pulse coherency: 0 - Coherent pulses; 1 - Non-coherent pulses; 2 - Post-initialization coherent pulses*/
+      uint8_t disableOffset      : 1;    /* 1 = disable automatic storage of oscillator offset */
+    } flags;
+  };
+} UBX_CFG_SMGR_data_t;
+
 // MON-specific structs
 
 // UBX-MON-HW (0x0A 0x09): Hardware status

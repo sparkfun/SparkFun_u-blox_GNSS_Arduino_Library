@@ -231,6 +231,7 @@ const uint8_t UBX_CFG_RINV = 0x34;      // Contents of Remote Inventory
 const uint8_t UBX_CFG_RST = 0x04;       // Reset Receiver / Clear Backup Data Structures. Used to reset device.
 const uint8_t UBX_CFG_RXM = 0x11;       // RXM configuration
 const uint8_t UBX_CFG_SBAS = 0x16;      // SBAS configuration
+const uint8_t UBX_CFG_SMGR = 0x62;      // Synchronization manager configuration
 const uint8_t UBX_CFG_TMODE3 = 0x71;    // Time Mode Settings 3. Used to enable Survey In Mode
 const uint8_t UBX_CFG_TP5 = 0x31;       // Time Pulse Parameters
 const uint8_t UBX_CFG_USB = 0x1B;       // USB Configuration
