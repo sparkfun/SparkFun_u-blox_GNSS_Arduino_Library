@@ -412,10 +412,17 @@ const uint8_t UBX_RXM_SPARTNKEY = 0x36; // Poll/transfer dynamic SPARTN keys
 const uint8_t UBX_SEC_UNIQID = 0x03; // Unique chip ID
 
 // Class: TIM
-// The following are used to configure the TIM UBX messages (timing messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
-const uint8_t UBX_TIM_TM2 = 0x03;  // Time mark data
-const uint8_t UBX_TIM_TP = 0x01;   // Time Pulse Timedata
-const uint8_t UBX_TIM_VRFY = 0x06; // Sourced Time Verification
+// The following are used to configure the TIM UBX messages (timing messages). Descriptions from UBX messages overview (u-blox M8 Protocol Specification Document page 178)
+const uint8_t UBX_TIM_DOSC = 0x11;    // Disciplined oscillator control
+const uint8_t UBX_TIM_FCHG = 0x16;    // Oscillator freq changed notification
+const uint8_t UBX_TIM_HOC = 0x17;     // Host oscillator control
+const uint8_t UBX_TIM_SMEAS = 0x13;   // Source measurement
+const uint8_t UBX_TIM_SVIN = 0x04;    // Survey-in data
+const uint8_t UBX_TIM_TM2 = 0x03;     // Time mark data
+const uint8_t UBX_TIM_TOS = 0x12;     // Time Pulse time and freq data
+const uint8_t UBX_TIM_TP = 0x01;      // Time Pulse time data
+const uint8_t UBX_TIM_VCOCAL = 0x15;  // Calibration
+const uint8_t UBX_TIM_VRFY = 0x06;    // Sourced Time Verification
 
 // Class: UPD
 // The following are used to configure the UPD UBX messages (firmware update messages). Descriptions from UBX messages overview (ZED-F9P Interface Description Document page 36)
@@ -1288,6 +1295,11 @@ public:
   void flushTIMTM2();                                                                                                 // Mark all the data as read/stale
   void logTIMTM2(bool enabled = true);                                                                                // Log data to file buffer
 
+  bool setAutoTIMSMEA(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Enable/disable automatic TIM TM2 reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoTIMSMEAcallback(void (*callbackPointer)(UBX_TIM_SMEAS_data_t), uint16_t maxWait = defaultMaxWait);         // Enable automatic TM2 reports at the navigation frequency. Data is accessed from the callback.
+  void flushTIMSMEA();                                                                                                 // Mark all the data as read/stale
+  void logTIMSMEA(bool enabled = true);                                                                                // Log data to file buffer
+
   // Sensor fusion (dead reckoning) (ESF)
 
   bool getEsfAlignment(uint16_t maxWait = defaultMaxWait);                                                            // ESF ALG Helper
@@ -1571,13 +1583,13 @@ public:
 
   // Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
   // From v2.0: These are public. The user can call these to extract data from custom packets
-  uint64_t extractLongLong(ubxPacket *msg, uint16_t spotToStart);  // Combine eight bytes from payload into uint64_t
-  uint32_t extractLong(ubxPacket *msg, uint16_t spotToStart);      // Combine four bytes from payload into long
-  int32_t extractSignedLong(ubxPacket *msg, uint16_t spotToStart); // Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
-  uint16_t extractInt(ubxPacket *msg, uint16_t spotToStart);       // Combine two bytes from payload into int
-  int16_t extractSignedInt(ubxPacket *msg, uint16_t spotToStart);
-  uint8_t extractByte(ubxPacket *msg, uint16_t spotToStart);      // Get byte from payload
-  int8_t extractSignedChar(ubxPacket *msg, uint16_t spotToStart); // Get signed 8-bit value from payload
+  static uint64_t extractLongLong(const ubxPacket *msg, uint16_t spotToStart);  // Combine eight bytes from payload into uint64_t
+  static uint32_t extractLong(const ubxPacket *msg, uint16_t spotToStart);      // Combine four bytes from payload into long
+  static int32_t extractSignedLong(const ubxPacket *msg, uint16_t spotToStart); // Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
+  static uint16_t extractInt(const ubxPacket *msg, uint16_t spotToStart);       // Combine two bytes from payload into int
+  static int16_t extractSignedInt(const ubxPacket *msg, uint16_t spotToStart);
+  static uint8_t extractByte(const ubxPacket *msg, uint16_t spotToStart);      // Get byte from payload
+  static int8_t extractSignedChar(const ubxPacket *msg, uint16_t spotToStart); // Get signed 8-bit value from payload
 
   // Pointers to storage for the "automatic" messages
   // RAM is allocated for these if/when required.
@@ -1612,7 +1624,8 @@ public:
   UBX_CFG_PRT_t *packetUBXCFGPRT = NULL;   // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_CFG_RATE_t *packetUBXCFGRATE = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
-  UBX_TIM_TM2_t *packetUBXTIMTM2 = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_TIM_SMEAS_t *packetUBXTIMSMEAS = NULL;  // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_TIM_TM2_t *packetUBXTIMTM2 = NULL;      // Pointer to struct. RAM will be allocated for this if/when necessary
 
   UBX_ESF_ALG_t *packetUBXESFALG = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_ESF_INS_t *packetUBXESFINS = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1704,6 +1717,7 @@ private:
   bool initPacketUBXCFGPRT();           // Allocate RAM for packetUBXCFGPRT and initialize it
   bool initPacketUBXCFGRATE();          // Allocate RAM for packetUBXCFGRATE and initialize it
   bool initPacketUBXTIMTM2();           // Allocate RAM for packetUBXTIMTM2 and initialize it
+  bool initPacketUBXTIMSMEA();          // Allocate RAM for packetUBXTIMSMEA and initialize it
   bool initPacketUBXESFALG();           // Allocate RAM for packetUBXESFALG and initialize it
   bool initPacketUBXESFSTATUS();        // Allocate RAM for packetUBXESFSTATUS and initialize it
   bool initPacketUBXESFINS();           // Allocate RAM for packetUBXESFINS and initialize it
