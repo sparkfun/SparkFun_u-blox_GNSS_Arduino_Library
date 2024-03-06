@@ -14244,7 +14244,7 @@ bool SFE_UBLOX_GNSS::setAutoTIMSMEAcallback(void (*callbackPointer)(UBX_TIM_SMEA
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial->println(F("setAutoTIMTM2callback: RAM alloc failed!"));
+      _debugSerial->println(F("setAutoTIMSMEAcallback: RAM alloc failed!"));
 #endif
     return (false);
   }

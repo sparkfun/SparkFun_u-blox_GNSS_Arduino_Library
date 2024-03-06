@@ -1295,8 +1295,8 @@ public:
   void flushTIMTM2();                                                                                                 // Mark all the data as read/stale
   void logTIMTM2(bool enabled = true);                                                                                // Log data to file buffer
 
-  bool setAutoTIMSMEA(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Enable/disable automatic TIM TM2 reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-  bool setAutoTIMSMEAcallback(void (*callbackPointer)(UBX_TIM_SMEAS_data_t), uint16_t maxWait = defaultMaxWait);         // Enable automatic TM2 reports at the navigation frequency. Data is accessed from the callback.
+  bool setAutoTIMSMEA(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                           // Enable/disable automatic TIM SMEA reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoTIMSMEAcallback(void (*callbackPointer)(UBX_TIM_SMEAS_data_t), uint16_t maxWait = defaultMaxWait);       // Enable automatic SMEA reports at the navigation frequency. Data is accessed from the callback.
   void flushTIMSMEA();                                                                                                 // Mark all the data as read/stale
   void logTIMSMEA(bool enabled = true);                                                                                // Log data to file buffer
 
