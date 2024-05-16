@@ -31,11 +31,9 @@
 
 #include <SoftwareSerial.h>
 
-//#define mySerial Serial1 // Uncomment this line to connect via Serial1
+#define mySerial Serial1 // Uncomment this line to connect via Serial1
 // - or -
 //SoftwareSerial mySerial(10, 11); // Uncomment this line to connect via SoftwareSerial(RX, TX). Connect pin 10 to GNSS TX pin.
-// - or -
-#define mySerial Serial // Uncomment this line if you just want to keep using Serial
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS myGNSS;
