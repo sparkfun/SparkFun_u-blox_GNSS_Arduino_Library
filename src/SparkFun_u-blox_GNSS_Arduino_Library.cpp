@@ -7725,25 +7725,33 @@ bool SFE_UBLOX_GNSS::getProtocolVersion(uint16_t maxWait)
   // }
 
   // We will step through the payload looking at each extension field of 30 bytes
-  for (uint8_t extensionNumber = 0; extensionNumber < 10; extensionNumber++)
+  char *ptr;
+  for (uint8_t extensionNumber = 0; extensionNumber < ((packetCfg.len - 40) / 30); extensionNumber++)
   {
-    // Now we need to find "PROTVER=18.00" in the incoming byte stream
-    if ((payloadCfg[(30 * extensionNumber) + 0] == 'P') && (payloadCfg[(30 * extensionNumber) + 6] == 'R'))
+    ptr = strstr((const char *)&payloadCfg[(30 * extensionNumber)], "PROTVER="); // Check for PROTVER (should be in extension 2)
+    if (ptr != nullptr)
     {
-      moduleSWVersion->versionHigh = (payloadCfg[(30 * extensionNumber) + 8] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 9] - '0');  // Convert '18' to 18
-      moduleSWVersion->versionLow = (payloadCfg[(30 * extensionNumber) + 11] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 12] - '0'); // Convert '00' to 00
-      moduleSWVersion->moduleQueried = true;                                                                                                // Mark this data as new
+      ptr += strlen("PROTVER="); // Point to the protocol version
+      int protHi = 0;
+      int protLo = 0;
+      int scanned = sscanf(ptr, "%d.%d", &protHi, &protLo);
+      if (scanned == 2) // Check we extracted the firmware version successfully
+      {
+        moduleSWVersion->versionHigh = protHi;
+        moduleSWVersion->versionLow = protLo;
+        moduleSWVersion->moduleQueried = true; // Mark this data as new
 
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
-      if (_printDebug == true)
-      {
-        _debugSerial->print(F("Protocol version: "));
-        _debugSerial->print(moduleSWVersion->versionHigh);
-        _debugSerial->print(F("."));
-        _debugSerial->println(moduleSWVersion->versionLow);
-      }
+        if (_printDebug == true)
+        {
+          _debugSerial->print(F("Protocol version: "));
+          _debugSerial->print(moduleSWVersion->versionHigh);
+          _debugSerial->print(F("."));
+          _debugSerial->println(moduleSWVersion->versionLow);
+        }
 #endif
-      return (true); // Success!
+        return (true); // Success!
+      }
     }
   }
 

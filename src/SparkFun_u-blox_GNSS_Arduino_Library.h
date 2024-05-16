@@ -604,7 +604,7 @@ enum sfe_ublox_rxm_mode_e
 
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
-#define MAX_PAYLOAD_SIZE 256 // We need ~220 bytes for getProtocolVersion on most ublox modules
+#define MAX_PAYLOAD_SIZE 276 // We need >=250 bytes for getProtocolVersion on the NEO-F10N
 //#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
 #endif
 
