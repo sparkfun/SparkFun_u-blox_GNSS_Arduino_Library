@@ -8236,7 +8236,10 @@ uint16_t SFE_UBLOX_GNSS::getNAV5PositionAccuracy(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return 0;
 
-  return (payloadCfg[18]);
+
+  uint16_t pAcc = ((uint16_t)payloadCfg[19]) << 8;
+  pAcc |= payloadCfg[18];
+  return (pAcc);
 }
 
 
