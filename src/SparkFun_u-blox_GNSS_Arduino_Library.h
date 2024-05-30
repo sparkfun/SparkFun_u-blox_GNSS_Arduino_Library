@@ -951,7 +951,7 @@ public:
   uint8_t getDynamicModel(uint16_t maxWait = defaultMaxWait); // Get the dynamic model - returns 255 if the sendCommand fails
 
   // Change the position accuracy using UBX-CFG-NAV5
-  bool setNAV5PositionAccuracy(uint16_t meters = 100, uint16_t maxWait = defaultMaxWait);
+  bool setNAV5PositionAccuracy(uint16_t metres = 100, uint16_t maxWait = defaultMaxWait);
   uint16_t getNAV5PositionAccuracy(uint16_t maxWait = defaultMaxWait); // Get the position accuracy - returns 0 if the sendCommand fails
 
 

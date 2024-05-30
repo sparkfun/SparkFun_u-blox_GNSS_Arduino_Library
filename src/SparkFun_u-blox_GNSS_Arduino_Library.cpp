@@ -8202,7 +8202,7 @@ bool SFE_UBLOX_GNSS::setupPowerMode(sfe_ublox_rxm_mode_e mode, uint16_t maxWait)
 
 // Change the Position Accuracy using UBX-CFG-NAV5
 // Value provided in meters
-bool SFE_UBLOX_GNSS::setNAV5PositionAccuracy(uint16_t meters, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setNAV5PositionAccuracy(uint16_t metres, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_NAV5;
@@ -8213,9 +8213,9 @@ bool SFE_UBLOX_GNSS::setNAV5PositionAccuracy(uint16_t meters, uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);
 
-  payloadCfg[0] = 0x10;            // mask: set only the posMark
-  payloadCfg[1] = 0x00;            // mask
-  payloadCfg[18] = meters; 
+  payloadCfg[0] |= 0x10; // mask: set the posMark, leave other bits unchanged
+  payloadCfg[18] = metres & 0xFF;
+  payloadCfg[19] = metres >> 8;
 
   packetCfg.len = 36;
   packetCfg.startingSpot = 0;
