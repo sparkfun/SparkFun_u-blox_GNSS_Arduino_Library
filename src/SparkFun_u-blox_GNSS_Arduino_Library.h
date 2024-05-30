@@ -950,6 +950,10 @@ public:
   bool setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = defaultMaxWait);
   uint8_t getDynamicModel(uint16_t maxWait = defaultMaxWait); // Get the dynamic model - returns 255 if the sendCommand fails
 
+  // Change the position accuracy using UBX-CFG-NAV5
+  bool setNAV5PositionAccuracy(uint16_t metres, uint16_t maxWait = defaultMaxWait);
+  uint16_t getNAV5PositionAccuracy(uint16_t maxWait = defaultMaxWait); // Get the position accuracy - returns 0 if the sendCommand fails
+
   // Reset / enable / configure the odometer
   bool resetOdometer(uint16_t maxWait = defaultMaxWait); // Reset the odometer
   bool enableOdometer(bool enable = true, uint16_t maxWait = defaultMaxWait); // Enable / disable the odometer

@@ -195,6 +195,9 @@ powerOffWithInterrupt	KEYWORD2
 setDynamicModel	KEYWORD2
 getDynamicModel	KEYWORD2
 
+setNAV5PositionAccuracy	KEYWORD2
+getNAV5PositionAccuracy	KEYWORD2
+
 resetOdometer	KEYWORD2
 enableOdometer	KEYWORD2
 getOdometerConfig	KEYWORD2
