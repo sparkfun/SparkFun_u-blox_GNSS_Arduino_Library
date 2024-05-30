@@ -8263,8 +8263,7 @@ bool SFE_UBLOX_GNSS::setDynamicModel(dynModel newDynamicModel, uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);
 
-  payloadCfg[0] = 0x01;            // mask: set only the dyn bit (0)
-  payloadCfg[1] = 0x00;            // mask
+  payloadCfg[0] |= 0x01;            // mask: set only the dyn bit (0)
   payloadCfg[2] = newDynamicModel; // dynModel
 
   packetCfg.len = 36;
