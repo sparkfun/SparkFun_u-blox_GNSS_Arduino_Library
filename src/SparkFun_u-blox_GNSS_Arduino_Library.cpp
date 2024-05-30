@@ -8213,7 +8213,7 @@ bool SFE_UBLOX_GNSS::setNAV5PositionAccuracy(uint16_t metres, uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);
 
-  payloadCfg[0] |= 0x10; // mask: set the posMark, leave other bits unchanged
+  payloadCfg[0] |= 0x10; // mask: set the posMask, leave other bits unchanged
   payloadCfg[18] = metres & 0xFF;
   payloadCfg[19] = metres >> 8;
 
