@@ -954,7 +954,6 @@ public:
   bool setNAV5PositionAccuracy(uint16_t metres, uint16_t maxWait = defaultMaxWait);
   uint16_t getNAV5PositionAccuracy(uint16_t maxWait = defaultMaxWait); // Get the position accuracy - returns 0 if the sendCommand fails
 
-
   // Reset / enable / configure the odometer
   bool resetOdometer(uint16_t maxWait = defaultMaxWait); // Reset the odometer
   bool enableOdometer(bool enable = true, uint16_t maxWait = defaultMaxWait); // Enable / disable the odometer
