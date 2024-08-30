@@ -114,7 +114,7 @@ For I<sup>2</sup>C communication, please be sure to remove all additional pull-u
 
 ## Compatibility
 
-v2 of the library provides support for generation 8, 9 and 10 u-blox GNSS modules. For generation 6 and 7, please see [this example (depricated)](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/tree/master/examples/Series_6_7/Example1_GetPositionAndTime_Series_6_7).
+v2 of the library provides support for generation 8, 9 and 10 u-blox GNSS modules. For generation 6 and 7, please see [this example (deprecated)](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/tree/master/examples/Series_6_7/Example1_GetPositionAndTime_Series_6_7).
 
 ## Contributing
 
