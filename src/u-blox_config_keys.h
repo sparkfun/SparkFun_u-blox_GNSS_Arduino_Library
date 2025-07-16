@@ -123,6 +123,9 @@ const uint32_t UBLOX_CFG_HW_ANT_CFG_RECOVER = 0x10a30035;      // Automatic reco
 const uint32_t UBLOX_CFG_HW_ANT_SUP_SWITCH_PIN = 0x20a30036;   // ANT1 PIO number
 const uint32_t UBLOX_CFG_HW_ANT_SUP_SHORT_PIN = 0x20a30037;    // ANT0 PIO number
 const uint32_t UBLOX_CFG_HW_ANT_SUP_OPEN_PIN = 0x20a30038;     // ANT2 PIO number
+const uint32_t UBLOX_CFG_HW_ANT_ON_SHORT_US = 0x30a3003c;      // Delay in microseconds before antenna is turned on after short detection
+const uint32_t UBLOX_CFG_HW_SENS_WOM_MODE = 0x20a30063;        // Wake on Motion mode
+const uint32_t UBLOX_CFG_HW_SENS_WOM_THLD = 0x20a30064;        // Wake on Motion threshold
 const uint32_t UBLOX_CFG_HW_ANT_SUP_ENGINE = 0x20a30054;       // Antenna supervisor engine selection
 const uint32_t UBLOX_CFG_HW_ANT_SUP_SHORT_THR = 0x20a30055;    // Antenna supervisor MADC engine short detection threshold
 const uint32_t UBLOX_CFG_HW_ANT_SUP_OPEN_THR = 0x20a30056;     // Antenna supervisor MADC engine open detection threshold
@@ -181,6 +184,7 @@ const uint32_t UBLOX_CFG_LOGFILTER_POSITION_THRS = 0x40de0008;        // Positio
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const uint32_t UBLOX_CFG_MOT_GNSSSPEED_THRS = 0x20250038; // GNSS speed threshold below which platform is considered as stationary (a.k.a. static hold threshold)
 const uint32_t UBLOX_CFG_MOT_GNSSDIST_THRS = 0x3025003b;  // Distance above which GNSS-based stationary motion is exit (a.k.a. static hold distance threshold)
+const uint32_t UBLOX_CFG_MOT_IMU_FILT_WINDOW = 0x30250016 // Averaging window for IMU measurements in noisy setups in milliseconds
 
 // CFG-MSGOUT: Message output configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -984,6 +988,8 @@ const uint32_t UBLOX_CFG_SBAS_USE_TESTMODE = 0x10360002;  // Use SBAS data when 
 const uint32_t UBLOX_CFG_SBAS_USE_RANGING = 0x10360003;   // Use SBAS GEOs as a ranging source (for navigation)
 const uint32_t UBLOX_CFG_SBAS_USE_DIFFCORR = 0x10360004;  // Use SBAS diﬀerential corrections
 const uint32_t UBLOX_CFG_SBAS_USE_INTEGRITY = 0x10360005; // Use SBAS integrity information
+const uint32_t UBLOX_CFG_SBS_ACCEPT_NOT_IN_PRNMASK = 0x30360008; // Accept corrections from SBAS SV, even if notself included in PRN MASK
+const uint32_t UBLOX_CFG_SBAS_USE_IONOONLY = 0x10360007;  // Use SBAS ionospheric corrections only
 const uint32_t UBLOX_CFG_SBAS_PRNSCANMASK = 0x50360006;   // SBAS PRN search configuration
 
 // CFG-SEC: Security configuration (ZED-F9R)
@@ -991,10 +997,14 @@ const uint32_t UBLOX_CFG_SBAS_PRNSCANMASK = 0x50360006;   // SBAS PRN search con
 const uint32_t UBLOX_CFG_SEC_CFG_LOCK = 0x10f60009;            // Configuration lockdown
 const uint32_t UBLOX_CFG_SEC_CFG_LOCK_UNLOCKGRP1 = 0x30f6000a; // Configuration lockdown exempted group 1
 const uint32_t UBLOX_CFG_SEC_CFG_LOCK_UNLOCKGRP2 = 0x30f6000b; // Configuration lockdown exempted group 2
+const uint32_t UBLOX_CFG_JAMDET_SENSITIVITY_HI = 0x10f60051;   // High sensitivity for jamming detection
 
 // CFG-SFCORE: Sensor fusion (SF) core configuration (ZED-F9R)
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-const uint32_t UBLOX_CFG_SFCORE_USE_SF = 0x10080001; // Use ADR/UDR sensor fusion
+const uint32_t UBLOX_CFG_SFCORE_USE_SF = 0x10080001;      // Use ADR/UDR sensor fusion
+const uint32_t UBLOX_SFCORE_IMU2CRP_LA_X = 0x30080002;    // X coordinate in centimeters of IMU-to-CRP lever-arm in the installation frame
+const uint32_t UBLOX_SFCORE_IMU2CRP_LA_Y = 0x30080003;    // Y coordinate in centimeters of IMU-to-CRP lever-arm in the installation frame
+const uint32_t UBLOX_SFCORE_IMU2CRP_LA_Z = 0x30080004;    // Z coordinate in centimeters of IMU-to-CRP lever-arm in the installation frame
 
 // CFG-SFIMU: Sensor fusion (SF) inertial measurement unit (IMU) configuration (ZED-F9R)
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1010,6 +1020,9 @@ const uint32_t UBLOX_CFG_SFIMU_ACCEL_ACCURACY = 0x30060018;        // Accelerome
 const uint32_t UBLOX_CFG_SFIMU_IMU_EN = 0x1006001d;                // IMU enabled
 const uint32_t UBLOX_CFG_SFIMU_IMU_I2C_SCL_PIO = 0x2006001e;       // SCL PIO of the IMU I2C
 const uint32_t UBLOX_CFG_SFIMU_IMU_I2C_SDA_PIO = 0x2006001f;       // SDA PIO of the IMU I2C
+const uint32_t UBLOX_CFG_IMU2ANT_LA_X = 0x30060020;                // X coordinate in centimeters of IMU-to-antenna lever-arm in the installation frame
+const uint32_t UBLOX_CFG_IMU2ANT_LA_Y = 0x30060021;                // Y coordinate in centimeters of IMU-to-antenna lever-arm in the installation frame
+const uint32_t UBLOX_CFG_IMU2ANT_LA_Z = 0x30060022;                // Z coordinate in centimeters of IMU-to-antenna lever-arm in the installation frame
 const uint32_t UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA = 0x10060027;       // Enable automatic IMU-mount alignment
 const uint32_t UBLOX_CFG_SFIMU_IMU_MNTALG_YAW = 0x4006002d;        // User-defined IMU-mount yaw angle [0, 360]
 const uint32_t UBLOX_CFG_SFIMU_IMU_MNTALG_PITCH = 0x3006002e;      // User-defined IMU-mount pitch angle [-90, 90]
@@ -1032,6 +1045,10 @@ const uint32_t UBLOX_CFG_SFODO_SPEED_BAND = 0x3007000e;        // Speed sensor d
 const uint32_t UBLOX_CFG_SFODO_USE_WT_PIN = 0x1007000f;        // Wheel tick signal enabled
 const uint32_t UBLOX_CFG_SFODO_DIR_PINPOL = 0x10070010;        // Wheel tick direction pin polarity
 const uint32_t UBLOX_CFG_SFODO_DIS_AUTOSW = 0x10070011;        // Disable automatic use of wheel tick or speed data received over the software interface
+const uint32_t UBLOX_CFG_SFODO_IMU2VRP_LA_X = 0x30070012;      // X coordinate in centimeters of IMU-to-VRP lever-arm in the installation frame
+const uint32_t UBLOX_CFG_SFODO_IMU2VRP_LA_Y = 0x30070013;      // Y coordinate in centimeters of IMU-to-VRP lever-arm in the installation frame
+const uint32_t UBLOX_CFG_SFODO_IMU2VRP_LA_Z = 0x30070014;      // Z coordinate in centimeters of IMU-to-VRP lever-arm in the installation frame
+const uint32_t UBLOX_SFODO_DIS_DIR_INFO = 0x1007001c;          // Disable direction information in the odometer data
 
 // CFG-SIGNAL: Satellite systems (GNSS) signal configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
