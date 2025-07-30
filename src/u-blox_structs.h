@@ -2059,7 +2059,7 @@ typedef struct
   uint8_t numMeas;        /* Number of measurements in repeated block */
   uint8_t reserved1[2];   /* Reserved. Do not use. Set as zero */
   uint32_t iTOW;          /* Time of the week [ms] */
-  uint8_t reserved2[2];   /* Reserved. Do not use. Set as zero */
+  uint8_t reserved2[4];   /* Reserved. Do not use. Set as zero */
   UBX_TIM_SMEAS_blockData_t data[DEF_MAX_NUM_TIM_SMEAS_BLOCKS];
 } UBX_TIM_SMEAS_data_t;
 
