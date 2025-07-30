@@ -184,7 +184,7 @@ const uint32_t UBLOX_CFG_LOGFILTER_POSITION_THRS = 0x40de0008;        // Positio
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const uint32_t UBLOX_CFG_MOT_GNSSSPEED_THRS = 0x20250038; // GNSS speed threshold below which platform is considered as stationary (a.k.a. static hold threshold)
 const uint32_t UBLOX_CFG_MOT_GNSSDIST_THRS = 0x3025003b;  // Distance above which GNSS-based stationary motion is exit (a.k.a. static hold distance threshold)
-const uint32_t UBLOX_CFG_MOT_IMU_FILT_WINDOW = 0x30250016 // Averaging window for IMU measurements in noisy setups in milliseconds
+const uint32_t UBLOX_CFG_MOT_IMU_FILT_WINDOW = 0x30250016; // Averaging window for IMU measurements in noisy setups in milliseconds
 
 // CFG-MSGOUT: Message output configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -730,7 +730,7 @@ const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_POSLLH_SPI = 0x20910489;     // Output 
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_POSLLH_UART1 = 0x20910486;   // Output rate of the UBX-NAV2-POSLLH message on port UART1
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_POSLLH_UART2 = 0x20910487;   // Output rate of the UBX-NAV2-POSLLH message on port UART2
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_POSLLH_USB = 0x20910488;     // Output rate of the UBX-NAV2-POSLLH message on port USB
-const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_PVAT_I2C = 0x2091062f        // Output rate of the UBX-NAV2-PVAT message on port I2C
+const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_PVAT_I2C = 0x2091062f;        // Output rate of the UBX-NAV2-PVAT message on port I2C
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_PVAT_SPI = 0x20910633;       // Output rate of the UBX-NAV2-PVAT message on port SPI
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_PVAT_UART1 = 0x20910630;     // Output rate of the UBX-NAV2-PVAT message on port UART1
 const uint32_t UBLOX_CFG_MSGOUT_UBX_NAV2_PVAT_UART2 = 0x20910631;     // Output rate of the UBX-NAV2-PVAT message on port UART2
