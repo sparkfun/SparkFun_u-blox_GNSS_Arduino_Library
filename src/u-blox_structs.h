@@ -57,6 +57,10 @@
 #define DEF_MAX_NUM_ESF_MEAS 31 // numMeas is 5 bits, indicating up to 31 groups could be received
 #endif
 
+#ifndef DEF_MAX_NUM_TIM_SMEAS_BLOCKS
+#define DEF_MAX_NUM_TIM_SMEAS_BLOCKS  6
+#endif
+
 // Additional flags and pointers that need to be stored with each message type
 struct ubxAutomaticFlags
 {
@@ -1877,6 +1881,51 @@ typedef struct
   uint8_t reserved3[8];
 } UBX_CFG_TMODE3_data_t;
 
+
+// UBX-CFG-SMGR (0x06 0x62): Synchronization manager configuration
+const uint16_t UBX_CFG_SMGR_LEN = 20;
+
+typedef struct
+{
+  uint8_t version;                       /* Message version (0x00 for this version) */
+  uint8_t minGNSSFix;                    /* Minimum number of GNSS fixes before we commit to use it as a source */
+  uint16_t maxFreqChangeRate;            /* Maximum frequency change rate during disciplining. Must not exceed 30ppb/s*/
+  uint16_t maxPhaseCorrRate;             /* Maximum phase correction rate in coherent time pulse mode. */
+  uint8_t reserved1[2];                  /* Reserved. Do not use */
+  uint16_t freqTolerance;                /* Freq limit of possible deviation from nominal */
+  uint16_t timeTolerance;                /* Time pulse limit of possible deviation from nominal */
+  union {
+    uint16_t all;
+    struct {
+      uint16_t measInternal       : 1;    /* 1 = report the estimated offset of the internal oscillator based on the oscillator model */
+      uint16_t measGNSS           : 1;    /* 1 = report the internal oscillator's offset relative to GNSS */
+      uint16_t measEXTINT0        : 1;    /* 1 = report the internal oscillator's offset relative to the source on EXTINT0 */
+      uint16_t measEXTINT1        : 1;    /* 1 = report the internal oscillator's offset relative to the source on EXTINT1 */
+    } bits;
+  } messageCfg;
+  uint16_t maxSlewRate;
+  union {
+    uint32_t all;
+    struct {
+      uint32_t disableInternal    : 1;    /* 1 = disable disciplining of the internal oscillator */
+      uint32_t disableExternal    : 1;    /* 1 = disable disciplining of the external oscillator */
+      uint32_t preferenceMode     : 1;    /* Reference selection preference: 0 - best frequency accuracy; 1 - best phase accuracy */
+      uint32_t enableGNSS         : 1;    /* 1 = enable use of GNSS as synchronization source */
+      uint32_t enableEXTINT0      : 1;    /* 1 = enable use of EXTINT0 as synchronization source */
+      uint32_t enableEXTINT1      : 1;    /* 1 = enable use of EXTINT1 as synchronization source */
+      uint32_t enableHostMeasInt  : 1;    /* 1 = enable use of host measurements on the internal oscillator as synchronization source */
+      uint32_t enableHostMeasExt  : 1;    /* 1 = enable use of host measurements on the external oscillator as synchronization source */
+      uint32_t reserved           : 2;    /* Reserved. Do not use */
+      uint32_t useAnyFix          : 1;    /* 0 - use over-determined navigation solutions only; 1 - use any fix */
+      uint32_t disableMaxSlewRate : 1;    /* 1 - don't use the value in the field maxSlewRate */
+      uint32_t issueFreqWarn      : 1;    /* 1 - issue a warning (via UBX-TIM-TOS flag) when frequency uncertainty exceeds freqTolerance */
+      uint32_t issueTimeWarn      : 1;    /* 1 = issue a warning (via UBX-TIM-TOS flag) when time uncertainty exceeds timeTolerance */
+      uint32_t TPCoherent         : 2;    /* Control time pulse coherency: 0 - Coherent pulses; 1 - Non-coherent pulses; 2 - Post-initialization coherent pulses*/
+      uint32_t disableOffset      : 1;    /* 1 = disable automatic storage of oscillator offset */
+    } bits;
+  } flags;
+} UBX_CFG_SMGR_data_t;
+
 // MON-specific structs
 
 // UBX-MON-HW (0x0A 0x09): Hardware status
@@ -1979,6 +2028,76 @@ typedef struct
 } UBX_MON_RF_data_t;
 
 // TIM-specific structs
+
+// UBX-TIM-SMEAS (0x0D 0x13): Source measurement
+// Note: length is variable
+const uint16_t UBX_TIM_SMEAS_MAX_LEN = 12 + 24 * DEF_MAX_NUM_TIM_SMEAS_BLOCKS;
+
+typedef struct
+{
+  uint8_t sourceId;             /* Index of source */
+  union {
+    uint8_t all;
+    struct {
+      uint8_t freqValid : 1;    /* 1 = frequency measurement is valid */
+      uint8_t phaseValid : 1;   /* 1 = phase measurement is valid */
+    } bits;
+  } flags;
+  int8_t phaseOffsetFrac;       /* Sub-nanosecond phase offset (scaled by 2^-8) */
+  uint8_t phaseUncFrac;         /* Sub-nanosecond phase uncertainty (scaled by 2^-8) */
+  int32_t phaseOffset;          /* Phase offset [ns] */
+  uint32_t phaseUnc;            /* Phase uncertainty (one standard deviation, ns) */
+  uint8_t reserved3[4];         /* Reserved. Do not use. Set as zero */
+  int32_t freqOffset;           /* Frequency offset [ppb] */
+  uint32_t freqUnc;             /* Frequency uncertainty (one standard deviation, ppb) */
+} UBX_TIM_SMEAS_blockData_t;
+
+
+typedef struct
+{
+  uint8_t version;        /* Message version (0x00 for this version) */
+  uint8_t numMeas;        /* Number of measurements in repeated block */
+  uint8_t reserved1[2];   /* Reserved. Do not use. Set as zero */
+  uint32_t iTOW;          /* Time of the week [ms] */
+  uint8_t reserved2[2];   /* Reserved. Do not use. Set as zero */
+  UBX_TIM_SMEAS_blockData_t data[DEF_MAX_NUM_TIM_SMEAS_BLOCKS];
+} UBX_TIM_SMEAS_data_t;
+
+
+typedef struct
+{
+  union
+  {
+    uint32_t all;
+    struct
+    {
+      uint32_t all : 1;
+
+      uint32_t sourceId : 1;
+
+      uint32_t freqValid : 1;
+      uint32_t phaseValid : 1;
+
+      uint32_t phaseOffsetFrac : 1;
+      uint32_t phaseUncFrac : 1;
+      uint32_t phaseOffset : 1;
+      uint32_t phaseUnc : 1;
+      uint32_t freqOffset : 1;
+      uint32_t freqUnc : 1;
+    } bits;
+  } moduleQueried;
+} UBX_TIM_SMEAS_moduleQueried_t;
+
+
+typedef struct
+{
+  ubxAutomaticFlags automaticFlags;
+  UBX_TIM_SMEAS_data_t data;            // Internal buffer
+  UBX_TIM_SMEAS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_TIM_SMEAS_data_t);
+  UBX_TIM_SMEAS_data_t *callbackData;   // Shown to the user
+} UBX_TIM_SMEAS_t;
+
 
 // UBX-TIM-TM2 (0x0D 0x03): Time mark data
 const uint16_t UBX_TIM_TM2_LEN = 28;
