@@ -937,8 +937,7 @@ bool SFE_UBLOX_GNSS::isConnected(uint16_t maxWait)
   if (commType == COMM_TYPE_I2C)
   {
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-    if (_i2cPort->endTransmission() != 0)
-      return false; // Sensor did not ack
+    return _i2cPort->endTransmission() != 0;
   }
 
   // Query port configuration to see whether we get a meaningful response
