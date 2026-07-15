@@ -16,7 +16,7 @@ jobs:
         board:
           # Uno
           # https://github.com/arduino/ArduinoCore-avr/blob/master/boards.txt
-          - fqbn: arduino:avr:uno
+          - fqbn: arduino:avr:mega
             platforms: |
               - name: arduino:avr
                 source-url: https://downloads.arduino.cc/packages/package_index.json

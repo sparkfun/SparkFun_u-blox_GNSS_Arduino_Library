@@ -7124,7 +7124,7 @@ bool SFE_UBLOX_GNSS::storePacket(ubxPacket *msg)
 
   // Now, check if there is enough space in the buffer for all of the data
   uint16_t totalLength = msg->len + 8; // Total length. Include sync chars, class, id, length and checksum bytes
-  if (totalLength > fileBufferSpaceAvailable())
+  if (totalLength >= fileBufferSpaceAvailable()) // Use >= so a write can never exactly fill the buffer (head == tail would then wrongly mean empty)
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -7175,7 +7175,7 @@ bool SFE_UBLOX_GNSS::storeFileBytes(uint8_t *theBytes, uint16_t numBytes)
   }
 
   // Now, check if there is enough space in the buffer for all of the data
-  if (numBytes > fileBufferSpaceAvailable())
+  if (numBytes >= fileBufferSpaceAvailable()) // Use >= so a write can never exactly fill the buffer (head == tail would then wrongly mean empty)
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
