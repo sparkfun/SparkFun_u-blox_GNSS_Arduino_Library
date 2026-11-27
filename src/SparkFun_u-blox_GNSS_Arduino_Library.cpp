@@ -11161,6 +11161,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVPVT()
   packetUBXNAVPVT->callbackData = NULL;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
   packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
+  memset(&packetUBXNAVPVT->data, 0, sizeof(packetUBXNAVPVT->data)); // getters return this data even when the poll failed
   return (true);
 }
 
