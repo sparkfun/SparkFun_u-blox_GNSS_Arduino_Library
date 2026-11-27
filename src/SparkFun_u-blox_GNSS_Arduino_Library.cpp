@@ -4630,6 +4630,11 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 {
   sfe_ublox_status_e retVal = SFE_UBLOX_STATUS_SUCCESS;
 
+  // packetCfg.len is overwritten with the length field of the last reply, which can be larger than the
+  // payload buffer (only packetCfgPayloadSize bytes of a reply are stored). Never send more than we hold.
+  if ((outgoingUBX->payload == payloadCfg) && (outgoingUBX->len > packetCfgPayloadSize))
+    return (SFE_UBLOX_STATUS_OUT_OF_RANGE);
+
   calcChecksum(outgoingUBX); // Sets checksum A and B bytes of the packet
 
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
@@ -8445,6 +8450,12 @@ bool SFE_UBLOX_GNSS::enableGNSS(bool enable, sfe_ublox_gnss_ids_e id, uint16_t m
     return (false);
 
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
+  // The count comes from the module: limit it to the blocks that were actually received and stored
+  uint16_t storedLen = (packetCfg.len < packetCfgPayloadSize) ? packetCfg.len : (uint16_t)packetCfgPayloadSize;
+  if (storedLen < 4)
+    return (false);
+  if (numConfigBlocks > (storedLen - 4) / 8)
+    numConfigBlocks = (storedLen - 4) / 8;
 
   for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
   {
@@ -8474,6 +8485,12 @@ bool SFE_UBLOX_GNSS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
     return (false);
 
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
+  // The count comes from the module: limit it to the blocks that were actually received and stored
+  uint16_t storedLen = (packetCfg.len < packetCfgPayloadSize) ? packetCfg.len : (uint16_t)packetCfgPayloadSize;
+  if (storedLen < 4)
+    return (false);
+  if (numConfigBlocks > (storedLen - 4) / 8)
+    numConfigBlocks = (storedLen - 4) / 8;
 
   for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
   {
@@ -11144,6 +11161,7 @@ bool SFE_UBLOX_GNSS::initPacketUBXNAVPVT()
   packetUBXNAVPVT->callbackData = NULL;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
   packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
+  memset(&packetUBXNAVPVT->data, 0, sizeof(packetUBXNAVPVT->data)); // getters return this data even when the poll failed
   return (true);
 }
 
@@ -17446,6 +17464,9 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.min = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  // year and month come from the module and index the two tables below
+  if ((packetUBXNAVPVT->data.year < 2020) || (packetUBXNAVPVT->data.year > 2099) || (packetUBXNAVPVT->data.month < 1) || (packetUBXNAVPVT->data.month > 12))
+    return 0;
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020;                                                                           // Jan 1st 2020 as days from Jan 1st 1970
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020];                                             // Add on the number of days since 2020
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
@@ -17477,6 +17498,9 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t &microsecond, uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  // year and month come from the module and index the two tables below
+  if ((packetUBXNAVPVT->data.year < 2020) || (packetUBXNAVPVT->data.year > 2099) || (packetUBXNAVPVT->data.month < 1) || (packetUBXNAVPVT->data.month > 12))
+    return 0;
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020;                                                                           // Jan 1st 2020 as days from Jan 1st 1970
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020];                                             // Add on the number of days since 2020
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
