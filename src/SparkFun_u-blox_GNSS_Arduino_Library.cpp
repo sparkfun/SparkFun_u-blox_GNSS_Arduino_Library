@@ -17463,6 +17463,9 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.min = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  // year and month come from the module and index the two tables below
+  if ((packetUBXNAVPVT->data.year < 2020) || (packetUBXNAVPVT->data.year > 2099) || (packetUBXNAVPVT->data.month < 1) || (packetUBXNAVPVT->data.month > 12))
+    return 0;
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020;                                                                           // Jan 1st 2020 as days from Jan 1st 1970
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020];                                             // Add on the number of days since 2020
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
@@ -17494,6 +17497,9 @@ uint32_t SFE_UBLOX_GNSS::getUnixEpoch(uint32_t &microsecond, uint16_t maxWait)
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.sec = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.nano = false;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+  // year and month come from the module and index the two tables below
+  if ((packetUBXNAVPVT->data.year < 2020) || (packetUBXNAVPVT->data.year > 2099) || (packetUBXNAVPVT->data.month < 1) || (packetUBXNAVPVT->data.month > 12))
+    return 0;
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020;                                                                           // Jan 1st 2020 as days from Jan 1st 1970
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[packetUBXNAVPVT->data.year - 2020];                                             // Add on the number of days since 2020
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[packetUBXNAVPVT->data.year % 4 == 0 ? 0 : 1][packetUBXNAVPVT->data.month - 1]; // Add on the number of days since Jan 1st
