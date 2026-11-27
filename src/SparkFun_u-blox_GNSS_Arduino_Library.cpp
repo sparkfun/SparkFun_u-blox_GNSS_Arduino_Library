@@ -4630,6 +4630,11 @@ sfe_ublox_status_e SFE_UBLOX_GNSS::sendCommand(ubxPacket *outgoingUBX, uint16_t 
 {
   sfe_ublox_status_e retVal = SFE_UBLOX_STATUS_SUCCESS;
 
+  // packetCfg.len is overwritten with the length field of the last reply, which can be larger than the
+  // payload buffer (only packetCfgPayloadSize bytes of a reply are stored). Never send more than we hold.
+  if ((outgoingUBX->payload == payloadCfg) && (outgoingUBX->len > packetCfgPayloadSize))
+    return (SFE_UBLOX_STATUS_OUT_OF_RANGE);
+
   calcChecksum(outgoingUBX); // Sets checksum A and B bytes of the packet
 
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
@@ -8445,6 +8450,12 @@ bool SFE_UBLOX_GNSS::enableGNSS(bool enable, sfe_ublox_gnss_ids_e id, uint16_t m
     return (false);
 
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
+  // The count comes from the module: limit it to the blocks that were actually received and stored
+  uint16_t storedLen = (packetCfg.len < packetCfgPayloadSize) ? packetCfg.len : (uint16_t)packetCfgPayloadSize;
+  if (storedLen < 4)
+    return (false);
+  if (numConfigBlocks > (storedLen - 4) / 8)
+    numConfigBlocks = (storedLen - 4) / 8;
 
   for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
   {
@@ -8474,6 +8485,12 @@ bool SFE_UBLOX_GNSS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
     return (false);
 
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
+  // The count comes from the module: limit it to the blocks that were actually received and stored
+  uint16_t storedLen = (packetCfg.len < packetCfgPayloadSize) ? packetCfg.len : (uint16_t)packetCfgPayloadSize;
+  if (storedLen < 4)
+    return (false);
+  if (numConfigBlocks > (storedLen - 4) / 8)
+    numConfigBlocks = (storedLen - 4) / 8;
 
   for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
   {
